@@ -54,8 +54,35 @@ function schedule(){return `${panel('生产排程 · 版本全量',`<div class="
 function shift(){const positions=[['配料','李明','L2','合格'],['搅拌','赵凯','L2','合格'],['灌装','王强','L2','合格'],['包装','张敏','L2','合格'],['在线检验','待分配','—','缺岗']];return `${panel('生产线班组排班',`<div class="toolbar"><span class="small-note">A01 灌装线 · 日班 · 技能符合且无撞班才可上岗</span>${action('智能匹配人员（模拟）','match','','btn-primary')}</div>${table(['工位','候选员工','技能资格','校验'],positions.map(x=>[x[0],`<strong>${x[1]}</strong>`,x[2],tag(x[3])]))}`,'查看员工技能矩阵')}`}
 function simpleView(f){const configs={kitting:['物料齐套',['订单 / 任务','物料分类','应需量','锁库量','状态'],[['SO-2026-1023-018','原料','300 kg','300 kg','齐套'],['SO-2026-1023-018','包材','750 个','500 个','部分缺料']]],issue:['车间领料与仓库发料',['领料单','对应正式任务','物料','状态'],[['PICK-001','PLAN-02 配制','主剂 A','待仓库发料'],['PICK-002','PLAN-04 包装','包装桶','待车间签收']]],purchase:['采购申请',['申请单','物料类别','数量','进度'],[['PO-001','包材','1,000 个','待审核'],['PO-002','原料','300 kg','待到货']]],inventory:['库存与批号',['库存批号','品类','规格','现存量','状态'],[['LOT-2026-011','原料','主剂 A','500 kg','可用'],['LOT-2026-012','半成品','720g/L','1,200 L','待检'],['LOT-2026-013','成品','5L × 4桶','140 箱','可用']]],inspection:['质量检验任务',['报检单','检验阶段','批次','状态'],[['QC-101','半成品检验','BTH-006','待检'],['QC-102','成品检验','BTH-007','已完成']]],release:['质量放行',['检验单','产品','结论','复核状态'],[['QA-201','配制半成品','合格','已确认'],['QA-202','包装成品','待检验','待确认']]],batch:['生产批次卡',['批次卡','任务类型','关联任务','状态'],[['BTH-2026-1023-006','配制','PLAN-02','待开工'],['BTH-2026-1023-007','包装','PLAN-04','待开工']]],engineering:['设备与调机调线',['工单','对象产线','内容','状态'],[['ENG-001','S03-4# 瓶装线','调机调线','待执行'],['ENG-002','L01 配制一线','设备点检','已完成']]],safety:['EHS 安全检查',['检查单','场所','问题','状态'],[['EHS-001','配制车间','现场防护检查','待整改'],['EHS-002','包装车间','巡检','已完成']]],finance:['财务审核',['凭证','类型','金额','状态'],[['FIN-001','加班费','待核算','待确认'],['FIN-002','激励工资','待核算','待确认']]],approvals:['总经办审批',['事项','申请部门','审批类型','状态'],[['APR-001','信息化','敏感权限','待复核'],['APR-002','PMC','排程授权','待复核']]],orderReview:['订单评审',['订单号','产品 / 规格','数量','评审状态'],data.orders.map(o=>[o.id,o.product+' / '+o.spec,`${o.qty} ${o.unit}`,o.status])],incentive:['生产激励提报',['单号','员工','计量依据','状态'],data.payroll.filter(p=>p.type==='生产激励').map(p=>[p.id,p.name,p.basis,p.status])]};const [title,cols,rows]=configs[f]||['功能示例',['记录','内容'],[['DEMO-001','演示记录']]];return panel(title,`${table(cols,rows.map(r=>r.map((x,i)=>i===r.length-1?tag(x):i===0?`<strong>${e(x)}</strong>`:e(x))))}<div class="small-note" style="padding-top:12px">前端演示数据。实际审批和业务状态应由正式系统服务端处理。</div>`,'仅展示样例')}
 function render(){let d=departments.find(x=>x.id===data.dept)||departments[0];const f=data.feature;crumbs(d,f);navRender();$('role-select').value=data.role;if(f&&!allowed(d.id,f)){data.feature=null;return render()}$('view').innerHTML=!f?deptHome(d):({overview,orders,tasks,catalog,bom,templates,skills,permissions,employees,leave,leaveApproval,payroll,schedule,shift}[f]||(()=>simpleView(f)))();save()}
-function openDept(id){data.dept=id;data.feature=null;data.expanded=data.expanded===id?null:id;render();closeSidebar()}
-function openFeature(feat,dept){let d=dept||data.dept;if(!allowed(d,feat)){modal('功能权限已锁定',`当前演示角色没有「${features[feat]}」权限。真实系统由信息化管理员配置，并按具体功能逐项授权。`);return}data.dept=d;data.expanded=d;data.feature=feat;render();closeSidebar();window.scrollTo({top:0,behavior:'smooth'})}
+const deniedFlashTimers=new WeakMap();
+function flashDenied(target){
+  if(!target)return;
+  target.classList.remove('access-denied-flash');
+  void target.offsetWidth; // 连续点击时重新播放动画
+  target.classList.add('access-denied-flash');
+  clearTimeout(deniedFlashTimers.get(target));
+  deniedFlashTimers.set(target,setTimeout(()=>{target.classList.remove('access-denied-flash');deniedFlashTimers.delete(target)},800));
+}
+function openDept(id,trigger){
+  const dept=departments.find(d=>d.id===id);
+  if(dept&&!deptGranted(dept)){
+    // 锁定部门仅展开功能目录，不导航到无权页面
+    data.expanded=data.expanded===id?null:id;
+    navRender();
+    flashDenied(document.querySelector(`#nav [data-dept="${id}"]`)||trigger);
+    return;
+  }
+  data.dept=id;data.feature=null;data.expanded=data.expanded===id?null:id;render();closeSidebar();
+}
+function openFeature(feat,dept,trigger){
+  let d=dept||data.dept;
+  if(!allowed(d,feat)){
+    // 不弹窗、不跳转、不出现 Toast，只有被点击的锁定项短暂泛红
+    flashDenied(trigger||document.querySelector(`#nav [data-feature="${feat}"][data-feature-dept="${d}"]`)||document.querySelector(`#nav [data-dept="${d}"]`));
+    return;
+  }
+  data.dept=d;data.expanded=d;data.feature=feat;render();closeSidebar();window.scrollTo({top:0,behavior:'smooth'});
+}
 function modal(title,body,fields='',handler=''){let host=$('modal-host');host.innerHTML=`<div class="modal-screen" id="modal-screen"><div class="modal-box"><button class="icon-btn modal-close" id="close-modal" aria-label="关闭">${icon('close')}</button><div class="eyebrow">FACTORY OS / DEMO</div><h2>${e(title)}</h2><p class="modal-description">${e(body)}</p>${fields?`<div class="modal-content">${fields}</div>`:''}<div class="modal-foot"><button class="btn btn-quiet" id="cancel-modal">取消</button>${handler?`<button class="btn btn-primary" data-action="${handler}">确认</button>`:action('知道了','close')}</div></div></div>`}
 function closeModal(){$('modal-host').innerHTML=''}
 function field(label,id,type='text',value='',other=''){return `<div class="form-group"><label for="${id}">${e(label)}</label><input class="field" id="${id}" type="${type}" value="${e(value)}" ${other}></div>`}
@@ -64,7 +91,7 @@ function updateUnread(){let n=data.messages.filter(m=>m.unread).length;$('unread
 function drawMessages(){updateUnread();$('message-list').innerHTML=data.messages.map(m=>{let d=departments.find(d=>d.id===m.dept);return `<div class="message ${m.unread?'unread':''}" data-message="${m.id}"><span class="message-icon">${icon(d?.icon||'bell')}</span><div class="message-main"><strong>${e(m.title)}</strong><p>${e(m.text)}</p><small>${e(m.date)} · ${e(d?.name||'系统消息')}</small></div>${icon('arrow','ico tiny')}</div>`}).join('')||'<div class="empty-state">暂无消息</div>'}
 function toggleDrawer(open){drawer=open;$('notify-drawer').classList.toggle('open',drawer);$('drawer-shade').classList.toggle('visible',drawer);if(drawer)drawMessages()}
 function closeSidebar(){$('sidebar').classList.remove('open');$('shade').classList.remove('visible')}
-document.addEventListener('click',ev=>{let a=ev.target.closest('[data-action]');if(a){let op=a.dataset.action,id=a.dataset.id;if(op==='close')return closeModal();if(op==='nav')return openFeature(id,'pmc');if(op==='newLeave')return modal('发起请假','请输入请假日期和事由。此操作仅保存到浏览器。',`<div class="form-grid">${field('开始日期','leave-start','date','2026-11-09')}${field('结束日期','leave-end','date','2026-11-09')}<div class="form-group wide"><label>请假事由</label><input class="field" id="leave-reason" value="个人事务"></div></div>`,'submitLeave');if(op==='submitLeave'){let start=$('leave-start').value,end=$('leave-end').value;if(!start||!end||end<start)return toast('请检查请假日期','hr');let n='LV-'+String(Date.now()).slice(-6);data.leaves.unshift({id:n,person:'当前演示员工',range:`${start} ~ ${end}`,reason:$('leave-reason').value||'个人事务',status:'待人事审批'});message('请假待审批',`${n} 已提交，等待人事人员处理`,'hr','leaveApproval');closeModal();render();return toast(`${n} 请假申请已提交`,'hr')}
+document.addEventListener('click',ev=>{let a=ev.target.closest('[data-action]');if(a){let op=a.dataset.action,id=a.dataset.id;if(op==='close')return closeModal();if(op==='nav')return openFeature(id,'pmc',a);if(op==='newLeave')return modal('发起请假','请输入请假日期和事由。此操作仅保存到浏览器。',`<div class="form-grid">${field('开始日期','leave-start','date','2026-11-09')}${field('结束日期','leave-end','date','2026-11-09')}<div class="form-group wide"><label>请假事由</label><input class="field" id="leave-reason" value="个人事务"></div></div>`,'submitLeave');if(op==='submitLeave'){let start=$('leave-start').value,end=$('leave-end').value;if(!start||!end||end<start)return toast('请检查请假日期','hr');let n='LV-'+String(Date.now()).slice(-6);data.leaves.unshift({id:n,person:'当前演示员工',range:`${start} ~ ${end}`,reason:$('leave-reason').value||'个人事务',status:'待人事审批'});message('请假待审批',`${n} 已提交，等待人事人员处理`,'hr','leaveApproval');closeModal();render();return toast(`${n} 请假申请已提交`,'hr')}
 if(op==='approveLeave'){let l=data.leaves.find(x=>x.id===id);if(!l)return;window._approveId=id;return modal('审批请假',`${id} · ${l.person} · ${l.range}`,`<div class="info-bar">审批处理仅为本浏览器模拟，不发送真实通知。</div>`,'doApproveLeave')}
 if(op==='doApproveLeave'){let l=data.leaves.find(x=>x.id===window._approveId);if(l)l.status='审核通过';message('请假审批完成',`${l?.id||''} 已审核通过`,'hr','leave');closeModal();render();return toast('请假审批已完成','hr')}
 if(op==='newOrder')return modal('创建销售订单','产品 · 规格 · 数量是订单必填信息。',`<div class="form-grid">${field('产品名称','ord-product','text','720g/L 百菌清悬浮剂')}${field('规格','ord-spec','text','5L × 4桶')}${field('计划数量（L）','ord-qty','number','1000','min="1"')}</div>`,'submitOrder');if(op==='submitOrder'){let prod=$('ord-product').value.trim(),spec=$('ord-spec').value.trim(),qty=Number($('ord-qty').value);if(!prod||!spec||!(qty>0))return toast('产品、规格、数量必填','sales');let id='SO-DEMO-'+Date.now().toString().slice(-5);data.orders.unshift({id,product:prod,spec,qty,unit:'L',status:'待评审',owner:'销售部'});message('新建销售订单',`${id} 已进入订单评审流程`,'sales','orderReview');closeModal();render();return toast(`${id} 订单已创建`,'sales')}
@@ -75,8 +102,8 @@ if(op==='fillTemplate')return modal('模板一键填充',`${id} · 将受控模�
 if(op==='schedule'){message('智能排产试算完成','演示订单已生成配制、包装、清洗、调机调线任务','pmc','schedule');return toast('模拟排产完成','pmc')}
 if(op==='match')return toast('已按技能矩阵筛选适岗候选人（演示）','production');if(op==='lines')return modal('产品与产线关联',lines.map(l=>`${l[0]} · ${l[1]} · ${l[2]}`).join('；'));
 if(op==='newOvertime')return modal('提交加班申请','加班费由人事复核、财务核准后确认。演示费率不代表实际工资制度。',`<div class="form-grid">${field('员工姓名','ot-name','text','当前员工')}${field('加班小时数','ot-hours','number','2','min="0.5" step="0.5"')}</div>`,'submitOvertime');if(op==='submitOvertime'){let hours=Number($('ot-hours').value);if(!hours)return toast('请填写加班时长','hr');let id='OT-DEMO-'+Date.now().toString().slice(-5);data.payroll.unshift({id,name:$('ot-name').value||'当前员工',type:'加班',basis:`${hours} 小时`,status:'待人事复核',amount:'—'});message('加班申请待复核',`${id} 已提交`,'hr','payroll');closeModal();render();return toast('加班申请已提交','hr')}return}
-let nav=ev.target.closest('[data-dept]');if(nav)return openDept(nav.dataset.dept);
-let feat=ev.target.closest('[data-feature]');if(feat)return openFeature(feat.dataset.feature,feat.dataset.featureDept);
+let nav=ev.target.closest('[data-dept]');if(nav)return openDept(nav.dataset.dept,nav);
+let feat=ev.target.closest('[data-feature]');if(feat)return openFeature(feat.dataset.feature,feat.dataset.featureDept,feat);
 let m=ev.target.closest('[data-message]');if(m){let x=data.messages.find(x=>String(x.id)===m.dataset.message);if(x){x.unread=false;save();updateUnread();toggleDrawer(false);openFeature(x.feature||'overview',x.dept)}}
 if(ev.target.closest('#close-modal')||ev.target.closest('#cancel-modal')||ev.target.id==='modal-screen')closeModal();
 });
