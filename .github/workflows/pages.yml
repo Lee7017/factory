@@ -1,4 +1,4 @@
-name: Deploy static factory demo to GitHub Pages
+name: Deploy factory website to GitHub Pages
 on:
   push:
     branches: [main]
