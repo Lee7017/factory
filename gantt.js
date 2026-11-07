@@ -16,6 +16,8 @@ const categories={
  '包装':'make','成品 QC':'qc','QA 放行':'qa'
 };
 const stages=['清洗','配制','半成品 QC','调机调线','包装','成品 QC','QA 放行'];
+const nonProductionTypes=new Set(['清洗','调机调线']);
+const taskLabel=type=>nonProductionTypes.has(type)?`非生产 · ${type}`:type;
 const defaults=[
  ['清洗','L01 配制一线',420,60],
  ['配制','L01 配制一线',480,210],
@@ -69,15 +71,15 @@ function startMinute(x){const d=new Date(x.start);return d.getHours()*60+d.getMi
 function render(){
  ensure();const day=readDay(),entries=state().gantt.filter(x=>x.start.slice(0,10)===day);
  const canEdit=ctx.access.has('pmc','schedule','edit');
- const types=[['配制 / 包装','make'],['清洗','clean'],['调机调线','change'],['QA / QC 检验','qc'],['QA 放行','qa']];
+ const types=[['生产任务 · 配制 / 包装','make'],['非生产 · 清洗','clean'],['非生产 · 调机调线','change'],['QC 检验','qc'],['QA 放行','qa']];
  const times=Array.from({length:25},(_,i)=>`<span class="gantt-tick" style="left:${i/24*100}%">${pad(i)}:00</span>`).join('');
  const rows=lanes.map(lane=>{
   const bars=entries.filter(x=>x.lane===lane.id).map(item=>{
    const start=startMinute(item),end=Math.min(1440,start+Number(item.duration));
    if(start>=1440||end<=0)return '';
    const width=Math.max(8,(end-start)/1440*100);
-   const label=`${item.type} · ${item.orderId} · ${fmtMin(start)}–${fmtMin(end)} · ${status(item)}`;
-   return `<button class="gantt-bar category-${categories[item.type]}" style="left:${(start/1440*100).toFixed(4)}%;width:${width.toFixed(4)}%" type="button" data-gantt="edit" data-gantt-id="${safe(item.id)}" aria-label="${safe(label)}" title="${safe(label)}"><strong>${safe(item.type)}</strong><small>${safe(item.orderId)} · ${fmtMin(start)}</small></button>`;
+   const label=`${taskLabel(item.type)} · ${item.orderId} · ${fmtMin(start)}–${fmtMin(end)} · ${status(item)}`;
+   return `<button class="gantt-bar category-${categories[item.type]}" style="left:${(start/1440*100).toFixed(4)}%;width:${width.toFixed(4)}%" type="button" data-gantt="edit" data-gantt-id="${safe(item.id)}" aria-label="${safe(label)}" title="${safe(label)}"><strong>${safe(taskLabel(item.type))}</strong><small>${safe(item.orderId)} · ${fmtMin(start)}</small></button>`;
   }).join('');
   return `<div class="gantt-row"><div class="gantt-lane"><strong>${safe(lane.id)}</strong><small>${safe(lane.desc)}</small></div><div class="gantt-track">${bars}</div></div>`;
  }).join('');
@@ -89,7 +91,7 @@ function render(){
    <div class="gantt-controls"><button type="button" data-gantt="prev" aria-label="前一天">‹</button><input type="date" id="gantt-date" aria-label="选择排产日期" value="${day}"><button type="button" data-gantt="next" aria-label="后一天">›</button><button type="button" data-gantt="today">今天</button><button type="button" class="gantt-add" data-gantt="add" ${canEdit?'':'title="无权修改排程"'}>+ 新建任务</button></div></header>
    <div class="gantt-legend">${legend}<span class="gantt-count">当天 ${n} 项任务</span></div>
    <div class="gantt-scroll" tabindex="0" aria-label="可左右滚动的排产甘特图"><div class="gantt-canvas"><div class="gantt-head"><div class="gantt-lane gantt-lane-title">产线 / 工位</div><div class="gantt-hours">${times}</div></div>${rows}</div></div>
-   <div class="gantt-foot">清洗、调机调线为独立非生产任务；QA/QC 使用检验工位，不占用配制或包装产线。同一工位时间冲突时不允许保存。</div>
+   <div class="gantt-foot"><strong>非生产任务：</strong>清洗、调机调线均有独立任务、开工、完工及复核；不计入生产产量。<strong>生产任务：</strong>配制、包装。QC 检验和 QA 放行按各自工位安排。同一工位时间冲突时不允许保存。</div>
  </section>`;
 }
 function showError(msg){const el=$('#gantt-error');if(el){el.textContent=msg;el.hidden=false;}}
@@ -105,7 +107,7 @@ function openEditor(id){
  const host=$('#gantt-dialog-host')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'gantt-dialog-host'}));
  host.innerHTML=`<div class="gantt-shade" data-gantt="close"></div><div class="gantt-dialog" role="dialog" aria-modal="true" aria-label="编辑排程任务"><header><h3>${item?'编辑排程任务':'新增排程任务'}</h3><button data-gantt="close" aria-label="关闭">×</button></header><form id="gantt-form">
    <label>关联订单<select name="orderId">${options(orders.map(o=>[o.id,`${o.id} · ${o.product}`]),current.orderId)}</select></label>
-   <label>任务类型<select name="type">${options(stages.map(x=>[x,x]),current.type)}</select></label>
+   <label>任务类型<select name="type">${options(stages.map(x=>[x,taskLabel(x)]),current.type)}</select></label>
    <label>产线 / 检验工位<select name="lane">${options(lanes.map(x=>[x.id,x.id]),current.lane)}</select></label>
    <label>计划开始时间<input type="datetime-local" name="start" required value="${safe(current.start)}"></label>
    <label>计划工时（分钟）<input type="number" name="duration" min="15" max="1440" step="15" required value="${current.duration}"></label>
