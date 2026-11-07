@@ -30,7 +30,7 @@ const staff=[
  {id:'E004',name:'张敏',dept:'生产车间',title:'生产班组长',positions:['production_lead']},
  {id:'E005',name:'赵凯',dept:'生产车间',title:'配料工',positions:['production']},
  {id:'E006',name:'刘洋',dept:'质量部',title:'QA 检验员',positions:['quality']},
- {id:'E007',name:'周琳',dept:'PMC 办公室',title:'计划员',positions:['pmc']},
+ {id:'E007',name:'周琳',dept:'生产计划与物料控制部（PMC）',title:'计划员',positions:['pmc']},
  {id:'E008',name:'吴建',dept:'设备工程部',title:'设备工程师',positions:['engineering']},
  {id:'E009',name:'孙浩',dept:'仓库 / 物流部',title:'仓管员',positions:['warehouse']},
  {id:'E010',name:'林静',dept:'信息化 / 主数据管理',title:'信息化管理员',positions:['it']},
