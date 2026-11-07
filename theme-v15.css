@@ -42,6 +42,7 @@ html,body,.app-shell{background:var(--page)}
 .employee-option>.ico{height:15px;width:15px;flex-shrink:0}
 .employee-menu-note{font-size:11px;color:#87909b;line-height:1.6;margin:10px 4px}
 #reset-local{width:100%;margin-top:5px}
+/* 部门主页：业务功能占一整行，下面待办和成员并排 */
 .dept-overview{gap:14px}
 .dept-workspace-grid{display:flex;flex-direction:column;gap:14px;align-items:stretch}
 .dept-workspace-grid>.panel{width:100%;flex:none}

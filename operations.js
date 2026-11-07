@@ -26,7 +26,7 @@ function init(context){ctx=context;const d=ctx.data;
  ctx.save();
 }
 const current=()=>ctx.access.current().name;
-function log(action,ref,detail=''){S.logs.unshift({at:now(),person:current(),action,ref,detail});S.logs=S.logs.slice(0,120);ctx.save()}
+function log(action,ref,detail=''){S.logs.unshift({at:now(),ts:Date.now(),person:current(),dept:ctx.data.dept,action,ref,detail});S.logs=S.logs.slice(0,120);ctx.save()}
 function can(dept,feature,action='view'){return ctx.access.has(dept,feature,action)}
 function flash(el){ctx.flashDenied(el)}
 function warn(msg){notice=msg;const modalError=document.querySelector('#ops-form');if(modalError){let box=modalError.querySelector('.op-form-error');if(!box){box=document.createElement('div');box.className='op-form-error';box.setAttribute('role','alert');modalError.prepend(box)}box.textContent=msg;}ctx.render();}
@@ -44,7 +44,7 @@ function cmd(label,op,id='',style=''){return `<button type="button" class="op-bu
 function badge(status){let done=/已通过|已完成|已入库|已核准|已关闭|已发布|合格|已放行/.test(status);return `<span class="op-badge ${done?'complete':''}">${esc(status)}</span>`}
 function banner(){return `<div class="ops-status-bar ${notice?'warning':''}" role="status" aria-live="polite"><span title="${esc(notice||'操作状态正常')}">${esc(notice||'操作状态正常')}</span>${notice?'<button data-op-action="dismiss" aria-label="关闭提示">×</button>':''}</div>`}
 function tip(text){return `<div class="op-rule"><strong>操作规则</strong>${esc(text)}</div>`}
-function shell(title,toolbar,content,tipText=''){return `<div class="ops-workbench">${banner()}${toolbar?`<div class="ops-heading"><div><strong>业务记录与操作</strong><small>修改后更新本浏览器内的关联记录</small></div><div class="op-tools">${toolbar}</div></div>`:''}${tipText?tip(tipText):''}${content}${historyView()}</div>`}
+function shell(title,toolbar,content,tipText=''){return `<div class="ops-workbench">${banner()}${toolbar?`<div class="ops-heading"><div><strong>业务记录与操作</strong><small>修改后更新本浏览器内的关联记录</small></div><div class="op-tools">${toolbar}</div></div>`:''}${tipText?tip(tipText):''}${content}</div>`}
 function historyView(){const rows=S.logs.slice(0,5);return `<details class="op-history"><summary>最近操作记录 <span>${S.logs.length} 条</span></summary>${rows.length?rows.map(x=>`<div><time>${esc(x.at)}</time><strong>${esc(x.action)}</strong><span>${esc(x.ref)} · ${esc(x.person)}</span></div>`).join(''):'<p>尚无操作</p>'}</details>`}
 function rowActions(o,which=''){const stage=stageOf(o);let list=Object.entries(orderActions).filter(([k,v])=>v[4]===stage&&(!which||(featureActions[which]||[]).includes(k)));return list.map(([key,meta])=>cmd(meta[0],`flow:${key}`,o.id,key==='reject'?'muted':'')).join('')||'<span class="op-muted">等待下一环节</span>'}
 function flowActionsFor(feature){const names={orders:'销售订单',orderReview:'销售订单评审',schedule:'APS 排程',kitting:'物料齐套核查',issue:'仓库发料与签收',tasks:'生产 / 非生产任务',batch:'生产批次卡',inspection:'质量检验',release:'质量放行',inventory:'库存和入库'};
@@ -80,7 +80,8 @@ function inspectFlow(id){const o=orderBy(id);if(!o)return;const host=document.qu
 function applyFlow(key,id,button){const o=orderBy(id),step=orderActions[key];if(!o||!step)return;const [label,dept,feature,permission,expected,next]=step;
  if(!can(dept,feature,permission))return flash(button);
  if(stageOf(o)!==expected)return warn(`${id} 当前是「${stageForOrder(o)}」，不满足「${label}」的前置状态。`);
- if(key==='reserve'){const shortages=Object.entries(requirements(o)).filter(([m,qty])=>availableStock(m)<qty);if(shortages.length)return warn(`库存不足：${shortages.map(([m,qty])=>`${m} 缺 ${qty-availableStock(m)}`).join('，')}。请先在采购部门完成采购单审批和到货入库。`);S.reservations[id]=requirements(o)}
+ if(['semiPass','finalPass'].includes(key)&&window.FactoryModules&&!window.FactoryModules.hasFlowInspection(id,key==='semiPass'?'半成品':'成品'))return warn('请先在 QA/QC 审批的报检判定中确认该阶段合格，不能跳过检验记录。');
+ if(key==='reserve'){const shortages=Object.entries(requirements(o)).filter(([m,qty])=>Math.max(0,availableStock(m)-(window.FactoryModules?.blockedFromFlow(m)||0))<qty);if(shortages.length)return warn(`库存不足：${shortages.map(([m,qty])=>`${m} 缺 ${qty-availableStock(m)}`).join('，')}。请先在采购部门完成采购单审批和到货入库。`);S.reservations[id]=requirements(o)}
  if(key==='blendStart'&&!ctx.data.tasks.some(t=>t.type==='清洗'&&t.status==='已完成'))return warn('配制不能开工：清洗任务尚未完成执行与复核。请先到“生产任务”处理清洗。');
  if(key==='packStart'&&!ctx.data.tasks.some(t=>t.type==='调机调线'&&t.status==='已完成'))return warn('包装不能开工：调机调线任务尚未完成执行与复核。请先到“设备与调机调线”处理。');
  if(key==='issue'){
@@ -93,10 +94,20 @@ function applyFlow(key,id,button){const o=orderBy(id),step=orderActions[key];if(
  if(key==='formal'){S.flows[id].planLine=S.flows[id].planLine||'L01 配制一线';}
  S.flows[id].stage=next;
  o.status=({draft:'草稿',review:'待评审',approved:'待排产',trial:'试算完成',formal:'已排程',reserved:'已锁库',issued:'已发料',stored:'已完成'})[next]||stages[next];
- S.flows[id].audit.push({at:now(),person:current(),action:label});log(label,id,`${expected} → ${next}`);success(`${id}：${label}，当前状态 ${stages[next]}`);
+ const route={draft:'sales',review:'sales',approved:'pmc',trial:'pmc',formal:'pmc',reserved:'warehouse',issued:'production',blending:'production',semi_qc:'quality',semi_ok:'production',packaging:'production',final_qc:'quality',inspected:'quality',released:'warehouse',stored:'warehouse'};
+ const from=route[expected]||dept,to=route[next]||dept;
+ S.flows[id].audit.push({at:now(),person:current(),action:label,from,to,state:stages[next]});log(label,id,`${expected} → ${next}`);success(`${id}：${label}，当前状态 ${stages[next]}`);
+ window.FactoryFlowUI?.show({ref:id,action:label,from,to,status:stages[next],next:({'approved':'排程试算','trial':'发布正式排程','formal':'物料齐套 / 锁库','reserved':'仓库发料','issued':'清洗复核及配制开工','blending':'配制报检','semi_qc':'QC 半成品判定','semi_ok':'调机调线复核及包装','packaging':'包装报检','final_qc':'QC 成品判定','inspected':'QA 放行','released':'成品入库','stored':'订单生产入库完成','review':'销售订单评审'})[next]||'查看单据当前状态',history:S.flows[id].audit.map(h=>({...h,from:h.from||(h.action==='订单记录导入'?'sales':undefined)}))});
 }
-function applyTask(mode,id,button){let task=ctx.data.tasks.find(t=>t.id===id);if(!task)return;const dept=task.type==='调机调线'?'engineering':'production',feat=dept==='engineering'?'engineering':'tasks';if(!can(dept,feat,'execute'))return flash(button);const map={start:['待开始','执行中','任务开工'],finish:['执行中','待复核','提交完工复核'],verify:['待复核','已完成','复核完成']};const [from,to,label]=map[mode]||[];if(task.status!==from)return warn(`任务 ${id} 当前状态为${task.status}，不能${label}`);task.status=to;log(label,id,task.type);success(`任务 ${id} ${to}`)}
-function applyGeneric(type,next,id,button){const cfg=catalogs[type],r=bucketFor(type)?.find(x=>x.id===id);if(!cfg||!r)return;const match=cfg.actions.find(a=>a[2]===next&&a[1]===r.status);if(!match)return warn('单据状态已变化，不能重复执行此操作');if(!can(cfg.dept,cfg.feature,match[3]))return flash(button);if(type==='purchase'&&next==='已入库')S.stock[r.material]=(S.stock[r.material]||0)+Number(r.qty);r.status=next;log(match[0],id);success(`${id} 已更新为 ${next}`)}
+function applyTask(mode,id,button){let task=ctx.data.tasks.find(t=>t.id===id);if(!task)return;const dept=task.type==='调机调线'?'engineering':'production',feat=dept==='engineering'?'engineering':'tasks';if(!can(dept,feat,'execute'))return flash(button);const map={start:['待开始','执行中','任务开工'],finish:['执行中','待复核','提交完工复核'],verify:['待复核','已完成','复核完成']};const [from,to,label]=map[mode]||[];if(task.status!==from)return warn(`任务 ${id} 当前状态为${task.status}，不能${label}`);
+ if(mode==='verify'&&task.type==='清洗'&&window.FactoryModules?.state?.rules?.cleanQC&&!window.FactoryModules.hasCleaningPass(id))return warn('清洗任务必须先在 QA/QC 审批 → 清洗报检取得合格结论，才能复核完工。');
+ task.status=to;log(label,id,task.type);success(`任务 ${id} ${to}`);
+ const sourceDept=dept,target=task.type==='清洗'&&mode==='finish'?'quality':dept;
+ window.FactoryFlowUI?.show({ref:id,action:`${task.type} · ${label}`,from:sourceDept,to:target,status:to,next:task.type==='清洗'&&mode==='finish'?'QA/QC 清洗报检':to==='待复核'?'任务复核确认':to==='已完成'?'继续后续生产任务':'按任务标准执行',history:(S.logs||[]).filter(x=>x.ref===id).slice(0,5).reverse().map(x=>({at:x.at,from:x.dept||dept,action:x.action}))});
+} 
+function applyGeneric(type,next,id,button){const cfg=catalogs[type],r=bucketFor(type)?.find(x=>x.id===id);if(!cfg||!r)return;const match=cfg.actions.find(a=>a[2]===next&&a[1]===r.status);if(!match)return warn('单据状态已变化，不能重复执行此操作');if(!can(cfg.dept,cfg.feature,match[3]))return flash(button);if(type==='purchase'&&next==='已入库')return warn('请到仓库管理 → 来料比对 · 报检入库完成收货、QC 判定和入库确认；不能直接跳过质量检查。');r.status=next;log(match[0],id);success(`${id} 已更新为 ${next}`);
+ window.FactoryFlowUI?.show({ref:id,action:match[0],from:cfg.dept,to:type==='purchase'&&next==='待到货'?'warehouse':cfg.dept,status:next,next:type==='purchase'&&next==='待到货'?'采购到货登记、来料报检':'继续办理单据',history:(S.logs||[]).filter(x=>x.ref===id).slice(0,5).reverse().map(x=>({at:x.at,from:x.dept,action:x.action}))});
+} 
 function openEdit(type,id){currentRecord=id||'';let cfg=catalogs[type];if(type==='product')cfg={title:'物料',fields:[['name','物料名称','text'],['category','物料类别','select',['成品','半成品','原料','辅料','包材','耗材','备件','其他']],['spec','规格','text'],['unit','单位','text']]};
  if(type==='bom')cfg={title:'BOM 关联',fields:[['parent','父项编码','text'],['child','子项编码','text'],['qty','单位用量','number'],['unit','用量单位','text']]};
  if(type==='template')cfg={title:'工艺模板草稿',fields:[['name','模板名称','text'],['version','版本号','text'],['kind','任务类型','select',['配制','包装']]]};
