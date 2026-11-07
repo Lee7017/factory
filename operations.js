@@ -42,7 +42,7 @@ function recordTable(cols,rows){return `<div class="op-table-wrap"><table class=
 const td=x=>`<td>${x}</td>`;
 function cmd(label,op,id='',style=''){return `<button type="button" class="op-button ${style}" data-op-action="${esc(op)}" data-op-id="${esc(id)}">${esc(label)}</button>`}
 function badge(status){let done=/已通过|已完成|已入库|已核准|已关闭|已发布|合格|已放行/.test(status);return `<span class="op-badge ${done?'complete':''}">${esc(status)}</span>`}
-function banner(){return notice?`<div class="op-alert" role="status">${esc(notice)}<button data-op-action="dismiss" aria-label="关闭提示">×</button></div>`:''}
+function banner(){return `<div class="ops-status-bar ${notice?'warning':''}" role="status" aria-live="polite"><span title="${esc(notice||'操作状态正常')}">${esc(notice||'操作状态正常')}</span>${notice?'<button data-op-action="dismiss" aria-label="关闭提示">×</button>':''}</div>`}
 function tip(text){return `<div class="op-rule"><strong>操作规则</strong>${esc(text)}</div>`}
 function shell(title,toolbar,content,tipText=''){return `<div class="ops-workbench">${banner()}${toolbar?`<div class="ops-heading"><div><strong>业务记录与操作</strong><small>修改后更新本浏览器内的关联记录</small></div><div class="op-tools">${toolbar}</div></div>`:''}${tipText?tip(tipText):''}${content}${historyView()}</div>`}
 function historyView(){const rows=S.logs.slice(0,5);return `<details class="op-history"><summary>最近操作记录 <span>${S.logs.length} 条</span></summary>${rows.length?rows.map(x=>`<div><time>${esc(x.at)}</time><strong>${esc(x.action)}</strong><span>${esc(x.ref)} · ${esc(x.person)}</span></div>`).join(''):'<p>尚无操作</p>'}</details>`}
