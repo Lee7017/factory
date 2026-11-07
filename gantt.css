@@ -1,0 +1,63 @@
+/* 共用业务面板中的时间—产线甘特图，灰阶视觉，保留各工序的区分。 */
+html{scrollbar-gutter:stable}
+.ops-workbench{min-width:0;min-height:440px}
+.ops-status-bar{order:-1;height:38px;min-height:38px;padding:8px 12px;background:#f8f9fa;border:1px solid #e5e8ed;border-radius:7px;color:#66707c;display:flex;align-items:center;gap:10px;overflow:hidden;font-size:12px}
+.ops-status-bar.warning{background:#fff7f7;border-color:#eed8d8;color:#983f3f}
+.ops-status-bar>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.ops-status-bar button{border:0;background:none;color:inherit;flex:0 0 24px;height:25px;cursor:pointer}
+.op-table{table-layout:fixed;min-width:830px}
+.op-table th:last-child,.op-table td:last-child{width:300px}
+.op-table tbody tr{height:66px}
+.op-row-actions{min-height:36px;align-items:center}
+.gantt-panel{background:#fff;border:1px solid #e2e6eb;border-radius:9px;overflow:hidden;min-width:0}
+.gantt-panel-head{min-height:86px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.gantt-panel-head h2{margin:0 0 5px;font-size:17px;line-height:1.4;font-weight:710;color:#222933}
+.gantt-panel-head p{font-size:12px;color:#7a8490;margin:0}
+.gantt-controls{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+.gantt-controls button,.gantt-controls input{height:34px;padding:0 11px;border:1px solid #dfe3e8;background:#fff;border-radius:6px;font-size:12px;color:#414956}
+.gantt-controls input{width:146px;min-width:0}
+.gantt-controls button{cursor:pointer}.gantt-controls button:hover{background:#f3f4f6;border-color:#bfc4cb}
+.gantt-controls .gantt-add{background:#272d36;color:#fff;border-color:#272d36;font-weight:650}
+.gantt-legend{min-height:43px;border-top:1px solid #edf0f2;display:flex;align-items:center;gap:16px;padding:8px 18px;flex-wrap:wrap;color:#65707b;font-size:11.5px}
+.gantt-legend-item{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.gantt-legend-item i{height:12px;width:18px;border-radius:3px;border:1px solid #777;display:block}
+.gantt-legend-item i.category-make{background:#5b6571}
+.gantt-legend-item i.category-clean{background:#c6ccd2}
+.gantt-legend-item i.category-change{background:#8f99a5}
+.gantt-legend-item i.category-qc{background:#e1e4e8;border-style:dashed}
+.gantt-legend-item i.category-qa{background:#303843}
+.gantt-count{margin-left:auto;font-variant-numeric:tabular-nums}
+.gantt-scroll{overflow-x:auto;overflow-y:hidden;border-top:1px solid #e8ebee;scrollbar-color:#cbd0d6 #f5f6f8;scrollbar-width:thin}
+.gantt-canvas{width:1824px;min-width:1824px;background:#fff}
+.gantt-head,.gantt-row{display:grid;grid-template-columns:188px minmax(0,1fr)}
+.gantt-lane{position:sticky;left:0;z-index:4;border-right:1px solid #e5e9ed;border-bottom:1px solid #eceff2;background:#fff;min-height:64px;padding:11px 13px;display:flex;flex-direction:column;justify-content:center;gap:3px}
+.gantt-lane strong{font-size:12px;font-weight:680;color:#2d343d;white-space:nowrap}
+.gantt-lane small{font-size:11px;color:#88929d}
+.gantt-head{height:44px;background:#f7f8fa}.gantt-head .gantt-lane{min-height:44px;background:#f7f8fa;font-size:11px;color:#7c8791;font-weight:650}
+.gantt-hours{position:relative;border-bottom:1px solid #e5e9ed;overflow:visible;background:#f7f8fa}
+.gantt-tick{position:absolute;top:14px;transform:translateX(-50%);font-size:10px;color:#89929d;white-space:nowrap}
+.gantt-tick:first-child{transform:translateX(4px)}.gantt-tick:last-child{transform:translateX(-100%)}
+.gantt-track{height:64px;position:relative;background:repeating-linear-gradient(to right,#eef0f3 0,#eef0f3 1px,transparent 1px,transparent calc(100% / 24)),linear-gradient(#fff,#fff)}
+.gantt-row:nth-child(even) .gantt-track{background:repeating-linear-gradient(to right,#e8ebee 0,#e8ebee 1px,transparent 1px,transparent calc(100% / 24)),#fafbfc}
+.gantt-bar{position:absolute;top:12px;height:39px;padding:4px 7px;text-align:left;display:flex;flex-direction:column;gap:1px;justify-content:center;border-radius:5px;border:1px solid #49525e;color:#fff;overflow:hidden;white-space:nowrap;cursor:pointer;z-index:2;transition:filter .12s ease}
+.gantt-bar:hover{filter:brightness(.9);outline:2px solid #707884;outline-offset:1px;z-index:3}
+.gantt-bar strong{overflow:hidden;text-overflow:ellipsis;font-weight:660;font-size:11px;line-height:1.3}
+.gantt-bar small{overflow:hidden;text-overflow:ellipsis;font-size:9px;opacity:.86}
+.gantt-bar.category-make{background:#5b6571;border-color:#5b6571}
+.gantt-bar.category-clean{background:#c6ccd2;color:#303942;border-color:#a5adb6}
+.gantt-bar.category-change{background:#8f99a5;border-color:#798390}
+.gantt-bar.category-qc{background:#e1e4e8;color:#3e4753;border:1px dashed #67717d}
+.gantt-bar.category-qa{background:#303843;border-color:#303843}
+.gantt-foot{padding:10px 17px;border-top:1px solid #edf0f2;color:#7e8994;font-size:11.5px;line-height:1.7}
+.gantt-shade{position:fixed;inset:0;background:#1c222947;z-index:130;backdrop-filter:blur(1px)}
+.gantt-dialog{position:fixed;z-index:131;top:50%;left:50%;transform:translate(-50%,-50%);width:min(480px,calc(100vw - 30px));max-height:90vh;overflow:auto;background:#fff;border:1px solid #dce1e7;border-radius:11px;box-shadow:0 20px 60px #11182726}
+.gantt-dialog header{height:61px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e8ebef;padding:0 21px}
+.gantt-dialog h3{margin:0;font-size:17px}.gantt-dialog header button{border:0;background:transparent;font-size:25px;color:#78818b;cursor:pointer}
+.gantt-dialog form{padding:20px;display:grid;gap:14px}
+.gantt-dialog label{display:grid;gap:7px;color:#596371;font-size:12px;font-weight:630}
+.gantt-dialog select,.gantt-dialog input{height:38px;border:1px solid #d9dfe5;border-radius:6px;padding:0 10px;background:#fff;color:#252d38;width:100%;min-width:0}
+.gantt-dialog footer{display:flex;justify-content:flex-end;gap:9px;margin-top:5px}
+.gantt-dialog footer button{border:1px solid #dfe2e6;background:#fff;padding:9px 16px;border-radius:6px;cursor:pointer;font-size:12px}
+.gantt-dialog footer .gantt-save{background:#2d3540;color:#fff;border-color:#2d3540}
+.gantt-error{margin:0;padding:9px 11px;background:#fff0f0;border:1px solid #f2d1d1;border-radius:6px;font-size:12px;color:#953f3f}
+@media(max-width:740px){.gantt-panel-head{padding:13px 13px;gap:11px}.gantt-panel-head h2{font-size:16px}.gantt-controls{width:100%}.gantt-legend{padding:9px 12px;gap:10px}.gantt-count{margin-left:0}.gantt-canvas{width:1600px;min-width:1600px}.gantt-head,.gantt-row{grid-template-columns:148px minmax(0,1fr)}.gantt-lane{padding:8px 10px}.gantt-lane strong{font-size:11px}.gantt-bar strong{font-size:10px}}
