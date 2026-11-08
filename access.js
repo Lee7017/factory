@@ -2,7 +2,7 @@
 (()=>{'use strict';
 const actionNames={view:'查看',create:'创建',edit:'修改',approve:'审批',execute:'执行',config:'配置'};
 const capabilities={
- overview:['view'],hours:['view','create'],sop:['view','create','edit','approve','execute'],qaQc:['view','create','approve'],workshop:['view','create','execute','approve'],warehouseOps:['view','create','execute','approve'],settings:['view','config'],leave:['view','create'],leaveApproval:['view','approve'],employees:['view','edit'],skills:['view','edit'],payroll:['view','create','approve'],orders:['view','create','edit'],orderReview:['view','approve'],orderHistory:['view'],schedule:['view','edit','approve'],kitting:['view','execute'],shift:['view','edit','approve'],purchase:['view','create','approve'],inventory:['view','edit'],issue:['view','execute'],inspection:['view','execute'],release:['view','approve'],tasks:['view','execute'],batch:['view','execute'],incentive:['view','create','approve'],templates:['view','edit','approve'],bom:['view','edit'],catalog:['view','edit'],engineering:['view','execute','approve'],safety:['view','execute'],finance:['view','approve'],permissions:['view','config'],approvals:['view','approve'],hoursAppeal:['view'],qaSampling:['view'],qaCleanInspection:['view'],qaNcr:['view'],qaQualityStock:['view'],workshopReceive:['view'],workshopDispute:['view'],workshopRework:['view'],warehouseIncoming:['view'],warehousePick:['view'],warehouseOutbound:['view'],warehouseReturns:['view'],warehouseLedger:['view'],shiftPeople:['view'],shiftStats:['view'],orderProductStats:['view'],orderDailyReport:['view'],sopExecutions:['view'],productSettings:['view'],dictionarySettings:['view']
+ overview:['view'],hours:['view','create'],sop:['view','create','edit','approve','execute'],qaQc:['view','create','approve'],workshop:['view','create','execute','approve'],warehouseOps:['view','create','execute','approve'],settings:['view','config'],leave:['view','create'],leaveApproval:['view','approve'],employees:['view','edit'],skills:['view','edit'],payroll:['view','create','approve'],orders:['view','create','edit'],orderReview:['view','approve'],orderHistory:['view'],schedule:['view','edit','approve'],kitting:['view','execute'],shift:['view','edit','approve'],purchase:['view','create','approve'],inventory:['view','edit'],issue:['view','execute'],inspection:['view','execute'],release:['view','approve'],tasks:['view','execute'],batch:['view','execute'],incentive:['view','create','approve'],templates:['view','edit','approve'],bom:['view','edit'],catalog:['view','edit'],engineering:['view','execute','approve'],finance:['view','approve'],permissions:['view','config'],approvals:['view','approve'],hoursAppeal:['view'],qaSampling:['view'],qaCleanInspection:['view'],qaNcr:['view'],qaQualityStock:['view'],workshopReceive:['view'],workshopDispute:['view'],workshopRework:['view'],warehouseIncoming:['view'],warehousePick:['view'],warehouseOutbound:['view'],warehouseReturns:['view'],warehouseLedger:['view'],shiftPeople:['view'],shiftStats:['view'],orderProductStats:['view'],orderDailyReport:['view'],sopExecutions:['view'],productSettings:['view'],dictionarySettings:['view']
 };
 const positions=[
  {id:'employee',name:'普通员工',dept:'hr',features:['hr.leave']},
@@ -16,11 +16,10 @@ const positions=[
  {id:'quality',name:'质量专员',dept:'quality',features:['quality.qaQc','quality.qaSampling','quality.qaCleanInspection','quality.qaNcr','quality.qaQualityStock','quality.release','hr.leave']},
  {id:'production',name:'生产操作员',dept:'production',features:['production.workshop','production.workshopReceive','production.workshopDispute','production.workshopRework','production.tasks','production.batch','hr.leave']},
  {id:'production_lead',name:'生产班组长',dept:'production',features:['production.workshop','production.workshopReceive','production.workshopDispute','production.workshopRework','production.tasks','production.batch','production.shift','production.skills','production.incentive','hr.leave']},
- {id:'tech',name:'工艺技术员',dept:'tech',features:['tech.sop','tech.sopExecutions','tech.templates','tech.bom','tech.catalog','hr.leave']},
+ {id:'tech',name:'工艺技术员',dept:'it',features:['it.sop','it.sopExecutions','it.templates','it.bom','it.catalog','hr.leave']},
  {id:'engineering',name:'设备工程师',dept:'engineering',features:['engineering.engineering','hr.leave']},
- {id:'ehs',name:'EHS 专员',dept:'ehs',features:['ehs.safety','hr.leave']},
  {id:'finance',name:'财务专员',dept:'finance',features:['finance.payroll','finance.finance','hr.leave']},
- {id:'it',name:'信息化管理员',dept:'it',features:['it.settings','it.productSettings','it.dictionarySettings','it.permissions','it.employees','it.catalog','hr.leave']},
+ {id:'it',name:'信息化管理员',dept:'it',features:['it.settings','it.productSettings','it.dictionarySettings','it.permissions','it.employees','it.catalog','it.sop','it.sopExecutions','it.templates','it.bom','hr.leave']},
  {id:'executive',name:'总经办',dept:'leadership',features:['leadership.approvals','hr.leave']},
  {id:'developer',name:'开发人员',dept:'it',features:['*']}
 ];
@@ -36,15 +35,15 @@ const staff=[
  {id:'E007',name:'周琳',dept:'生产计划与物料控制部（PMC）',title:'计划员',positions:['pmc']},
  {id:'E008',name:'吴建',dept:'设备工程部',title:'设备工程师',positions:['engineering']},
  {id:'E009',name:'孙浩',dept:'仓库 / 物流部',title:'仓管员',positions:['warehouse']},
- {id:'E010',name:'林静',dept:'信息化 / 主数据管理',title:'信息化管理员',positions:['it']},
+ {id:'E010',name:'林静',dept:'信息化 / 工艺技术部',title:'信息化管理员',positions:['it']},
  {id:'E011',name:'许宁',dept:'人事行政办公室',title:'普通员工',positions:['employee']},
  {id:'E012',name:'小明',dept:'开发人员',title:'开发人员',positions:['developer']},
  {id:'E013',name:'杨澜',dept:'销售部',title:'销售专员',positions:['sales']},
  {id:'E014',name:'唐娟',dept:'采购 / 供应链部',title:'采购专员',positions:['purchase']},
  {id:'E021',name:'何敏',dept:'采购 / 供应链部',title:'采购主管',positions:['purchase_manager']},
- {id:'E015',name:'韩冰',dept:'EHS 安全环保部',title:'EHS 专员',positions:['ehs']},
+ {id:'E015',name:'韩冰',dept:'人事行政办公室',title:'行政员工',positions:['employee']},
  {id:'E016',name:'冯洁',dept:'财务部',title:'财务专员',positions:['finance']},
- {id:'E017',name:'苏晨',dept:'工艺技术部',title:'工艺技术员',positions:['tech']},
+ {id:'E017',name:'苏晨',dept:'信息化 / 工艺技术部',title:'工艺技术员',positions:['tech']},
  {id:'E018',name:'郑华',dept:'总经办',title:'管理人员',positions:['executive']},
  {id:'E019',name:'戴琴',dept:'人事行政办公室',title:'人事专员',positions:['hr']},
  {id:'E020',name:'马飞',dept:'生产车间',title:'生产 / 仓库兼岗',positions:['production','warehouse']}
@@ -68,7 +67,7 @@ if(!state.splitFeatureRightsMigrated){
   'warehouse.warehouseOps':['warehouse.warehouseIncoming','warehouse.warehousePick','warehouse.warehouseOutbound','warehouse.warehouseReturns','warehouse.warehouseLedger'],
   'quality.qaQc':['quality.qaSampling','quality.qaCleanInspection','quality.qaNcr','quality.qaQualityStock'],
   'production.workshop':['production.workshopReceive','production.workshopDispute','production.workshopRework'],
-  'tech.sop':['tech.sopExecutions'],
+  'it.sop':['it.sopExecutions'],
   'it.settings':['it.productSettings','it.dictionarySettings']
  };
  for(const p of positions.filter(x=>x.id!=='developer')){
@@ -80,6 +79,30 @@ if(!state.splitFeatureRightsMigrated){
 }
 // 兼容此前已保存的岗位权限：新增模块只迁移一次，不覆盖后续手动撤权。
 if(!state.modulesRightsMigrated){for(const p of positions.filter(p=>p.id!=='developer')){const existing=state.positionRights[p.id]||[];for(const feature of p.features){if(!['hours','qaQc','workshop','warehouseOps','sop','settings'].includes(feature.split('.')[1]))continue;const name=feature.split('.')[1];for(const action of capabilities[name]||['view']){if(p.id==='production'&&feature==='production.workshop'&&action==='approve')continue;const key=feature+'.'+action;if(!existing.includes(key))existing.push(key)}}state.positionRights[p.id]=existing}state.modulesRightsMigrated=true;try{localStorage.setItem(storage,JSON.stringify(state))}catch{}}
+// 旧的工艺权限与岗位迁移到信息化部门，保留已保存的其他权限。
+if(!state.mergedTechIntoItV1){
+ const migrate=key=>key.replace(/^tech\./,'it.');
+ for(const [pos,rights] of Object.entries(state.positionRights)){
+  state.positionRights[pos]=[...new Set(rights.filter(key=>!key.startsWith('ehs.')).map(migrate))];
+ }
+ for(const [person,rights] of Object.entries(state.extra)){
+  state.extra[person]=[...new Set(rights.filter(key=>!key.startsWith('ehs.')).map(migrate))];
+ }
+ for(const [person,roles] of Object.entries(state.assigned)){
+  state.assigned[person]=roles.filter(role=>role!=='ehs');
+  if(person==='E015'&&!state.assigned[person].length)state.assigned[person]=['employee'];
+ }
+ const itRights=state.positionRights.it||[];
+ for(const name of ['sop','sopExecutions','templates','bom']){
+  for(const action of capabilities[name]||['view']){
+   const key='it.'+name+'.'+action;
+   if(!itRights.includes(key))itRights.push(key);
+  }
+ }
+ state.positionRights.it=itRights;
+ state.mergedTechIntoItV1=true;
+ try{localStorage.setItem(storage,JSON.stringify(state))}catch{}
+}
 let selectedEmployee='E020',selectedPosition='production',selectedDept='production';
 let departments=[],features={};
 const save=()=>{try{localStorage.setItem(storage,JSON.stringify(state))}catch{}};
