@@ -35,7 +35,7 @@ const staff=[
  {id:'E007',name:'周琳',dept:'生产计划与物料控制部（PMC）',title:'计划员',positions:['pmc']},
  {id:'E008',name:'吴建',dept:'设备工程部',title:'设备工程师',positions:['engineering']},
  {id:'E009',name:'孙浩',dept:'仓库 / 物流部',title:'仓管员',positions:['warehouse']},
- {id:'E010',name:'林静',dept:'信息化 / 工艺技术部',title:'信息化管理员',positions:['it']},
+ {id:'E010',name:'林静',dept:'信息化部',title:'信息化管理员',positions:['it']},
  {id:'E011',name:'许宁',dept:'人事行政办公室',title:'普通员工',positions:['employee']},
  {id:'E012',name:'小明',dept:'开发人员',title:'开发人员',positions:['developer']},
  {id:'E013',name:'杨澜',dept:'销售部',title:'销售专员',positions:['sales']},
@@ -43,7 +43,7 @@ const staff=[
  {id:'E021',name:'何敏',dept:'采购 / 供应链部',title:'采购主管',positions:['purchase_manager']},
  {id:'E015',name:'韩冰',dept:'人事行政办公室',title:'行政员工',positions:['employee']},
  {id:'E016',name:'冯洁',dept:'财务部',title:'财务专员',positions:['finance']},
- {id:'E017',name:'苏晨',dept:'信息化 / 工艺技术部',title:'工艺技术员',positions:['tech']},
+ {id:'E017',name:'苏晨',dept:'信息化部',title:'工艺技术员',positions:['tech']},
  {id:'E018',name:'郑华',dept:'总经办',title:'管理人员',positions:['executive']},
  {id:'E019',name:'戴琴',dept:'人事行政办公室',title:'人事专员',positions:['hr']},
  {id:'E020',name:'马飞',dept:'生产车间',title:'生产 / 仓库兼岗',positions:['production','warehouse']}
