@@ -149,7 +149,7 @@ function renderGraph(entry){const kind=inferKind(entry),history=getHistory(entry
  <div class="journey-toolbar"><span>当前状态 <b>${clean(status)}</b></span>${entry.action?`<span>刚刚办理 <b>${clean(entry.action)}</b> · ${clean(entry.operator||'经办人未记录')}</span>`:''}<span>单据按实际办理顺序流转</span></div>
  <div class="journey-section-head"><strong>部门 · 员工 · 处理事项</strong><small>实线箭头表示前进，弯箭头表示进入下一行</small></div>
  <div class="journey-steps">${rowsOfCards(steps,kind,stage,history)}</div>
- ${loopRows(kind,history)}${extras(entry,kind)}
+ ${extras(entry,kind)}
  <div class="journey-section-head journey-history-title"><strong>操作记录</strong><small>${history.length} 条</small></div><div class="journey-history">${historyRows||'<div class="journey-history-empty">当前没有已记录的操作</div>'}</div>
  <footer class="journey-footer"><span>退回、审批、出库均记录实际经办员工</span><div><button type="button" class="journey-button" data-flow-close>关闭</button>${activeContinue?'<button type="button" class="journey-button primary" data-flow-track>跟踪卡点 →</button>':''}</div></footer>
  </section>`}
