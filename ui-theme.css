@@ -395,13 +395,15 @@ button,input,select,textarea{font-family:inherit;color:inherit}
 }
 @media(prefers-reduced-motion:reduce){.bottleneck-track-highlight{animation:none}}
 
-/* V23 · 黑白毛玻璃 + 绿色底光。绿色位于玻璃后方，用来显出真实的透与模糊。 */
+/* V27 · 红绿底光交叠晕染。颜色只在毛玻璃背后，面板透明度保持原值。 */
 body{
   background:
+    radial-gradient(ellipse 32% 33% at 78% 31%,rgba(215,83,93,.24) 0%,rgba(232,131,138,.12) 48%,transparent 94%),
+    radial-gradient(ellipse 30% 29% at 22% 83%,rgba(214,90,99,.16),transparent 90%),
     radial-gradient(ellipse 42% 36% at 54% 34%,rgba(63,165,105,.38) 0%,rgba(123,204,146,.22) 44%,transparent 96%),
     radial-gradient(ellipse 33% 37% at 84% 80%,rgba(77,169,118,.24),transparent 92%),
     radial-gradient(ellipse 28% 31% at 8% 17%,rgba(171,221,179,.25),transparent 90%),
-    linear-gradient(145deg,#f8fbf9 0%,#f3f7f4 52%,#fafafa 100%);
+    linear-gradient(145deg,#fbf9f9 0%,#f4f7f4 52%,#fafafa 100%);
   background-attachment:fixed;
 }
 .ambient-a{left:24%;top:10%;width:760px;height:660px;opacity:.30;filter:blur(60px);background:radial-gradient(circle,rgba(48,161,103,.45),transparent 70%)}
@@ -411,7 +413,9 @@ body{
 .dept-hub::before{
   content:"";position:absolute;z-index:-1;pointer-events:none;
   inset:85px -4% auto 13%;height:450px;
-  background:radial-gradient(ellipse at 42% 43%,rgba(61,173,108,.27),rgba(143,211,163,.12) 46%,transparent 79%);
+  background:
+    radial-gradient(ellipse at 76% 51%,rgba(220,96,105,.19),rgba(232,144,147,.08) 47%,transparent 78%),
+    radial-gradient(ellipse at 42% 43%,rgba(61,173,108,.27),rgba(143,211,163,.12) 46%,transparent 79%);
   filter:blur(30px);
 }
 .panel,.glass.panel,.dept-feature-panel,.dept-members,.dept-todo-lane,.op-table-wrap,.mw-content,.gantt-panel,.op-subsection,.mw-metric,.mw-snapshot,.office-location{
