@@ -74,7 +74,16 @@ class DepartmentUiTest(unittest.TestCase):
         self.assertIn("if(op==='saveOffice')", self.app)
         self.assertIn(".dept-roster-office .office-location", self.theme)
         self.assertNotIn('<div class="dept-hub"><div class="office-location"', self.app)
-        self.assertIn("20261108-roster-v28", self.index)
+        self.assertIn("20261108-sidebar-blend-v29", self.index)
+
+    def test_sidebar_red_green_blend(self):
+        sidebar = self.theme.split("/* V29 · 左侧栏也使用红绿底光", 1)[1]
+        self.assertIn("rgba(85,170,116,.25)", sidebar)
+        self.assertIn("rgba(214,95,109,.22)", sidebar)
+        self.assertIn("rgba(255,255,255,.72)", sidebar)
+        self.assertIn("backdrop-filter:blur(28px) saturate(150%)", sidebar)
+        self.assertIn("@media(max-width:860px)", sidebar)
+        self.assertIn("20261108-sidebar-blend-v29", self.index)
 
     def test_square_grid_and_visible_glass(self):
         self.assertIn("grid-template-columns:repeat(2,minmax(0,1fr))", self.theme)
