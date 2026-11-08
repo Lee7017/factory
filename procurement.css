@@ -35,3 +35,8 @@
 .proc-table td{border-top:1px solid #e7e9ec;padding:10px 7px}
 .proc-page .mw-section-head{margin-top:15px}
 @media(max-width:560px){.proc-top{align-items:flex-start;flex-direction:column}.proc-modal{padding:17px}.proc-fields{grid-template-columns:1fr}.proc-dl{grid-template-columns:83px 1fr}.proc-form-info{padding:4px 0}.proc-actions{gap:5px}.proc-btn{font-size:11px;padding:6px 8px}}
+
+/* Read-only approval notice: only users with approval rights see approval actions. */
+.proc-approval-banner{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 14px;margin-bottom:15px;border:1px solid #dce6ef;border-radius:9px;background:rgba(246,248,251,.88);color:#536170;font-size:12px}
+.proc-approval-banner strong{font-size:12px;color:#293d52}
+@media(max-width:590px){.proc-approval-banner{align-items:flex-start;flex-direction:column;gap:5px}}
