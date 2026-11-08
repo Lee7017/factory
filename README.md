@@ -50,7 +50,7 @@ GitHub Pages 不运行 Node.js 和 SQLite。此版本的记录仅保存在当前
 - `app.js`：部门导航、部门成员、聊天和公共交互。
 - `operations.js`：业务记录、操作表单、状态校验、跨部门流程和操作记录。
 
-回归测试可参考 `tests/test_workflow.py`，包含采购缺料、清洗和调线前置校验，以及订单到成品入库的跨部门流程。
+运行 `python3 -m unittest discover -s tests -p 'test_department_ui.py'` 可静态检查部门合并、53 项 SVG、入口权限和绿色玻璃样式。`tests/test_workflow.py` 是旧版 Playwright 业务流程脚本，执行前仍需更新其历史选择器。
 
 
 ## 部门首页与流转反馈（V19）
