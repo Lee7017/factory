@@ -92,10 +92,10 @@ function docMeta(entry){
  };
 }
 function currentTime(){return new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
-let tid=null,fadeTimer=null,activeContinue=null,activeTrackRef='';
+let fadeTimer=null,activeContinue=null,activeTrackRef='';
 function show(entry){
  const host=document.querySelector('#flow-transition-host');if(!host||!entry)return;
- clearTimeout(tid);clearTimeout(fadeTimer);
+ clearTimeout(fadeTimer);
  const from=label(entry.from),to=label(entry.to||entry.from),history=Array.isArray(entry.history)?entry.history.slice(-5):[];
  const same=from===to,doc=docMeta(entry);
  const action=entry.action||'操作完成',operator=entry.operator||history.at(-1)?.person||'当前用户',at=entry.at||history.at(-1)?.at||currentTime();
@@ -112,22 +112,21 @@ function show(entry){
    <div class="flow-path">
      <div class="flow-node"><small>${same?'处理部门':'本次处理部门'}</small><strong>${clean(from)}</strong></div>
      <div class="flow-travel"><span class="flow-route-line"></span><span class="flow-route-arrow">${same?'·':'→'}</span></div>
-     <div class="flow-node flow-node-dest"><small>${same?'当前仍由该部门处理':'下一处理部门'}</small><strong>${clean(to)}</strong></div>
+     <div class="flow-node flow-node-dest ${same?'is-same':'is-next'}"><small>${same?'当前仍由该部门处理':'下一处理部门'}</small><strong>${clean(to)}</strong></div>
    </div>
    <div class="flow-state"><span>当前状态 <b>${clean(entry.status||'已更新')}</b></span><span>下一步 <b>${clean(entry.next||'查看对应业务记录')}</b></span></div>
    <div class="flow-history-title"><strong>这张单据怎么走到这里</strong><span>${history.length} 条近期记录</span></div>
    <div class="flow-history">${history.length?history.map((h,i)=>`<div class="flow-history-row"><span class="flow-history-dot ${i===history.length-1?'is-current':''}"></span><span class="flow-history-dept">${clean(label(h.from||h.dept))}</span><span class="flow-history-action">${clean(h.action||'状态更新')}</span><small>${clean(h.at||'')}</small></div>`).join(''):'<div class="flow-history-empty">当前是这张单据的第一条业务记录</div>'}</div>
    <div class="flow-action-receipt"><span>刚刚执行</span><strong>${clean(action)}</strong><small>${clean(operator)} · ${clean(at)}</small></div>
-   <footer class="flow-bottom"><span>画面会自动消退</span><div class="flow-bottom-actions">${openButton}<button type="button" class="flow-continue" data-flow-track>跟踪卡点 →</button></div></footer>
-   <div class="flow-timer"></div>
+   <footer class="flow-bottom"><span>点击弹窗外区域可关闭</span><div class="flow-bottom-actions">${openButton}<button type="button" class="flow-continue" data-flow-track>跟踪卡点 →</button></div></footer>
  </section>`;
  host.classList.remove('flow-dismiss');host.classList.add('flow-visible');
- tid=setTimeout(()=>dismiss(),6500);
 }
-function dismiss(){const host=document.querySelector('#flow-transition-host');if(!host)return;host.classList.remove('flow-visible');host.classList.add('flow-dismiss');clearTimeout(tid);fadeTimer=setTimeout(()=>{if(!host.classList.contains('flow-visible')){host.innerHTML='';activeContinue=null;activeTrackRef=''}},450)}
+function dismiss(){const host=document.querySelector('#flow-transition-host');if(!host)return;host.classList.remove('flow-visible');host.classList.add('flow-dismiss');fadeTimer=setTimeout(()=>{if(!host.classList.contains('flow-visible')){host.innerHTML='';activeContinue=null;activeTrackRef=''}},450)}
 function fromAudit(row,history,defaultDept){const rule=routes[row.type]||Object.entries(routes).find(([key])=>String(row.type).includes(key))?.[1];let from=rule?.[0]||defaultDept||'当前部门',to=rule?.[1]||from;
  const newer=rule?.[2]||'查看对应单据状态和待办';show({ref:row.ref,action:row.type,from,to,next:newer,nextOpen:nextTargets[row.type]||Object.entries(nextTargets).find(([key])=>String(row.type).includes(key))?.[1],status:row.detail||'已记录',summary:row.detail||'',operator:row.by||'当前用户',at:row.time||'',history});}
 document.addEventListener('click',ev=>{
+ if(ev.target.classList.contains('flow-veil')){dismiss();return;}
  const open=ev.target.closest('[data-flow-open-dept]');
  if(open){const dept=open.dataset.flowOpenDept,feature=open.dataset.flowOpenFeature;dismiss();if(dept&&feature)location.hash=`#/departments/${dept}/${feature}`;return;}
  if(ev.target.closest('[data-flow-track]')){
