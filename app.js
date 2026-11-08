@@ -39,7 +39,11 @@ function navRender(){const node=$('nav');node.innerHTML=departments.filter(d=>(d
 const deptURL=id=>`${location.origin}${location.pathname}#/departments/${id}`;
 const pageHash=(dept,feat)=>`#/departments/${dept}${feat?'/'+feat:''}`;
 function updateAddress(dept,feat){if(location.hash!==pageHash(dept,feat))history.pushState(null,'',pageHash(dept,feat));}
-function crumbs(d,f){$('crumb').textContent=f?`${d.name} / ${features[f]}`:d.name;$('view-title').textContent=f?features[f]:d.name;$('view-description').textContent=f?featureHint(f):d.description}
+function crumbs(d,f){
+ const root=$('breadcrumbs');
+ root.innerHTML=`<button type="button" class="crumb-link crumb-home" data-breadcrumb-home>工厂管理系统</button><span class="crumb-sep">/</span><button type="button" class="crumb-link crumb-dept" data-breadcrumb-dept="${e(d.id)}">${e(d.name)}</button>${f?`<span class="crumb-sep">/</span><strong class="crumb-current">${e(features[f])}</strong>`:''}`;
+ $('view-title').textContent=f?features[f]:d.name;$('view-description').textContent=f?featureHint(f):d.description
+}
 function panel(title,contents,extra=''){return `<section class="panel"><div class="section-title">${title}<small>${extra}</small></div>${contents}</section>`}
 function table(columns,rows){return `<div class="table-wrap"><table class="data-table"><thead><tr>${columns.map(c=>`<th>${e(c)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map(x=>`<td>${x??''}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`}
 function tag(s){const dark=['执行中','已完成','审核通过','已发布','合格','可排班','已确认','可用'].includes(s);return `<span class="tag ${dark?'dark':''}">${e(s)}</span>`}
@@ -207,6 +211,8 @@ function drawMessages(){updateUnread();$('message-list').innerHTML=data.messages
 function toggleDrawer(open){drawer=open;$('notify-drawer').classList.toggle('open',drawer);$('drawer-shade').classList.toggle('visible',drawer);if(drawer)drawMessages()}
 function closeSidebar(){$('sidebar').classList.remove('open');$('shade').classList.remove('visible')}
 document.addEventListener('click',ev=>{
+const homeCrumb=ev.target.closest('[data-breadcrumb-home]');if(homeCrumb){openFeature('overview','leadership',homeCrumb);return;}
+const deptCrumb=ev.target.closest('[data-breadcrumb-dept]');if(deptCrumb){openDept(deptCrumb.dataset.breadcrumbDept);return;}
 const tabBtn=ev.target.closest('[data-dept-tab]');if(tabBtn){deptTabs[data.dept]=tabBtn.dataset.deptTab;render();return;}
 const modBtn=ev.target.closest('[data-module-action]');if(modBtn){window.FactoryModules.handleClick(modBtn);return;}
 const opBtn=ev.target.closest('[data-op-action]');if(opBtn){ops.handleClick(opBtn);return;}
