@@ -35,7 +35,7 @@ const bucketFor=type=>type==='purchase'?S.purchases:S[type];
 const now=()=>new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
 function init(context){ctx=context;const d=ctx.data;
  if(!d.ops||d.ops.version!==16){
-  d.ops={version:16,flows:{},stock:{'RM-001':500,'PK-001':500,'AD-001':150,'RM-002':300,'PK-002':200},purchases:[{id:'PO-001',material:'PK-001',qty:250,supplier:'包材供应商',status:'待审批'}],approvals:[{id:'APR-001',subject:'敏感权限申请',owner:'信息化 / 主数据管理',reason:'需总经办复核',status:'待复核'}],finance:[{id:'FIN-001',subject:'生产激励核算',amount:1200,owner:'财务部',status:'待确认'}],products:[{id:'FG-001',name:'720g/L 百菌清悬浮剂',category:'成品',spec:'5L × 4桶',unit:'桶'},{id:'SF-001',name:'百菌清配制半成品',category:'半成品',spec:'720g/L',unit:'L'}],bom:[{id:'BOM-01',parent:'SF-001',child:'RM-001',qty:.1,unit:'kg/L'},{id:'BOM-02',parent:'FG-001',child:'PK-001',qty:.25,unit:'个/L'}],templates:[{id:'TPL-SF-01',name:'配制工艺模板 A',version:'v2.1',kind:'配制',status:'已发布'},{id:'TPL-FG-01',name:'桶装包装模板',version:'v1.3',kind:'包装',status:'已发布'}],skills:{},roster:[{id:'SHIFT-001',slot:'配料',person:'E002',level:'L2',status:'已排班'},{id:'SHIFT-002',slot:'包装',person:'E003',level:'L2',status:'已排班'}],staffEdits:{},logs:[]};
+  d.ops={version:16,flows:{},stock:{'RM-001':500,'PK-001':500,'AD-001':150,'RM-002':300,'PK-002':200},purchases:[{id:'PO-001',material:'PK-001',qty:250,supplier:'包材供应商',status:'待审批'}],approvals:[{id:'APR-001',subject:'敏感权限申请',owner:'信息化部',reason:'需总经办复核',status:'待复核'}],finance:[{id:'FIN-001',subject:'生产激励核算',amount:1200,owner:'财务部',status:'待确认'}],products:[{id:'FG-001',name:'720g/L 百菌清悬浮剂',category:'成品',spec:'5L × 4桶',unit:'桶'},{id:'SF-001',name:'百菌清配制半成品',category:'半成品',spec:'720g/L',unit:'L'}],bom:[{id:'BOM-01',parent:'SF-001',child:'RM-001',qty:.1,unit:'kg/L'},{id:'BOM-02',parent:'FG-001',child:'PK-001',qty:.25,unit:'个/L'}],templates:[{id:'TPL-SF-01',name:'配制工艺模板 A',version:'v2.1',kind:'配制',status:'已发布'},{id:'TPL-FG-01',name:'桶装包装模板',version:'v1.3',kind:'包装',status:'已发布'}],skills:{},roster:[{id:'SHIFT-001',slot:'配料',person:'E002',level:'L2',status:'已排班'},{id:'SHIFT-002',slot:'包装',person:'E003',level:'L2',status:'已排班'}],staffEdits:{},logs:[]};
  }
  S=d.ops;S.reservations??={};for(const o of d.orders||[])if(!S.flows[o.id])S.flows[o.id]={stage:o.status==='待评审'?'review':o.status==='草稿'?'draft':'approved',audit:[{at:now(),action:'订单记录导入',person:'系统'}]};
  for(const t of d.tasks||[])if(!t.audit)t.audit=[];
@@ -44,7 +44,7 @@ function init(context){ctx=context;const d=ctx.data;
  for(const p of ctx.access.staff){
   if(S.staffEdits[p.id])Object.assign(p,S.staffEdits[p.id]);
   // 兼容保存过的员工档案里的旧部门名称。
-  if(p.dept==='工艺技术部'||p.dept==='信息化 / 主数据管理')p.dept='信息化 / 工艺技术部';
+  if(p.dept==='工艺技术部'||p.dept==='信息化 / 主数据管理'||p.dept==='信息化部')p.dept='信息化部';
   if(p.dept==='EHS 安全环保部')p.dept='人事行政办公室';
  }
  ctx.save();
