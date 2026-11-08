@@ -49,9 +49,25 @@ const homeHash=()=>`#/overview`;
 const pageHash=(dept,feat)=>`#/departments/${dept}${feat?'/'+feat:''}`;
 function updateAddress(dept,feat){if(location.hash!==pageHash(dept,feat))history.pushState(null,'',pageHash(dept,feat));}
 function updateHomeAddress(){if(location.hash!==homeHash())history.pushState(null,'',homeHash());}
+let deptInfoPinned=false;
+function hideDeptInfo(){
+ const pop=$('dept-description-popover');
+ if(!pop)return;
+ pop.hidden=true;deptInfoPinned=false;
+ document.querySelector('[data-dept-info-toggle][aria-expanded="true"]')?.setAttribute('aria-expanded','false');
+}
+function revealDeptInfo(trigger,pin=false){
+ const dept=departments.find(d=>d.id===trigger.dataset.deptInfoToggle),pop=$('dept-description-popover');
+ if(!dept||!pop)return;
+ pop.innerHTML=`<strong>${e(dept.name)}</strong><span class="dept-info-description">${e(dept.description)}</span>`;
+ pop.hidden=false;deptInfoPinned=pin;trigger.setAttribute('aria-expanded','true');
+ const rect=trigger.getBoundingClientRect(),size=pop.getBoundingClientRect();
+ pop.style.left=Math.max(12,Math.min(rect.left-24,window.innerWidth-size.width-12))+'px';
+ pop.style.top=Math.max(12,Math.min(rect.bottom+9,window.innerHeight-size.height-12))+'px';
+}
 function crumbs(d,f){
  const root=$('breadcrumbs');
- root.innerHTML=`<button type="button" class="crumb-link crumb-home" data-breadcrumb-home>工厂管理系统</button><span class="crumb-sep">/</span><span class="dept-crumb-group"><button type="button" class="crumb-link crumb-dept" data-breadcrumb-dept="${e(d.id)}">${e(d.name)}</button><span class="dept-info-wrap"><button type="button" class="dept-info-trigger" data-dept-info-toggle aria-label="查看${e(d.name)}介绍" aria-expanded="false" aria-controls="dept-description-popover" title="部门介绍">${icon('info')}</button><span class="dept-info-popover" id="dept-description-popover" role="tooltip"><strong>${e(d.name)}</strong><span>${e(d.description)}</span></span></span></span>${f?`<span class="crumb-sep">/</span><strong class="crumb-current">${e(features[f])}</strong>`:''}`;
+ root.innerHTML=`<button type="button" class="crumb-link crumb-home" data-breadcrumb-home>工厂管理系统</button><span class="crumb-sep">/</span><span class="dept-crumb-group"><button type="button" class="crumb-link crumb-dept" data-breadcrumb-dept="${e(d.id)}">${e(d.name)}</button><button type="button" class="dept-info-trigger" data-dept-info-toggle="${e(d.id)}" aria-label="查看${e(d.name)}介绍" aria-expanded="false" aria-controls="dept-description-popover">${icon('info')}</button></span>${f?`<span class="crumb-sep">/</span><strong class="crumb-current">${e(features[f])}</strong>`:''}`;
  $('view-title').textContent=f?features[f]:d.name;$('view-description').textContent=f?featureHint(f):d.description
 }
 function crumbsHome(){
@@ -186,7 +202,7 @@ function switchEmployee(id){
  render();updateAddress(data.dept);toggleUserMenu(false);
 }
 function toggleUserMenu(force){const menu=$('user-menu'),trigger=$('user-menu-toggle');const show=typeof force==='boolean'?force:menu.hidden;menu.hidden=!show;trigger.setAttribute('aria-expanded',String(show));}
-function render(){let d=departments.find(x=>x.id===data.dept)||departments[0];const f=data.feature;$('view').parentElement.classList.toggle('is-dept-home',!data.home&&!f);navRender();updateUserHeader();if(data.home){data.feature=null;crumbsHome();try{$('view').innerHTML=window.FactoryModules?.render('overview')||overview()}catch(err){console.error('overview render failed',err);$('view').innerHTML=overview()}save();return}crumbs(d,f);if(f&&!allowed(d.id,f)){data.feature=null;return render()}$('view').innerHTML=!f?deptHome(d):window.FactoryModules.supports(f)?window.FactoryModules.render(f):(['permissions','leave','leaveApproval'].includes(f)?({permissions,leave,leaveApproval}[f])():ops.render(f));save()}
+function render(){hideDeptInfo();let d=departments.find(x=>x.id===data.dept)||departments[0];const f=data.feature;$('view').parentElement.classList.toggle('is-dept-home',!data.home&&!f);navRender();updateUserHeader();if(data.home){data.feature=null;crumbsHome();try{$('view').innerHTML=window.FactoryModules?.render('overview')||overview()}catch(err){console.error('overview render failed',err);$('view').innerHTML=overview()}save();return}crumbs(d,f);if(f&&!allowed(d.id,f)){data.feature=null;return render()}$('view').innerHTML=!f?deptHome(d):window.FactoryModules.supports(f)?window.FactoryModules.render(f):(['permissions','leave','leaveApproval'].includes(f)?({permissions,leave,leaveApproval}[f])():ops.render(f));save()}
 const deniedFlashTimers=new WeakMap();
 function flashDenied(target){
   if(!target)return;
@@ -261,17 +277,11 @@ function closeSidebar(){$('sidebar').classList.remove('open');$('shade').classLi
 document.addEventListener('click',ev=>{
  const infoTrigger=ev.target.closest('[data-dept-info-toggle]');
  if(infoTrigger){
-   const wrap=infoTrigger.closest('.dept-info-wrap');
-   const open=!wrap.classList.contains('is-open');
-   wrap.classList.toggle('is-open',open);
-   infoTrigger.setAttribute('aria-expanded',String(open));
+   if(deptInfoPinned&&!$('dept-description-popover').hidden)hideDeptInfo();
+   else revealDeptInfo(infoTrigger,true);
    return;
  }
- const openInfo=document.querySelector('.dept-info-wrap.is-open');
- if(openInfo&&!openInfo.contains(ev.target)){
-   openInfo.classList.remove('is-open');
-   openInfo.querySelector('[data-dept-info-toggle]')?.setAttribute('aria-expanded','false');
- }
+ if(!ev.target.closest('#dept-description-popover'))hideDeptInfo();
 const homeTile=ev.target.closest('[data-nav-home]');if(homeTile){openHome();return;}
  const homeCrumb=ev.target.closest('[data-breadcrumb-home]');if(homeCrumb){openHome();return;}
 const deptCrumb=ev.target.closest('[data-breadcrumb-dept]');if(deptCrumb){openDept(deptCrumb.dataset.breadcrumbDept);return;}
@@ -309,15 +319,20 @@ if(ev.target.closest('#close-modal')||ev.target.closest('#cancel-modal')||ev.tar
 document.addEventListener('submit',ev=>{if(window.FactoryModules.submitForm(ev))return;if(ops.submitForm(ev))return;if(ev.target.id==='chat-form'){ev.preventDefault();submitChat()}});
 document.addEventListener('keydown',ev=>{
  if(ev.key!=='Escape')return;
- const openInfo=document.querySelector('.dept-info-wrap.is-open');
- if(openInfo){
-   openInfo.classList.remove('is-open');
-   const trigger=openInfo.querySelector('[data-dept-info-toggle]');
-   trigger?.setAttribute('aria-expanded','false');
-   trigger?.blur();
- }
+ const trigger=document.querySelector('[data-dept-info-toggle][aria-expanded="true"]');
+ if(trigger){hideDeptInfo();trigger.blur();}
  if(window._chatPeer)closeChat();
 });
+document.addEventListener('mouseover',ev=>{
+ const trigger=ev.target.closest?.('[data-dept-info-toggle]');
+ if(trigger&&!trigger.contains(ev.relatedTarget)&&!deptInfoPinned)revealDeptInfo(trigger);
+});
+document.addEventListener('mouseout',ev=>{
+ const trigger=ev.target.closest?.('[data-dept-info-toggle]');
+ if(trigger&&!trigger.contains(ev.relatedTarget)&&!deptInfoPinned)hideDeptInfo();
+});
+window.addEventListener('resize',hideDeptInfo);
+window.addEventListener('scroll',hideDeptInfo,true);
 document.addEventListener('input',ev=>{if(ev.target.id!=='dept-member-search')return;const term=ev.target.value.trim().toLowerCase();let found=0;document.querySelectorAll('#dept-member-grid [data-member-search]').forEach(card=>{const ok=card.dataset.memberSearch.includes(term);card.hidden=!ok;if(ok)found++});const empty=document.querySelector('#dept-members-no-results');if(empty)empty.hidden=found>0;});
 
 document.addEventListener('change',ev=>{const lookup={'perm-employee':'employee','perm-position':'position','perm-dept':'dept'};const key=lookup[ev.target.id];if(key){access.updateSelection(key,ev.target.value);render();}});
