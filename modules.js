@@ -27,10 +27,12 @@ function row(values){return `<tr>${values.map(td).join('')}</tr>`}
 function wrap(page,title,intro,toolbar,content,stats=''){
  const active=currentTab[page]||tabs[page]?.[0]?.[0]||'';
  const tabset=tabs[page]?`<nav class="mw-tabs" aria-label="${esc(title)}功能分组">${tabs[page].map(([id,label])=>btn(label,'tab',`${page}:${id}`,active===id?'active':'')).join('')}</nav>`:'';
- return `<div class="mw-page" data-module-page="${esc(page)}"><div class="mw-head"><div class="mw-head-info"><strong>${esc(title)}</strong><span>${esc(intro)}</span></div><div class="mw-actions">${toolbar||''}</div></div>${stats}${tabset}<section class="mw-content">${content}</section><div class="mw-feedback" role="status">${message?esc(message):'操作记录保存在当前浏览器；审批与库存变更会关联相应单据。'}</div></div>`;
+ const commandbar=(tabset||toolbar)?`<div class="mw-commandbar">${tabset}<div class="mw-actions">${toolbar||''}</div></div>`:'';
+ return `<div class="mw-page" data-module-page="${esc(page)}">${commandbar}${stats}<section class="mw-content">${content}</section><div class="mw-feedback" role="status">${message?esc(message):'操作记录保存在当前浏览器；审批与库存变更会关联相应单据。'}</div></div>`;
 }
 function cards(rows){return `<div class="mw-metrics">${rows.map(([label,value,sub])=>`<div class="mw-metric"><span>${esc(label)}</span><strong>${esc(value)}</strong><small>${esc(sub||'')}</small></div>`).join('')}</div>`}
 function head(label,extra=''){return `<div class="mw-section-head"><h3>${esc(label)}</h3><span>${esc(extra)}</span></div>`}
+function note(extra=''){return extra?`<p class="mw-tab-note">${esc(extra)}</p>`:''}
 function field(key,label,kind='text',val='',options=[]){const control=kind==='select'?`<select name="${esc(key)}" id="m-${esc(key)}" required>${options.map(x=>{let [v,t]=Array.isArray(x)?x:[x,x];return `<option value="${esc(v)}" ${String(v)===String(val)?'selected':''}>${esc(t)}</option>`}).join('')}</select>`:kind==='textarea'?`<textarea name="${esc(key)}" id="m-${esc(key)}" rows="3" required>${esc(val)}</textarea>`:`<input name="${esc(key)}" id="m-${esc(key)}" type="${esc(kind)}" value="${esc(val)}" ${kind==='number'?'min="0.01" step="any"':''} required>`;return `<label class="mw-field"><span>${esc(label)}</span>${control}</label>`}
 function modal(title,fields,context){form=context;modDialogOpen=true;$('#modules-modal-host').innerHTML=`<div class="mw-overlay" data-module-action="closeModal"></div><section class="mw-modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><h2>${esc(title)}</h2>${btn('关闭','closeModal')}</header><form id="module-form"><div class="mw-modal-fields">${fields}</div><p class="mw-modal-error" aria-live="polite"></p><footer>${btn('取消','closeModal')}<button class="mw-btn primary" type="submit">保存并提交</button></footer></form></section>`}
 function close(){modDialogOpen=false;form=null;$('#modules-modal-host').innerHTML=''}
@@ -66,18 +68,18 @@ function pendingForDept(dept){const out=[];const push=(arr,feature,k,filter,titl
 function qualityPage(){const t=currentTab.qaQc||'decision';let content='',toolbar='';
  if(t==='decision'){
  toolbar=btn('新建报检单','form:inspection','','primary');
- content=head('报检判定','含来料、半成品与成品')+grid(['报检单','来源','对象 / 订单','批次','状态','处理'],S.inspections.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.source),esc(r.material||r.order),esc(r.batch||'—'),status(r.status),r.status==='待判定'?btn('合格','qc:pass',r.id,'primary')+btn('不合格','qc:fail',r.id):esc(r.result||'已记录')])));
+ content=note('含来料、半成品与成品')+grid(['报检单','来源','对象 / 订单','批次','状态','处理'],S.inspections.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.source),esc(r.material||r.order),esc(r.batch||'—'),status(r.status),r.status==='待判定'?btn('合格','qc:pass',r.id,'primary')+btn('不合格','qc:fail',r.id):esc(r.result||'已记录')])));
  }else if(t==='sampling'){
  toolbar=btn('发起抽检','form:sample','','primary');
- content=head('抽检记录','抽检异常自动生成不合格品处置单')+grid(['抽检单','抽检对象','项目','数量','结论','操作'],S.samples.map(r=>row([esc(r.id),esc(r.batch||r.material),esc(r.item),esc(r.qty),status(r.status),r.status==='待判定'?btn('合格','sample:pass',r.id,'primary')+btn('不合格','sample:fail',r.id):'—'])));
+ content=note('抽检异常自动生成不合格品处置单')+grid(['抽检单','抽检对象','项目','数量','结论','操作'],S.samples.map(r=>row([esc(r.id),esc(r.batch||r.material),esc(r.item),esc(r.qty),status(r.status),r.status==='待判定'?btn('合格','sample:pass',r.id,'primary')+btn('不合格','sample:fail',r.id):'—'])));
  }else if(t==='clean'){
  toolbar=btn('新建清洗报检','form:clean','','primary');
- content=head('清洗报检','清洗为独立非生产任务；检验通过后才能复核完工')+grid(['报检单','清洗工单','产线','结论','操作'],S.cleanReports.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.task),esc(r.line),status(r.status),r.status==='待判定'?btn('合格','clean:pass',r.id,'primary')+btn('不合格','clean:fail',r.id):'—'])));
+ content=note('清洗为独立非生产任务；检验通过后才能复核完工')+grid(['报检单','清洗工单','产线','结论','操作'],S.cleanReports.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.task),esc(r.line),status(r.status),r.status==='待判定'?btn('合格','clean:pass',r.id,'primary')+btn('不合格','clean:fail',r.id):'—'])));
  }else if(t==='ncr'){
  toolbar=btn('登记不合格品','form:ncr','','primary');
- content=head('不合格品处置','隔离、返洗、返工、报废有独立处置记录')+grid(['处置单','来源','关联对象','问题','状态','操作'],S.ncr.map(r=>row([esc(r.id),esc(r.source),esc(r.ref),esc(r.reason),status(r.status),r.status==='待处置'?btn('处置','dispose',r.id,'primary'):esc(r.disposal||'—')])));
+ content=note('隔离、返洗、返工、报废有独立处置记录')+grid(['处置单','来源','关联对象','问题','状态','操作'],S.ncr.map(r=>row([esc(r.id),esc(r.source),esc(r.ref),esc(r.reason),status(r.status),r.status==='待处置'?btn('处置','dispose',r.id,'primary'):esc(r.disposal||'—')])));
  }else{
- content=head('质量库存','未经放行或冻结的批次不能参与正常发料')+grid(['批次号','物料','数量','有效期','质量状态','操作'],S.batches.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.material),money(r.qty)+' '+esc(r.unit||''),esc(r.expiry||'—'),status(r.quality),btn(r.quality==='冻结'?'解除冻结':'冻结批次','toggleFreeze',r.id)])));
+ content=note('未经放行或冻结的批次不能参与正常发料')+grid(['批次号','物料','数量','有效期','质量状态','操作'],S.batches.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.material),money(r.qty)+' '+esc(r.unit||''),esc(r.expiry||'—'),status(r.quality),btn(r.quality==='冻结'?'解除冻结':'冻结批次','toggleFreeze',r.id)])));
  }
  const count=cards([['报检判定',S.inspections.filter(r=>r.status==='待判定').length,'待处理'],['抽检',S.samples.filter(r=>r.status==='待判定').length,'待处理'],['清洗报检',S.cleanReports.filter(r=>r.status==='待判定').length,'待处理'],['不合格品处置',S.ncr.filter(r=>r.status==='待处置').length,'待处理'],['质量库存',S.batches.filter(b=>b.quality==='冻结').length,'冻结批次']]);
  return wrap('qaQc','质量检验及审批','报检判定、抽检、清洗报检、不合格处置与质量库存',toolbar,content,count);
@@ -85,14 +87,14 @@ function qualityPage(){const t=currentTab.qaQc||'decision';let content='',toolba
 function workshopPage(){const t=currentTab.workshop||'request';let content='',tools='';
  if(t==='request'){
  tools=btn('车间发起领料','form:issue','','primary')+btn('结余退库','form:return');
- content=head('领料 / 退库单','仓库签发和车间接收必须是不同人员的签名记录')+grid(['单号','分类','物料及批次','数量','关联订单','状态','动作'],S.materialRequests.map(r=>row([esc(r.id),esc(r.type),esc(r.material)+(r.batch?' / '+esc(r.batch):''),money(r.qty),esc(r.order||'—'),status(r.status),r.type==='领料'&&r.status==='待车间签收'?btn('车间签收','receiveShop',r.id,'primary'):'—'])));
+ content=note('仓库签发和车间接收必须是不同人员的签名记录')+grid(['单号','分类','物料及批次','数量','关联订单','状态','动作'],S.materialRequests.map(r=>row([esc(r.id),esc(r.type),esc(r.material)+(r.batch?' / '+esc(r.batch):''),money(r.qty),esc(r.order||'—'),status(r.status),r.type==='领料'&&r.status==='待车间签收'?btn('车间签收','receiveShop',r.id,'primary'):'—'])));
  }else if(t==='doubleSign'){
- content=head('到料接收双签','两个操作人、时间与数量写入同一领料单')+grid(['单号','仓库签发人','车间接收人','签发 / 接收时间','状态','操作'],S.materialRequests.filter(r=>r.type==='领料').map(r=>row([esc(r.id),esc(r.warehouseBy||'未签发'),esc(r.shopBy||'未签收'),esc([r.warehouseTime,r.shopTime].filter(Boolean).join(' / ')||'—'),status(r.status),r.status==='待车间签收'?btn('确认接收','receiveShop',r.id,'primary'):'—'])));
+ content=note('两个操作人、时间与数量写入同一领料单')+grid(['单号','仓库签发人','车间接收人','签发 / 接收时间','状态','操作'],S.materialRequests.filter(r=>r.type==='领料').map(r=>row([esc(r.id),esc(r.warehouseBy||'未签发'),esc(r.shopBy||'未签收'),esc([r.warehouseTime,r.shopTime].filter(Boolean).join(' / ')||'—'),status(r.status),r.status==='待车间签收'?btn('确认接收','receiveShop',r.id,'primary'):'—'])));
  }else if(t==='dispute'){
- content=head('工时申诉审批','审批后生成工时更正记录，原记录保留')+grid(['申诉单','员工','关联工时','说明','状态','操作'],S.disputes.map(r=>row([esc(r.id),esc(ctx.access.staff.find(p=>p.id===r.person)?.name||r.person),esc(r.hourId),esc(r.reason),status(r.status),r.status==='待审批'?btn('通过','appeal:approve',r.id,'primary')+btn('驳回','appeal:reject',r.id):'—'])));
+ content=note('审批后生成工时更正记录，原记录保留')+grid(['申诉单','员工','关联工时','说明','状态','操作'],S.disputes.map(r=>row([esc(r.id),esc(ctx.access.staff.find(p=>p.id===r.person)?.name||r.person),esc(r.hourId),esc(r.reason),status(r.status),r.status==='待审批'?btn('通过','appeal:approve',r.id,'primary')+btn('驳回','appeal:reject',r.id):'—'])));
  }else{
  tools=btn('发起返洗 / 返工','form:rework','','primary');
- content=head('返洗与返工','返洗形成独立清洗工单；返工保留原批次和问题来源')+grid(['工单号','分类','关联对象','产线','执行状态','处理'],ctx.data.tasks.filter(x=>x.sourceNcr||x.rework).map(r=>row([esc(r.id),esc(r.type),esc(r.sourceNcr||r.rework),esc(r.line),status(r.status),btn('查看任务','goto:production:tasks')])));
+ content=note('返洗形成独立清洗工单；返工保留原批次和问题来源')+grid(['工单号','分类','关联对象','产线','执行状态','处理'],ctx.data.tasks.filter(x=>x.sourceNcr||x.rework).map(r=>row([esc(r.id),esc(r.type),esc(r.sourceNcr||r.rework),esc(r.line),status(r.status),btn('查看任务','goto:production:tasks')])));
  }
  return wrap('workshop','车间领料、接收与工时','领料单、双签、结余退库、工时申诉以及返洗返工',tools,content);
 }
@@ -103,11 +105,11 @@ function warehousePage(){const t=currentTab.warehouseOps||'batches';let content=
  content=head('库存分组汇总','原辅料、品牌包材、非品牌包材、半成品、成品')+summary+head('实际批次台账','支持质量状态、效期预警和冻结')+grid(['批次号','物料','分类','数量','入库日期','有效期','质量状态','操作'],S.batches.map(b=>row([esc(b.id),esc(b.material),esc(b.group),money(b.qty)+' '+esc(b.unit),esc(b.received),esc(b.expiry||'—'),status(isExpired(b)?'已过期':isNear(b)?'近效期 · '+b.quality:b.quality),btn(b.quality==='冻结'?'解冻':'冻结','toggleFreeze',b.id)])));
  }else if(t==='incoming'){
  tools=btn('采购到货登记','form:incoming','','primary')+navButton('生产入库确认','warehouse','inventory');
- content=head('来料比对 → 报检 → 合格入库','未经质检判定合格的来料不能确认入库')+grid(['到货单','采购单','物料 / 数量','供应商','状态','下一步'],S.incoming.map(r=>row([esc(r.id),esc(r.purchase),esc(r.material)+' / '+money(r.qty),esc(r.supplier),status(r.status),['待比对','比对差异'].includes(r.status)?btn('核对采购与实收','inbound:compare',r.id,'primary')+btn('修改实收','inbound:correct',r.id):r.status==='待报检'?btn('提交报检','inbound:inspect',r.id,'primary'):r.status==='待QC'?navButton('前往 QC','quality','qaQc'):r.status==='合格待入库'?btn('入库确认','inbound:store',r.id,'primary'):'—'])));
+ content=note('流程：来料比对 → 报检 → 合格入库；未经质检判定合格的来料不能确认入库')+grid(['到货单','采购单','物料 / 数量','供应商','状态','下一步'],S.incoming.map(r=>row([esc(r.id),esc(r.purchase),esc(r.material)+' / '+money(r.qty),esc(r.supplier),status(r.status),['待比对','比对差异'].includes(r.status)?btn('核对采购与实收','inbound:compare',r.id,'primary')+btn('修改实收','inbound:correct',r.id):r.status==='待报检'?btn('提交报检','inbound:inspect',r.id,'primary'):r.status==='待QC'?navButton('前往 QC','quality','qaQc'):r.status==='合格待入库'?btn('入库确认','inbound:store',r.id,'primary'):'—'])));
  }else if(t==='pick'){
- content=head('备料执行 · FIFO','按同物料最早入库批次优先；冻结、待检或过期批次排除')+grid(['领料单','物料 / 数量','推荐批次','状态','操作'],S.materialRequests.filter(x=>x.type==='领料').map(r=>{const allocations=allocateFIFO(r.material,r.qty);return row([esc(r.id),esc(r.material)+' / '+money(r.qty),esc(r.allocations?.map(x=>x.id+' × '+x.qty).join('、')||allocations?.map(x=>x.id+' × '+x.qty).join('、')||'暂无合格批次'),status(r.status),r.status==='待备料'?btn('按 FIFO 备料','prepare',r.id,'primary'):r.status==='待仓库签发'?btn('仓库签发','issueStock',r.id,'primary'):'—'])}));
+ content=note('按同物料最早入库批次优先；冻结、待检或过期批次排除')+grid(['领料单','物料 / 数量','推荐批次','状态','操作'],S.materialRequests.filter(x=>x.type==='领料').map(r=>{const allocations=allocateFIFO(r.material,r.qty);return row([esc(r.id),esc(r.material)+' / '+money(r.qty),esc(r.allocations?.map(x=>x.id+' × '+x.qty).join('、')||allocations?.map(x=>x.id+' × '+x.qty).join('、')||'暂无合格批次'),status(r.status),r.status==='待备料'?btn('按 FIFO 备料','prepare',r.id,'primary'):r.status==='待仓库签发'?btn('仓库签发','issueStock',r.id,'primary'):'—'])}));
  }else if(t==='returns'){
- content=head('退库接收','退库确认后增加原批次结余并记录入库流水')+grid(['退库单','原批次','物料 / 数量','状态','操作'],S.materialRequests.filter(r=>r.type==='退库').map(r=>row([esc(r.id),esc(r.batch||'—'),esc(r.material)+' / '+money(r.qty),status(r.status),r.status==='待仓库接收'?btn('验收并退库','acceptReturn',r.id,'primary'):'—'])));
+ content=note('退库确认后增加原批次结余并记录入库流水')+grid(['退库单','原批次','物料 / 数量','状态','操作'],S.materialRequests.filter(r=>r.type==='退库').map(r=>row([esc(r.id),esc(r.batch||'—'),esc(r.material)+' / '+money(r.qty),status(r.status),r.status==='待仓库接收'?btn('验收并退库','acceptReturn',r.id,'primary'):'—'])));
  }else{
  const month=today().slice(5,7),monthly=S.ledger.filter(x=>x.time.startsWith(month+'/'));
  const totals={};for(const l of monthly){if(!/质检入库|质量放行入账|双签并扣库|退库接收/.test(l.type))continue;const m=l.detail.match(/^([A-Z]+-[0-9]+) ([+-][0-9.]+)/);if(!m)continue;totals[m[1]]??={incoming:0,outgoing:0};const val=Number(m[2]);if(val>0)totals[m[1]].incoming+=val;else totals[m[1]].outgoing-=val}
@@ -130,52 +132,52 @@ function validAllocations(request){return (request.allocations||[{id:request.bat
 function shiftPage(){const t=currentTab.shift||'plan';let content='',tools='';
  if(t==='plan'){
  tools=btn('安排岗位班次','form:roster','','primary');
- content=head('产线 × 岗位双维度排班','技能、请假、工位撞班与开工前检查')+grid(['班次','日期','产线','岗位','员工','订单','开工前 Gate','操作'],S.roster.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.day+' '+r.start+'–'+r.end),esc(r.line),esc(r.position),esc(ctx.access.staff.find(x=>x.id===r.person)?.name||r.person),esc(r.order),status(r.gate||'待检查'),btn('检查开工条件','gate',r.id,'primary')])));
+ content=note('按产线 × 岗位编排；检查技能、请假、工位撞班与开工前 Gate')+grid(['班次','日期','产线','岗位','员工','订单','开工前 Gate','操作'],S.roster.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.day+' '+r.start+'–'+r.end),esc(r.line),esc(r.position),esc(ctx.access.staff.find(x=>x.id===r.person)?.name||r.person),esc(r.order),status(r.gate||'待检查'),btn('检查开工条件','gate',r.id,'primary')])));
  }else if(t==='people'){
- content=head('员工排班','按员工查看班次安排与工种')+grid(['员工','日期','工位','产线','班次','状态'],S.roster.map(r=>row([esc(ctx.access.staff.find(x=>x.id===r.person)?.name||r.person),esc(r.day),esc(r.position),esc(r.line),esc(r.start+'–'+r.end),status(r.gate||'待检查')])));
+ content=note('按员工查看班次安排与工种')+grid(['员工','日期','工位','产线','班次','状态'],S.roster.map(r=>row([esc(ctx.access.staff.find(x=>x.id===r.person)?.name||r.person),esc(r.day),esc(r.position),esc(r.line),esc(r.start+'–'+r.end),status(r.gate||'待检查')])));
  }else if(t==='stats'){
  const passed=S.roster.filter(r=>r.gate==='已通过').length;
  content=cards([['排班记录',S.roster.length,'产线 × 岗位'],['开工前 Gate 通过',passed,'人员、资质、请假、清洗'],['确认工时',S.hours.filter(h=>h.status==='已确认').length,'计入统计'],['未确认工时',S.hours.filter(h=>h.status==='待确认').length,'暂不计入']])+head('班次统计明细')+grid(['产线','排班数','通过数','员工数'],[...new Set(S.roster.map(r=>r.line))].map(l=>{let a=S.roster.filter(r=>r.line===l);return row([esc(l),a.length,a.filter(x=>x.gate==='已通过').length,new Set(a.map(x=>x.person)).size])}));
  }else if(t==='products'){
  const confirms=S.hours.filter(h=>h.status==='已确认'&&h.order);
  const orders=[...new Set(confirms.map(h=>h.order))];
- content=head('订单产品统计','只累计员工已确认的订单工时')+grid(['订单号','产品','确认工时（小时）','参与员工','状态'],orders.map(o=>{let a=confirms.filter(h=>h.order===o),obj=ctx.data.orders.find(x=>x.id===o);return row([esc(o),esc(obj?.product||'—'),money(a.reduce((sum,x)=>sum+Number(x.hours),0)),new Set(a.map(x=>x.person)).size,status(ops().flows[o]?.stage||'待处理')])}));
+ content=note('只累计员工已确认的订单工时')+grid(['订单号','产品','确认工时（小时）','参与员工','状态'],orders.map(o=>{let a=confirms.filter(h=>h.order===o),obj=ctx.data.orders.find(x=>x.id===o);return row([esc(o),esc(obj?.product||'—'),money(a.reduce((sum,x)=>sum+Number(x.hours),0)),new Set(a.map(x=>x.person)).size,status(ops().flows[o]?.stage||'待处理')])}));
  }else{
  const list=S.hours.filter(h=>h.status==='已确认'&&h.order);
- content=head('订单日报表','按日期 / 订单汇总已确认工时')+grid(['日期','订单','已确认工时（小时）','工时类型'],[...new Set(list.map(h=>h.day+'|'+h.order))].map(k=>{let [day,order]=k.split('|'),xs=list.filter(h=>h.day===day&&h.order===order);return row([esc(day),esc(order),money(xs.reduce((a,b)=>a+Number(b.hours),0)),esc([...new Set(xs.map(x=>x.type))].join(' / '))])}));
+ content=note('按日期 / 订单汇总已确认工时')+grid(['日期','订单','已确认工时（小时）','工时类型'],[...new Set(list.map(h=>h.day+'|'+h.order))].map(k=>{let [day,order]=k.split('|'),xs=list.filter(h=>h.day===day&&h.order===order);return row([esc(day),esc(order),money(xs.reduce((a,b)=>a+Number(b.hours),0)),esc([...new Set(xs.map(x=>x.type))].join(' / '))])}));
  }
  return wrap('shift','排班与订单工时统计','产线 × 岗位、技能校验、请假影响、开工前 Gate',tools,content);
 }
 function hoursPage(){const t=currentTab.hours||'mine';let content='',tools='';const own=S.hours.filter(h=>h.person===me().id);
  if(t==='mine'){
  tools=btn('新增工时','form:hours','','primary')+btn('从排班生成工时','generateHours');
- content=head('我的工时','本人确认后才会进入排班统计与订单产品统计')+cards([['待确认',own.filter(x=>x.status==='待确认').length,'按本人班次计算'],['已确认',money(own.filter(x=>x.status==='已确认').reduce((a,x)=>a+Number(x.hours),0)),'小时'],['管理岗工时',money(own.filter(x=>x.status==='已确认'&&x.type==='管理岗工时').reduce((a,x)=>a+Number(x.hours),0)),'小时'],['辅助工时',money(own.filter(x=>x.status==='已确认'&&x.type==='辅助工时').reduce((a,x)=>a+Number(x.hours),0)),'小时']])+grid(['工时单','日期 / 班制','类型','小时数','订单','状态','操作'],own.map(r=>row([esc(r.id),esc(r.day+' / '+(r.shift||'自报')),esc(r.type),money(r.hours),esc(r.order||'未关联'),status(r.status),r.status==='待确认'?btn('本人确认','confirmHours',r.id,'primary')+btn('提出申诉','appeal',r.id):btn('提出申诉','appeal',r.id)])));
+ content=note('本人确认后才会进入排班统计与订单产品统计')+cards([['待确认',own.filter(x=>x.status==='待确认').length,'按本人班次计算'],['已确认',money(own.filter(x=>x.status==='已确认').reduce((a,x)=>a+Number(x.hours),0)),'小时'],['管理岗工时',money(own.filter(x=>x.status==='已确认'&&x.type==='管理岗工时').reduce((a,x)=>a+Number(x.hours),0)),'小时'],['辅助工时',money(own.filter(x=>x.status==='已确认'&&x.type==='辅助工时').reduce((a,x)=>a+Number(x.hours),0)),'小时']])+grid(['工时单','日期 / 班制','类型','小时数','订单','状态','操作'],own.map(r=>row([esc(r.id),esc(r.day+' / '+(r.shift||'自报')),esc(r.type),money(r.hours),esc(r.order||'未关联'),status(r.status),r.status==='待确认'?btn('本人确认','confirmHours',r.id,'primary')+btn('提出申诉','appeal',r.id):btn('提出申诉','appeal',r.id)])));
  }else{
  tools=btn('提出申诉','appealLatest','','primary');
- content=head('工时申诉记录','保留原工时，审批记录可追溯')+grid(['申诉单','工时单','原因','状态','处理时间'],S.disputes.filter(r=>r.person===me().id).map(r=>row([esc(r.id),esc(r.hourId),esc(r.reason),status(r.status),esc(r.processedAt||'—')])));
+ content=note('保留原工时，审批记录可追溯')+grid(['申诉单','工时单','原因','状态','处理时间'],S.disputes.filter(r=>r.person===me().id).map(r=>row([esc(r.id),esc(r.hourId),esc(r.reason),status(r.status),esc(r.processedAt||'—')])));
  }
  return wrap('hours','我的工时','管理岗工时、辅助工时及按本人班制生成的工时',tools,content);
 }
 function standardsPage(){const t=currentTab.sop||'cards';let content='',tools='';
  if(t==='cards'){
  tools=btn('新建标准卡','form:sop','','primary');
- content=head('操作标准卡','受控版本、岗位、工序、步骤和执行记录')+grid(['标准卡','工序','岗位 / 产线','版本','状态','操作'],S.standards.map(r=>row([`<b>${esc(r.id)}</b> · ${esc(r.title)}`,esc(r.process),esc(r.position+' / '+r.line),esc(r.version),status(r.status),r.status==='草稿'?btn('提交审核','sop:submit',r.id)+btn('复制编辑','sop:copy',r.id):r.status==='待审核'?btn('审核发布','sop:publish',r.id,'primary'):r.status==='已发布'?btn('执行确认','sop:execute',r.id,'primary')+btn('复制新版本','sop:copy',r.id):'—'])));
+ content=note('受控版本、岗位、工序、步骤和执行记录')+grid(['标准卡','工序','岗位 / 产线','版本','状态','操作'],S.standards.map(r=>row([`<b>${esc(r.id)}</b> · ${esc(r.title)}`,esc(r.process),esc(r.position+' / '+r.line),esc(r.version),status(r.status),r.status==='草稿'?btn('提交审核','sop:submit',r.id)+btn('复制编辑','sop:copy',r.id):r.status==='待审核'?btn('审核发布','sop:publish',r.id,'primary'):r.status==='已发布'?btn('执行确认','sop:execute',r.id,'primary')+btn('复制新版本','sop:copy',r.id):'—'])));
  }else{
- content=head('标准卡执行记录','执行人、工序、签名和记录时间')+grid(['记录号','标准卡','员工','操作结果','执行时间'],S.executions.map(r=>row([esc(r.id),esc(r.card),esc(r.person),status(r.result),esc(r.at)])));
+ content=note('执行人、工序、签名和记录时间')+grid(['记录号','标准卡','员工','操作结果','执行时间'],S.executions.map(r=>row([esc(r.id),esc(r.card),esc(r.person),status(r.result),esc(r.at)])));
  }
  return wrap('sop','操作标准卡','标准作业指导书（SOP）的版本、审核、执行确认',tools,content);
 }
 function settingsPage(){const t=currentTab.settings||'org';let content='',tools='';
  if(t==='org'){
- content=head('权限与组织','岗位权限与个人追加权限取并集，一个员工可兼任多个岗位')+`<div class="mw-tiles">${navButton('员工权限矩阵','it','permissions')}${navButton('员工档案','it','employees')}${navButton('我的工时','hr','hours')}</div>`;
+ content=note('岗位权限与个人追加权限取并集，一个员工可兼任多个岗位')+`<div class="mw-tiles">${navButton('员工权限矩阵','it','permissions')}${navButton('员工档案','it','employees')}${navButton('我的工时','hr','hours')}</div>`;
  }else if(t==='process'){
  const rows=[['cleanQC','清洗必须报检合格才能复核完成'],['requireDoubleSign','车间领料必须仓库签发与车间签收'],['fifo','仓库发料按最早合格批次先出'],['requireSkill','排班须核对岗位技能等级'],['requireLeave','排班须核对已批准请假']];
- content=head('流程与工艺配置','配置保存到当前浏览器；修改需系统设置权限')+`<div class="mw-rule-list">${rows.map(([k,label])=>`<div class="mw-rule"><span>${esc(label)}</span>${btn(S.rules[k]?'已启用':'已停用','rule',k,S.rules[k]?'primary':'')}</div>`).join('')}</div>`+`<div class="mw-tiles">${navButton('工艺模板','tech','templates')}${navButton('操作标准卡','tech','sop')}${navButton('生产排程','pmc','schedule')}</div>`;
+ content=note('修改需系统设置权限；流程规则影响对应业务校验')+`<div class="mw-rule-list">${rows.map(([k,label])=>`<div class="mw-rule"><span>${esc(label)}</span>${btn(S.rules[k]?'已启用':'已停用','rule',k,S.rules[k]?'primary':'')}</div>`).join('')}</div>`+`<div class="mw-tiles">${navButton('工艺模板','tech','templates')}${navButton('操作标准卡','tech','sop')}${navButton('生产排程','pmc','schedule')}</div>`;
  }else if(t==='product'){
- content=head('产品与物料','产品、物料主数据，成品与半成品 BOM、产线关系')+`<div class="mw-tiles">${navButton('产品与产线','tech','catalog')}${navButton('BOM 关系','tech','bom')}${navButton('批次台账','warehouse','warehouseOps')}</div>`;
+ content=note('产品、物料主数据，成品与半成品 BOM、产线关系')+`<div class="mw-tiles">${navButton('产品与产线','tech','catalog')}${navButton('BOM 关系','tech','bom')}${navButton('批次台账','warehouse','warehouseOps')}</div>`;
  }else{
  tools=btn('新增字典项','form:dictionary','','primary');
- content=head('基础字典','按类型管理启用与停用，保留历史记录')+grid(['编号','分类','字典项','取值','状态','操作'],S.dictionary.map(r=>row([esc(r.id),esc(r.group),esc(r.name),esc(r.value),status(r.active?'已启用':'已停用'),btn(r.active?'停用':'启用','dictionary:toggle',r.id)])));
+ content=note('按类型管理启用与停用，保留历史记录')+grid(['编号','分类','字典项','取值','状态','操作'],S.dictionary.map(r=>row([esc(r.id),esc(r.group),esc(r.name),esc(r.value),status(r.active?'已启用':'已停用'),btn(r.active?'停用':'启用','dictionary:toggle',r.id)])));
  }
  return wrap('settings','系统设置','权限与组织、流程与工艺、产品与物料、基础字典',tools,content);
 }
