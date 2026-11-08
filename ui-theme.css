@@ -394,3 +394,121 @@ button,input,select,textarea{font-family:inherit;color:inherit}
   100%{filter:none}
 }
 @media(prefers-reduced-motion:reduce){.bottleneck-track-highlight{animation:none}}
+
+/* V23 · 黑白毛玻璃 + 绿色底光。绿色位于玻璃后方，用来显出真实的透与模糊。 */
+body{
+  background:
+    radial-gradient(ellipse 42% 36% at 54% 34%,rgba(63,165,105,.38) 0%,rgba(123,204,146,.22) 44%,transparent 96%),
+    radial-gradient(ellipse 33% 37% at 84% 80%,rgba(77,169,118,.24),transparent 92%),
+    radial-gradient(ellipse 28% 31% at 8% 17%,rgba(171,221,179,.25),transparent 90%),
+    linear-gradient(145deg,#f8fbf9 0%,#f3f7f4 52%,#fafafa 100%);
+  background-attachment:fixed;
+}
+.ambient-a{left:24%;top:10%;width:760px;height:660px;opacity:.30;filter:blur(60px);background:radial-gradient(circle,rgba(48,161,103,.45),transparent 70%)}
+.ambient-b{right:-10%;bottom:-22%;width:760px;height:650px;opacity:.27;filter:blur(66px);background:radial-gradient(circle,rgba(124,201,144,.42),transparent 68%)}
+.app-shell,.workspace,.main-content{background:transparent}
+.dept-hub{position:relative;isolation:isolate}
+.dept-hub::before{
+  content:"";position:absolute;z-index:-1;pointer-events:none;
+  inset:85px -4% auto 13%;height:450px;
+  background:radial-gradient(ellipse at 42% 43%,rgba(61,173,108,.27),rgba(143,211,163,.12) 46%,transparent 79%);
+  filter:blur(30px);
+}
+.panel,.glass.panel,.dept-feature-panel,.dept-members,.dept-todo-lane,.op-table-wrap,.mw-content,.gantt-panel,.op-subsection,.mw-metric,.mw-snapshot,.office-location{
+  background:rgba(255,255,255,.49);
+  backdrop-filter:blur(20px) saturate(140%);
+  -webkit-backdrop-filter:blur(20px) saturate(140%);
+}
+
+/* 左侧部门：从纵向文字菜单改为方形宫格，图标居上、名称居下。 */
+.sidebar{width:282px;flex-basis:282px;background:rgba(255,255,255,.46);backdrop-filter:blur(28px) saturate(150%);-webkit-backdrop-filter:blur(28px) saturate(150%)}
+.sidebar .nav-label{padding-left:17px;padding-right:17px}
+.sidebar .nav-search{margin-left:13px;margin-right:13px}
+#nav.dept-nav{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;
+  gap:10px;padding:3px 12px 20px;scrollbar-color:rgba(42,80,54,.22) transparent;
+}
+#nav .nav-dept{min-width:0}
+#nav .dept-row{
+  width:100%;aspect-ratio:1/1;min-height:120px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;padding:11px 7px;text-align:center;
+  background:rgba(255,255,255,.28);
+  border:1px solid rgba(35,46,39,.10);border-radius:16px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75);
+  backdrop-filter:blur(12px) saturate(135%);-webkit-backdrop-filter:blur(12px) saturate(135%);
+}
+#nav .dept-row .dept-ico{
+  width:48px;height:48px;flex:0 0 48px;border-radius:14px;
+  display:grid;place-items:center;background:rgba(255,255,255,.48);
+  border:1px solid rgba(30,38,32,.10);color:#232b26;
+}
+#nav .dept-row .dept-ico .ico{width:29px;height:29px;stroke-width:1.7}
+#nav .dept-row strong{
+  flex:0 1 auto;font-size:12px;font-weight:680;line-height:1.32;
+  width:100%;color:#252a26;overflow-wrap:anywhere;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;
+}
+#nav .dept-row:hover{
+  background:rgba(255,255,255,.63);border-color:rgba(43,104,65,.18);
+  box-shadow:0 8px 20px rgba(28,62,43,.06),inset 0 1px 0 rgba(255,255,255,.92);
+  transform:translateY(-1px);
+}
+#nav .dept-row.active{
+  background:rgba(255,255,255,.69);border-color:rgba(39,111,66,.34);
+  box-shadow:0 9px 26px rgba(42,99,63,.10),inset 0 1px 0 rgba(255,255,255,.96);
+}
+#nav .dept-row.active .dept-ico{background:rgba(220,240,224,.55);color:#1a4830}
+
+/* 中间业务功能：每项独立 SVG，卡片本身仍为透明磨砂玻璃。 */
+.dept-feature-panel{border-radius:17px;overflow:hidden;background:rgba(255,255,255,.22)}
+.dept-feature-panel .feature-list{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;padding:16px;background:transparent;
+}
+.dept-feature-panel .feature-row{
+  position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;
+  min-height:166px;gap:13px;padding:18px;
+  border:1px solid rgba(28,43,33,.12);border-radius:16px;
+  background:rgba(255,255,255,.28);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.76),0 7px 22px rgba(28,64,41,.025);
+  backdrop-filter:blur(12px) saturate(140%);-webkit-backdrop-filter:blur(12px) saturate(140%);
+  transition:transform .18s,background .18s,border-color .18s,box-shadow .18s;
+}
+.dept-feature-panel .feature-row:hover{
+  background:rgba(255,255,255,.52);border-color:rgba(36,95,57,.22);
+  box-shadow:0 12px 32px rgba(29,69,44,.075),inset 0 1px 0 rgba(255,255,255,.94);
+  transform:translateY(-2px);
+}
+.dept-feature-panel .feature-row .feature-glyph{
+  position:relative;display:grid;place-items:center;
+  width:56px;height:56px;flex:0 0 56px;
+  border-radius:15px;color:#223b2a;background:rgba(255,255,255,.48);
+  border:1px solid rgba(34,67,44,.12);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.90);
+}
+.dept-feature-panel .feature-row .feature-glyph>.ico{width:30px;height:30px;stroke-width:1.75}
+.dept-feature-panel .feature-row .feature-copy{display:grid;gap:5px;width:100%;min-width:0;flex:0 1 auto}
+.dept-feature-panel .feature-row .feature-copy strong{font-size:15px;line-height:1.36;color:#181e1a}
+.dept-feature-panel .feature-row .feature-copy small{font-size:12px;line-height:1.48;color:#47574b;white-space:normal;-webkit-line-clamp:2}
+.dept-feature-panel .feature-row .feature-side{position:absolute;right:16px;top:19px;opacity:.55}
+.dept-feature-panel .feature-row.is-locked .feature-glyph{color:#667069}
+.dept-feature-panel .feature-row .feature-lock{
+  position:absolute;right:-5px;bottom:-5px;width:21px;height:21px;display:grid;place-items:center;
+  border-radius:7px;border:1px solid rgba(40,44,41,.13);background:rgba(255,255,255,.85);color:#555d57;
+}
+.dept-feature-panel .feature-row .feature-lock .ico{width:12px;height:12px}
+@media(max-width:1180px){.sidebar{width:262px;flex-basis:262px}}
+@media(max-width:1100px){.dept-feature-panel .feature-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:860px){.sidebar{width:282px;flex-basis:282px;background:rgba(255,255,255,.83)}}
+@media(max-width:560px){
+ .dept-feature-panel .feature-list{gap:9px;padding:10px}
+ .dept-feature-panel .feature-row{min-height:145px;padding:14px}
+ .dept-feature-panel .feature-row .feature-glyph{width:49px;height:49px;flex-basis:49px}
+ .dept-feature-panel .feature-row .feature-glyph>.ico{width:26px;height:26px}
+}
+@media(max-width:420px){.dept-feature-panel .feature-list{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){#nav .dept-row,.dept-feature-panel .feature-row{transition:none;transform:none!important}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  #nav .dept-row,.dept-feature-panel .feature-row{background:rgba(252,255,252,.88)}
+}
