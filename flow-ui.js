@@ -16,11 +16,14 @@ const routes={
  '清洗报检不合格':['quality','production','返洗及整改'],
  '报检合格':['quality','production','下一工序'],
  '报检不合格':['quality','production','不合格品处置'],
- '采购到货登记':['purchase','warehouse','来料比对'],
+ '采购到货登记':['warehouse','quality','来料检验'],
  '来料比对':['warehouse','quality','来料 QC 判定'],
  '来料 QC 合格':['quality','warehouse','批次入库确认'],
+ '来料 QC 不合格':['quality','warehouse','复核或安排补货'],
  '来料入库确认':['warehouse','warehouse','可用批次参与 FIFO 备料'],
  '采购单审批':['purchase','warehouse','采购到货与收货'],
+ '仓库到货登记':['warehouse','quality','QC 来料检验'],
+ '仓库确认入库':['warehouse','warehouse','库存可用'],
  '成品出库单创建':['warehouse','warehouse','确认成品批次出库'],
  '成品销售出库':['warehouse','sales','成品已发出，销售可查看交付结果'],
  '填报工时':['production','production','本人确认工时'],
@@ -43,11 +46,14 @@ const nextTargets={
  '清洗报检不合格':{dept:'production',feature:'workshopRework'},
  '报检合格':{dept:'production',feature:'tasks'},
  '报检不合格':{dept:'quality',feature:'qaNcr'},
- '采购到货登记':{dept:'warehouse',feature:'warehouseIncoming'},
+ '采购到货登记':{dept:'quality',feature:'qaQc'},
  '来料比对':{dept:'quality',feature:'qaQc'},
  '来料 QC 合格':{dept:'warehouse',feature:'warehouseIncoming'},
+ '来料 QC 不合格':{dept:'warehouse',feature:'warehouseIncoming'},
  '来料入库确认':{dept:'warehouse',feature:'warehousePick'},
  '采购单审批':{dept:'warehouse',feature:'warehouseIncoming'},
+ '仓库到货登记':{dept:'quality',feature:'qaQc'},
+ '仓库确认入库':{dept:'warehouse',feature:'warehouseIncoming'},
  '成品出库单创建':{dept:'warehouse',feature:'warehouseOutbound'},
  '成品销售出库':{dept:'sales',feature:'orderHistory'},
  '填报工时':{dept:'hr',feature:'hours'},
@@ -66,7 +72,7 @@ const docRules=[
  [/^NCR-/,'不合格品处置单','quality','qaQc'],
  [/^(MR|ISSUE)-/,'领料单','production','workshop'],
  [/^(RT|RETURN)-/,'退库单','warehouse','warehouseOps'],
- [/^IN-/,'采购到货单','warehouse','warehouseOps'],
+ [/^IN-/,'采购到货单','warehouse','warehouseIncoming'],
  [/^OB-/,'成品出库单','warehouse','warehouseOps'],
  [/^IQC-/,'来料检验单','quality','qaQc'],
  [/^LOT-/,'库存批次','warehouse','warehouseOps'],
@@ -92,48 +98,72 @@ function docMeta(entry){
  };
 }
 function currentTime(){return new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
-let fadeTimer=null,activeContinue=null,activeTrackRef='';
-function show(entry){
- const host=document.querySelector('#flow-transition-host');if(!host||!entry)return;
- clearTimeout(fadeTimer);
- const from=label(entry.from),to=label(entry.to||entry.from),history=Array.isArray(entry.history)?entry.history.slice(-5):[];
- const same=from===to,doc=docMeta(entry);
- const action=entry.action||'操作完成',operator=entry.operator||history.at(-1)?.person||'当前用户',at=entry.at||history.at(-1)?.at||currentTime();
- activeContinue=entry.nextOpen||nextTargets[action]||(doc.dept&&doc.feature?{dept:doc.dept,feature:doc.feature}:null);
- activeTrackRef=doc.ref;
- host.innerHTML=`<div class="flow-veil" aria-hidden="true"></div><section class="flow-window" role="status" aria-label="业务流转结果">
-   <div class="flow-window-top"><div class="flow-signal"><span class="flow-signal-dot">✓</span><span>单据流转已更新</span></div><button type="button" class="flow-close" data-flow-close aria-label="关闭流转提示">×</button></div>
-   <header class="flow-document">
-     <span class="flow-document-type">${clean(doc.type)}</span>
-     <strong class="flow-document-id">${clean(doc.ref)}</strong>
-     ${doc.summary?`<p class="flow-document-summary">${clean(doc.summary)}</p>`:''}
-   </header>
-   <div class="flow-path">
-     <div class="flow-node"><small>${same?'处理部门':'本次处理部门'}</small><strong>${clean(from)}</strong></div>
-     <div class="flow-travel"><span class="flow-route-line" aria-hidden="true"></span><svg class="flow-route-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" /></svg></div>
-     <div class="flow-node flow-node-dest ${same?'is-same':'is-next'}"><small>${same?'当前仍由该部门处理':'下一处理部门'}</small><strong>${clean(to)}</strong>${same?'':`<svg class="flow-marquee-outline" aria-hidden="true"><rect x="2" y="2" width="100%" height="100%" rx="8" /></svg>`}</div>
-   </div>
-   <div class="flow-state"><span>当前状态 <b>${clean(entry.status||'已更新')}</b></span><span>下一步 <b>${clean(entry.next||'查看对应业务记录')}</b></span></div>
-   <div class="flow-history-title"><strong>这张单据怎么走到这里</strong><span>${history.length} 条近期记录</span></div>
-   <div class="flow-history">${history.length?history.map((h,i)=>`<div class="flow-history-row"><span class="flow-history-dot ${i===history.length-1?'is-current':''}"></span><span class="flow-history-dept">${clean(label(h.from||h.dept))}</span><span class="flow-history-action">${clean(h.action||'状态更新')}</span><small>${clean(h.at||'')}</small></div>`).join(''):'<div class="flow-history-empty">当前是这张单据的第一条业务记录</div>'}</div>
-   <div class="flow-action-receipt"><span>刚刚执行</span><strong>${clean(action)}</strong><small>${clean(operator)} · ${clean(at)}</small></div>
-   <footer class="flow-bottom"><span>点击弹窗外区域可关闭</span><div class="flow-bottom-actions"><button type="button" class="flow-continue" data-flow-track>跟踪卡点 →</button></div></footer>
- </section>`;
- host.classList.remove('flow-dismiss');host.classList.add('flow-visible');
+let dismissTimer=null,activeContinue=null,activeTrackRef='';
+const arrowRight='<svg class="journey-arrow" viewBox="0 0 48 26" aria-hidden="true"><path d="M2 13 H42 M33 4 L42 13 L33 22"/></svg>';
+const arrowReturn='<svg class="journey-return-arrow" viewBox="0 0 80 39" aria-hidden="true"><path d="M73 5 H27 Q9 5 9 20 V32 M2 24 L9 32 L16 24"/></svg>';
+const flowConfig={
+ order:{title:'销售订单',steps:[
+  ['sales','接收销售订单',/订单记录导入|保存销售订单/],['sales','订单评审',/提交评审|评审通过|退回修改/],['pmc','排程与物料齐套',/排程|齐套|锁库/],['warehouse','仓库领料发料',/确认领料发料|发料/],
+  ['production','配制与包装',/配制|包装/],['quality','QC 检验 / QA 放行',/检验|QA 放行|质量放行|QC/],['warehouse','成品入库',/成品入库/],['sales','通知客户发货',/发货通知/],['warehouse','成品出库发货',/仓库成品出库|成品销售出库/],['sales','客户收货确认',/确认客户收货|交付确认/]
+ ],loops:[['销售订单评审','退回修改后重新送审','sales'],['QC 判定','不合格 → 生产返工并重新报检','production'],['QA 复核','退回复检 → QC 重新判定','quality']],progress:{draft:-1,review:0,approved:1,trial:1,formal:2,reserved:2,issued:3,blending:3,semi_qc:4,semi_ok:4,packaging:4,final_qc:4,inspected:4,released:5,stored:6,dispatch:7,shipping:7,shipped:8,delivered:9}},
+ purchase:{title:'采购单',steps:[['purchase','采购员创建并送审',/创建.*采购|提交.*采购/],['purchase','采购主管审批',/采购主管审批|审批通过|驳回/],['warehouse','按实际到货登记（可分批）',/仓库到货登记|采购到货登记/],['quality','QC 来料检验',/QC|来料检验/],['warehouse','合格批次确认入库',/仓库确认入库|来料入库/]],loops:[['采购主管','审批驳回 → 采购员修改后重新送审','purchase'],['QC 来料检验','不合格 → 隔离 / 供应商补货','warehouse']],progress:{草稿:-1,待审批:0,已驳回:0,待到货:1,部分到货:2,到货处理中:2,已入库:4}},
+ receipt:{title:'到货单',steps:[['warehouse','仓库登记实收与供应商批次',/仓库到货登记|采购到货登记/],['quality','QC 检验并判定',/QC|检验/],['warehouse','确认合格批次入库',/仓库确认入库|入库确认/]],loops:[['QC 检验','不合格 → 仓库隔离并联系采购处理','warehouse']],progress:{待比对:0,比对差异:0,待报检:0,待QC:0,合格待入库:1,不合格:0,已驳回:0,已入库:2}},
+ outbound:{title:'成品出库单',steps:[['sales','销售发货通知',/发货通知/],['warehouse','仓库按成品批次拣货',/成品出库单创建/],['warehouse','核对并确认出库',/成品销售出库/],['sales','跟踪客户收货',/客户收货|交付确认/]],loops:[['仓库复核','批次或数量不符 → 返回重新拣货','warehouse']],progress:{待出库:1,已出库:2}}
+};
+function inferKind(entry){if(entry.kind)return entry.kind;const s=String(entry.ref||'');return /^SO-/.test(s)?'order':/^PO-/.test(s)?'purchase':/^IN-/.test(s)?'receipt':/^OB-/.test(s)?'outbound':'handoff'}
+function getStage(entry,kind){if(entry.stage!==undefined)return entry.stage;const ops=window.FactoryOperations?.state,modules=window.FactoryModules?.state,ref=entry.ref;
+ if(kind==='order')return ops?.flows?.[ref]?.stage||'draft';
+ if(kind==='purchase')return ops?.purchases?.find(x=>x.id===ref)?.status||'待审批';
+ if(kind==='receipt')return modules?.incoming?.find(x=>x.id===ref)?.status||'待QC';
+ if(kind==='outbound')return modules?.outbound?.find(x=>x.id===ref)?.status||'待出库';return ''}
+function getHistory(entry,kind){if(entry.history?.length)return entry.history;
+ const ops=window.FactoryOperations?.state,modules=window.FactoryModules?.state,ref=entry.ref;
+ if(kind==='order')return ops?.flows?.[ref]?.audit||[];
+ if(kind==='receipt')return (modules?.ledger||[]).filter(x=>x.ref===ref).map(x=>({action:x.type,person:x.by,at:x.time,from:x.dept}));
+ if(kind==='outbound')return (modules?.ledger||[]).filter(x=>x.ref===ref).map(x=>({action:x.type,person:x.by,at:x.time,from:x.dept}));
+ return [];
 }
-function dismiss(){const host=document.querySelector('#flow-transition-host');if(!host)return;host.classList.remove('flow-visible');host.classList.add('flow-dismiss');fadeTimer=setTimeout(()=>{if(!host.classList.contains('flow-visible')){host.innerHTML='';activeContinue=null;activeTrackRef=''}},450)}
-function fromAudit(row,history,defaultDept){const rule=routes[row.type]||Object.entries(routes).find(([key])=>String(row.type).includes(key))?.[1];let from=rule?.[0]||defaultDept||'当前部门',to=rule?.[1]||from;
- const newer=rule?.[2]||'查看对应单据状态和待办';show({ref:row.ref,action:row.type,from,to,next:newer,nextOpen:nextTargets[row.type]||Object.entries(nextTargets).find(([key])=>String(row.type).includes(key))?.[1],status:row.detail||'已记录',summary:row.detail||'',operator:row.by||'当前用户',at:row.time||'',history});}
-document.addEventListener('click',ev=>{
- if(ev.target.classList.contains('flow-veil')){dismiss();return;}
- if(ev.target.closest('[data-flow-track]')){
-  const target=activeContinue?{...activeContinue}:null,ref=activeTrackRef;
-  dismiss();
-  if(target)window.FactoryNavigation?.trackBottleneck?.(target,ref);
-  return;
- }
- if(ev.target.closest('[data-flow-close]'))dismiss();
-});
-document.addEventListener('keydown',ev=>{if(ev.key==='Escape')dismiss()});
-window.FactoryFlowUI={show,dismiss,fromAudit,names:deptNames};
+function personFor(step,history,done){const h=[...history].reverse().find(x=>step[2]?.test(String(x.action||''))&&x.person||step[2]?.test(String(x.action||''))&&x.by);if(h)return h.person||h.by;
+ return done?'历史记录未注明':'待分配';}
+function buildSteps(entry,kind){const config=flowConfig[kind];if(config)return config.steps;
+ const source=entry.from||'sales',target=entry.to||source;return [[source,entry.action||'业务办理',new RegExp('.*')],[target,entry.next||'下一个业务动作',new RegExp('(?!)')]];}
+function stepState(i,kind,stage){if(kind==='handoff')return i===0?'done':'current';const score=flowConfig[kind]?.progress?.[stage]??-1,last=(flowConfig[kind]?.steps?.length||0)-1;if(score>=last&&i===last)return 'complete';return i<=score?'done':i===score+1?'current':'waiting'}
+function makeCard(step,i,state,history){const [dept,act]=step,operator=personFor(step,history,['done','complete'].includes(state));return `<div class="journey-card is-${state}" data-journey-step="${i}">
+ <div class="journey-card-head"><span class="journey-seq">${String(i+1).padStart(2,'0')}</span><span class="journey-state">${state==='done'?'已办理':state==='current'?'当前环节':state==='complete'?'已办结':'待办理'}</span></div>
+ <div class="journey-dept">${clean(label(dept))}</div><strong class="journey-task">${clean(act)}</strong><div class="journey-person"><span class="journey-person-label">${['done','complete'].includes(state)?'经办员工':'负责员工'}</span><span>${clean(operator)}</span></div>
+ ${['current','complete'].includes(state)?'<svg class="journey-marquee" aria-hidden="true"><rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)" rx="12"/></svg>':''}</div>`}
+function rowsOfCards(steps,kind,stage,history){let html='';for(let i=0;i<steps.length;i+=4){const part=steps.slice(i,i+4);html+=`<div class="journey-row">${part.map((step,j)=>makeCard(step,i+j,stepState(i+j,kind,stage),history)+(j<part.length-1?`<span class="journey-connector">${arrowRight}</span>`:'')).join('')}</div>`;
+ if(i+4<steps.length)html+=`<div class="journey-row-return" aria-hidden="true"><svg viewBox="0 0 900 36" preserveAspectRatio="none"><path d="M785 2 V15 Q785 25 774 25 H112 Q100 25 100 32"/><path d="M93 25 L100 32 L107 25"/></svg></div>`}
+ return html}
+function loopRows(kind,history){const loops=flowConfig[kind]?.loops||[];if(!loops.length)return '';
+ return `<div class="journey-loops"><div class="journey-section-head"><strong>退回 / 复检的循环路线</strong><small>出现退回时沿返回箭头再次办理，不会直接跳过检验</small></div><div class="journey-loops-grid">${loops.map(([origin,text,dept])=>`<div class="journey-loop">${arrowReturn}<span><strong>${clean(origin)}</strong><small>${clean(text)}</small><em>返回 ${clean(label(dept))}</em></span></div>`).join('')}</div></div>`}
+function extras(entry,kind){if(entry.detailHtml)return `<div class="journey-extra">${entry.detailHtml}</div>`;if(kind==='order'){const m=window.FactoryModules?.state,ref=entry.ref;
+ const outbound=m?.outbound?.filter(x=>x.order===ref)||[];
+ if(outbound.length)return `<div class="journey-extra"><div class="journey-section-head"><strong>成品出库与客户交付</strong><small>${outbound.length} 张出库单</small></div>${outbound.map(r=>`<div class="journey-extra-line"><b>${clean(r.id)}</b><span>${clean(r.qty)} 箱 · ${clean(r.destination)} · ${clean(r.status)}</span></div>`).join('')}</div>`;
+ }return ''}
+function renderGraph(entry){const kind=inferKind(entry),history=getHistory(entry,kind),cfg=flowConfig[kind],stage=getStage(entry,kind),type=entry.docType||cfg?.title||docMeta(entry).type;
+ const steps=buildSteps(entry,kind);const summary=entry.summary||'',status=entry.status||stage||'待办理';
+ const historyRows=history.slice(-5).reverse().map(h=>`<div class="journey-history-row"><span class="journey-history-action">${clean(h.action||'处理单据')}</span><span>${clean(label(h.from||h.dept||''))}</span><span>${clean(h.person||h.by||'经办人未记录')}</span><time>${clean(h.at||h.time||'')}</time></div>`).join('');
+ return `<div class="flow-veil" data-flow-close aria-hidden="true"></div><section class="flow-window journey-dialog" role="dialog" aria-modal="true" aria-labelledby="journey-title">
+ <header class="journey-top"><div><span class="journey-eyebrow">跨部门单据流转</span><h2 id="journey-title">${clean(type)} <span>${clean(entry.ref||'业务记录')}</span></h2><p>${clean(summary)}</p></div><button class="journey-close" data-flow-close type="button" aria-label="关闭流程弹窗">×</button></header>
+ <div class="journey-toolbar"><span>当前状态 <b>${clean(status)}</b></span>${entry.action?`<span>刚刚办理 <b>${clean(entry.action)}</b> · ${clean(entry.operator||'经办人未记录')}</span>`:''}<span>单据按实际办理顺序流转</span></div>
+ <div class="journey-section-head"><strong>部门 · 员工 · 处理事项</strong><small>实线箭头表示前进，弯箭头表示进入下一行</small></div>
+ <div class="journey-steps">${rowsOfCards(steps,kind,stage,history)}</div>
+ ${loopRows(kind,history)}${extras(entry,kind)}
+ <div class="journey-section-head journey-history-title"><strong>操作记录</strong><small>${history.length} 条</small></div><div class="journey-history">${historyRows||'<div class="journey-history-empty">当前没有已记录的操作</div>'}</div>
+ <footer class="journey-footer"><span>退回、审批、出库均记录实际经办员工</span><div><button type="button" class="journey-button" data-flow-close>关闭</button>${activeContinue?'<button type="button" class="journey-button primary" data-flow-track>跟踪卡点 →</button>':''}</div></footer>
+ </section>`}
+function openDialog(entry){const host=document.querySelector('#flow-transition-host');if(!host||!entry)return;
+ clearTimeout(dismissTimer);activeContinue=entry.nextOpen||nextTargets[entry.action]||null;activeTrackRef=entry.ref||'';
+ host.innerHTML=renderGraph(entry);host.classList.remove('flow-dismiss');host.classList.add('flow-visible');
+}
+function show(entry){openDialog(entry)}
+function openDocument(entry){openDialog(entry)}
+function dismiss(){const host=document.querySelector('#flow-transition-host');if(!host)return;host.classList.remove('flow-visible');host.classList.add('flow-dismiss');host.innerHTML='';activeContinue=null;activeTrackRef=''}
+function fromAudit(row,history,defaultDept){const rule=routes[row.type]||Object.entries(routes).find(([k])=>String(row.type).includes(k))?.[1],from=rule?.[0]||defaultDept||'当前部门',to=rule?.[1]||from;
+ show({ref:row.ref,action:row.type,from,to,status:row.detail||'已记录',summary:row.detail||'',operator:row.by||'当前用户',at:row.time||'',history,next:rule?.[2]||'查看单据状态',nextOpen:nextTargets[row.type]||Object.entries(nextTargets).find(([k])=>String(row.type).includes(k))?.[1]});}
+document.addEventListener('click',event=>{if(event.target.closest('[data-flow-track]')){const target=activeContinue?{...activeContinue}:null,ref=activeTrackRef;dismiss();if(target)window.FactoryNavigation?.trackBottleneck?.(target,ref);return;}
+ if(event.target.closest('[data-flow-close]'))dismiss();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape')dismiss()});
+window.FactoryFlowUI={show,openDocument,dismiss,fromAudit,names:deptNames,flowConfig};
 })();

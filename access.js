@@ -11,6 +11,7 @@ const positions=[
  {id:'sales',name:'销售专员',dept:'sales',features:['sales.orders','sales.orderReview','sales.orderHistory','hr.leave']},
  {id:'pmc',name:'PMC 计划员',dept:'pmc',features:['pmc.schedule','pmc.kitting','pmc.shift','pmc.shiftPeople','pmc.shiftStats','pmc.orderProductStats','pmc.orderDailyReport','production.skills','hr.leave']},
  {id:'purchase',name:'采购专员',dept:'purchase',features:['purchase.purchase','hr.leave']},
+ {id:'purchase_manager',name:'采购主管',dept:'purchase',features:['purchase.purchase','hr.leave']},
  {id:'warehouse',name:'仓库管理员',dept:'warehouse',features:['warehouse.warehouseOps','warehouse.warehouseIncoming','warehouse.warehousePick','warehouse.warehouseOutbound','warehouse.warehouseReturns','warehouse.warehouseLedger','warehouse.inventory','warehouse.issue','hr.leave']},
  {id:'quality',name:'质量专员',dept:'quality',features:['quality.qaQc','quality.qaSampling','quality.qaCleanInspection','quality.qaNcr','quality.qaQualityStock','quality.release','hr.leave']},
  {id:'production',name:'生产操作员',dept:'production',features:['production.workshop','production.workshopReceive','production.workshopDispute','production.workshopRework','production.tasks','production.batch','hr.leave']},
@@ -40,6 +41,7 @@ const staff=[
  {id:'E012',name:'小明',dept:'开发人员',title:'开发人员',positions:['developer']},
  {id:'E013',name:'杨澜',dept:'销售部',title:'销售专员',positions:['sales']},
  {id:'E014',name:'唐娟',dept:'采购 / 供应链部',title:'采购专员',positions:['purchase']},
+ {id:'E021',name:'何敏',dept:'采购 / 供应链部',title:'采购主管',positions:['purchase_manager']},
  {id:'E015',name:'韩冰',dept:'EHS 安全环保部',title:'EHS 专员',positions:['ehs']},
  {id:'E016',name:'冯洁',dept:'财务部',title:'财务专员',positions:['finance']},
  {id:'E017',name:'苏晨',dept:'工艺技术部',title:'工艺技术员',positions:['tech']},
@@ -48,7 +50,7 @@ const staff=[
  {id:'E020',name:'马飞',dept:'生产车间',title:'生产 / 仓库兼岗',positions:['production','warehouse']}
 ];
 const storage='factory-permissions-v2';
-const defaultRights=()=>Object.fromEntries(positions.filter(p=>p.id!=='developer').map(p=>[p.id,p.features.flatMap(x=>{const f=x.split('.')[1];return (capabilities[f]||['view']).filter(a=>!(p.id==='production'&&x==='production.workshop'&&a==='approve')).map(a=>`${x}.${a}`)})]));
+const defaultRights=()=>Object.fromEntries(positions.filter(p=>p.id!=='developer').map(p=>[p.id,p.features.flatMap(x=>{const f=x.split('.')[1];return (capabilities[f]||['view']).filter(a=>!((p.id==='production'&&x==='production.workshop'&&a==='approve')||(p.id==='purchase'&&x==='purchase.purchase'&&a==='approve'))).map(a=>`${x}.${a}`)})]));
 const fresh=()=>({current:'E012',assigned:Object.fromEntries(staff.map(p=>[p.id,[...p.positions]])),extra:{},positionRights:defaultRights()});
 let state=fresh();
 try{const read=JSON.parse(localStorage.getItem(storage)||'null');if(read&&typeof read==='object'){
