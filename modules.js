@@ -42,6 +42,12 @@ function done(str){message=str;close();ctx.save();ctx.render();completeWithFlow(
 function save(str){message=str;ctx.save();ctx.render();completeWithFlow()}
 const id=prefix=>`${prefix}-${Date.now().toString().slice(-7)}-${Math.floor(Math.random()*900+100)}`;
 const orderOptions=()=>ctx.data.orders.filter(o=>ops().flows[o.id]?.stage!=='stored').map(o=>[o.id,`${o.id} · ${o.product}`]);
+const completedOrderOptions=()=>ctx.data.orders.filter(o=>ops().flows[o.id]?.stage==='stored').map(o=>[o.id,`${o.id} · ${o.product}`]);
+function pendingOutboundQty(batchId){return S.outbound.filter(x=>x.status==='待出库').flatMap(x=>x.allocations||[]).filter(x=>x.id===batchId).reduce((n,x)=>n+Number(x.qty),0)}
+function allocateFinished(orderId,qty){
+ const sorted=S.batches.filter(b=>b.group==='成品'&&b.order===orderId&&b.quality==='合格'&&Number(b.qty)>0).sort((a,b)=>a.received.localeCompare(b.received)||a.id.localeCompare(b.id));
+ let left=Number(qty),out=[];for(const b of sorted){const available=Math.max(0,Number(b.qty)-pendingOutboundQty(b.id)),used=Math.min(left,available);if(used>0){out.push({id:b.id,qty:used});left-=used}if(left<=0)break}return left>0?null:out;
+}
 const taskOptions=type=>ctx.data.tasks.filter(t=>!type||t.type===type).map(t=>[t.id,`${t.id} · ${t.type} · ${t.line}`]);
 const staffOptions=()=>ctx.access.staff.map(x=>[x.id,`${x.name} · ${x.title}`]);
 const materialOptions=()=>[...new Set(['RM-001','RM-002','AD-001','PK-001','PK-002','CO-001',...ops().products.map(p=>p.id),...S.batches.map(b=>b.material)])];
@@ -108,13 +114,16 @@ function warehousePage(){const t=currentTab.warehouseOps||'batches';let content=
  content=note('流程：来料比对 → 报检 → 合格入库；未经质检判定合格的来料不能确认入库')+grid(['到货单','采购单','物料 / 数量','供应商','状态','下一步'],S.incoming.map(r=>row([esc(r.id),esc(r.purchase),esc(r.material)+' / '+money(r.qty),esc(r.supplier),status(r.status),['待比对','比对差异'].includes(r.status)?btn('核对采购与实收','inbound:compare',r.id,'primary')+btn('修改实收','inbound:correct',r.id):r.status==='待报检'?btn('提交报检','inbound:inspect',r.id,'primary'):r.status==='待QC'?navButton('前往 QC','quality','qaQc'):r.status==='合格待入库'?btn('入库确认','inbound:store',r.id,'primary'):'—'])));
  }else if(t==='pick'){
  content=note('按同物料最早入库批次优先；冻结、待检或过期批次排除')+grid(['领料单','物料 / 数量','推荐批次','状态','操作'],S.materialRequests.filter(x=>x.type==='领料').map(r=>{const allocations=allocateFIFO(r.material,r.qty);return row([esc(r.id),esc(r.material)+' / '+money(r.qty),esc(r.allocations?.map(x=>x.id+' × '+x.qty).join('、')||allocations?.map(x=>x.id+' × '+x.qty).join('、')||'暂无合格批次'),status(r.status),r.status==='待备料'?btn('按 FIFO 备料','prepare',r.id,'primary'):r.status==='待仓库签发'?btn('仓库签发','issueStock',r.id,'primary'):'—'])}));
+ }else if(t==='outbound'){
+ tools=btn('新建成品出库单','form:outbound','','primary');
+ content=note('成品出库只允许选择已完成并已入库的订单；确认出库时按该订单的成品批次扣减库存并写入收发流水。')+grid(['出库单','订单','客户 / 去向','数量','批次','状态','操作'],S.outbound.map(r=>row([esc(r.id),esc(r.order),esc(r.destination),money(r.qty)+' 箱',esc((r.allocations||[]).map(x=>x.id+' × '+x.qty).join('、')||'待分配'),status(r.status),r.status==='待出库'?btn('确认出库','shipOutbound',r.id,'primary'):'—'])));
  }else if(t==='returns'){
  content=note('退库确认后增加原批次结余并记录入库流水')+grid(['退库单','原批次','物料 / 数量','状态','操作'],S.materialRequests.filter(r=>r.type==='退库').map(r=>row([esc(r.id),esc(r.batch||'—'),esc(r.material)+' / '+money(r.qty),status(r.status),r.status==='待仓库接收'?btn('验收并退库','acceptReturn',r.id,'primary'):'—'])));
  }else{
  const month=today().slice(5,7),monthly=S.ledger.filter(x=>x.time.startsWith(month+'/'));
- const totals={};for(const l of monthly){if(!/质检入库|质量放行入账|双签并扣库|退库接收/.test(l.type))continue;const m=l.detail.match(/^([A-Z]+-[0-9]+) ([+-][0-9.]+)/);if(!m)continue;totals[m[1]]??={incoming:0,outgoing:0};const val=Number(m[2]);if(val>0)totals[m[1]].incoming+=val;else totals[m[1]].outgoing-=val}
+ const totals={};for(const l of monthly){if(!/质检入库|质量放行入账|双签并扣库|退库接收|成品销售出库/.test(l.type))continue;const m=l.detail.match(/^([A-Z]+-[0-9]+) ([+-][0-9.]+)/);if(!m)continue;totals[m[1]]??={incoming:0,outgoing:0};const val=Number(m[2]);if(val>0)totals[m[1]].incoming+=val;else totals[m[1]].outgoing-=val}
  const summary=Object.entries(totals).map(([code,x])=>{const end=ops().stock[code]||0,start=Math.max(0,end-x.incoming+x.outgoing);return row([esc(code),money(start),money(x.incoming),money(x.outgoing),money(end)])});
- content=head(today().slice(0,7)+' 收发存','按本月已确认出入库业务汇总，单位按物料主数据定义')+grid(['物料编码','期初','本月收入','本月发出','当前结存'],summary)+head('批次收发流水')+grid(['时间','业务','单据号','物料 / 数量','操作人'],monthly.filter(r=>/批次|入库|发料|退库|到货|冻结|领料/.test(r.type)).map(r=>row([esc(r.time),esc(r.type),esc(r.ref),esc(r.detail),esc(r.by)])));
+ content=head(today().slice(0,7)+' 收发存','按本月已确认出入库业务汇总，单位按物料主数据定义')+grid(['物料编码','期初','本月收入','本月发出','当前结存'],summary)+head('批次收发流水')+grid(['时间','业务','单据号','物料 / 数量','操作人'],monthly.filter(r=>/批次|入库|出库|发料|退库|到货|冻结|领料/.test(r.type)).map(r=>row([esc(r.time),esc(r.type),esc(r.ref),esc(r.detail),esc(r.by)])));
  }
  return wrap('warehouseOps','仓库批次、效期与收发存','来料比对、质量入库、FIFO 发料、退库和月末流水',tools,content);
 }
