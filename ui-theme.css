@@ -512,3 +512,105 @@ body{
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   #nav .dept-row,.dept-feature-panel .feature-row{background:rgba(252,255,252,.88)}
 }
+
+/* V24 · 80% desktop density.
+   Use the user's 80%-browser-zoom screenshot as the desktop reference.
+   Keep the browser at 100%; do not use CSS zoom or transform, so sticky,
+   fixed panels, pointer positions and mobile breakpoints remain natural. */
+@media (min-width:861px){
+  html{font-size:12px}
+  body{font-size:12px}
+  .sidebar{width:240px;flex:0 0 240px}
+  .sidebar .brand-simple{
+    height:55px;min-height:55px;padding:0 16px;gap:9px
+  }
+  .sidebar .brand-simple b{font-size:14px}
+  .brand-simple .brand-mark{width:26px;height:26px;flex-basis:26px;border-radius:6px}
+  .brand-simple .brand-mark svg{width:15px;height:15px}
+  .sidebar .nav-label{
+    padding:14px 14px 9px;font-size:10.5px
+  }
+  .sidebar .nav-label span{font-size:10.5px}
+  .sidebar .nav-search{
+    min-height:34px;height:34px;margin:0 11px 10px;padding:0 9px;border-radius:8px
+  }
+  .sidebar .nav-search input{font-size:11.5px}
+  #nav.dept-nav{gap:9px;padding:3px 10px 16px}
+  #nav .dept-row{
+    aspect-ratio:1/1;min-height:100px;gap:7px;padding:8px 5px;border-radius:13px
+  }
+  #nav .dept-row .dept-ico{
+    width:40px;height:40px;flex-basis:40px;border-radius:12px
+  }
+  #nav .dept-row .dept-ico .ico{width:24px;height:24px}
+  #nav .dept-row strong{font-size:10.8px;line-height:1.27;font-weight:680}
+  .side-bottom{min-height:38px;padding:11px 13px;font-size:10px}
+  .topbar{height:55px;min-height:55px;padding:0 25px}
+  .top-actions{gap:12px}
+  .crumb-link{min-height:26px;padding:3px 6px;font-size:11px}
+  .crumb-current,.breadcrumbs{font-size:11px}
+  .breadcrumbs{gap:6px}
+  .user-trigger{min-height:37px;gap:8px}
+  .user-avatar{height:28px;width:28px;flex-basis:28px;font-size:11px}
+  .user-text b{font-size:11.5px}
+  .user-text small{font-size:10px}
+  .topbar .icon-btn{width:29px;height:29px}
+  .topbar .icon-btn .ico{width:17px;height:17px}
+  .main-content{max-width:1250px;padding:25px 25px 32px}
+  .page-heading{margin-bottom:17px}
+  .page-heading h1{font-size:21px;letter-spacing:-.2px}
+  .page-heading p{font-size:11.5px;margin-top:5px}
+  .dept-hub{gap:12px}
+  .office-location{min-height:49px;padding:10px 13px;gap:10px;border-radius:9px}
+  .office-location .office-label{font-size:11px}
+  .office-location strong{font-size:11px}
+  .office-location button{min-height:29px;padding:4px 9px;font-size:11px}
+  .dept-hub-tabs{padding:4px;gap:4px;border-radius:10px}
+  .dept-hub-tab{min-height:40px;font-size:12px}
+  .dept-hub-tab em,.dept-hub-tab[aria-selected="true"] em{font-size:10px}
+  .dept-feature-panel{border-radius:14px}
+  .dept-feature-panel .feature-list{gap:10px;padding:13px}
+  .dept-feature-panel .feature-row{
+    min-height:142px;gap:11px;padding:14px;border-radius:13px
+  }
+  .dept-feature-panel .feature-row .feature-glyph{
+    width:46px;height:46px;flex-basis:46px;border-radius:12px
+  }
+  .dept-feature-panel .feature-row .feature-glyph>.ico{width:25px;height:25px}
+  .dept-feature-panel .feature-row .feature-copy{gap:4px}
+  .dept-feature-panel .feature-row .feature-copy strong{font-size:12.5px;line-height:1.32}
+  .dept-feature-panel .feature-row .feature-copy small{font-size:10.8px;line-height:1.45}
+  .dept-feature-panel .feature-row .feature-side{top:14px;right:13px}
+  .dept-feature-panel .feature-row .feature-side .ico{width:13px;height:13px}
+  .dept-feature-panel .feature-row .feature-lock{width:18px;height:18px}
+  .footer,.footer span{font-size:10px}
+  .footer{margin-top:24px;padding-top:14px}
+  /* Keep the same compact scale in other department tabs and business pages. */
+  .dept-members-head strong{font-size:13px}
+  .dept-members-head small,.dept-todo-head,.dept-todo-card small{font-size:11px}
+  .dept-member-card strong,.dept-todo-card strong{font-size:12px}
+  .dept-member-card small,.dept-todo-card .todo-status{font-size:10.5px}
+  .dept-member-card,.dept-todo-card{padding:12px;min-height:70px}
+  .dept-members-search{font-size:11.5px;min-height:35px}
+  .panel,.glass.panel{padding:16px}
+  .section-title{font-size:13px}
+  .mw-head,.ops-heading{min-height:56px;padding:11px 14px}
+  .mw-content,.op-subsection{padding:14px}
+  .mw-head-info strong,.ops-heading strong{font-size:14px}
+  .mw-head-info>span,.ops-heading small{font-size:11.5px}
+  .mw-btn,.op-button,.btn{min-height:31px;font-size:11.5px;padding:6px 10px}
+  .mw-table,.op-table,.data-table{font-size:11.5px}
+  .mw-table th,.op-table th,.data-table th{font-size:11px}
+  .mw-table td,.op-table td,.data-table td{font-size:11.5px}
+  .mw-metric{min-height:74px;padding:11px}
+  .mw-metric strong,.mw-snapshot strong{font-size:20px}
+  .mw-metric>span,.mw-metric small,.mw-snapshot>small{font-size:10.5px}
+  .mw-tiles .mw-btn{min-height:36px;min-width:120px}
+  .field,.op-field input,.op-field select,.mw-field input,.mw-field select,.mw-field textarea{font-size:12px;min-height:33px}
+  .access-table th,.access-table td{font-size:11.5px}
+}
+@media (min-width:861px) and (max-width:1100px){
+  .sidebar{width:222px;flex-basis:222px}
+  #nav .dept-row{min-height:94px}
+  .main-content{padding:23px 19px 30px}
+}
