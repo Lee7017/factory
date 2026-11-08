@@ -212,9 +212,9 @@ function overviewPage(){const stages=ops().flows||{},activeOrders=ctx.data.order
  const pending=S.inspections.filter(r=>r.status==='待判定').length+S.cleanReports.filter(r=>r.status==='待判定').length;
  const ready=S.materialRequests.filter(r=>r.status==='待备料').length, gates=S.roster.filter(r=>r.gate==='已通过').length;
  const current=activeOrders.map(o=>{const f=stages[o.id];return row([esc(o.id),esc(o.product),status(f?.stage||o.status),btn('查看流程','goto:sales:orders')])});
- const content=cards([['进行中订单',totals,'首页只显示未完结订单'],['历史订单',historyOrders.length,'已完成自动归档'],['已开始生产',started,'含执行及后续阶段'],['待检与清洗报检',pending,'质量任务'],['待备料',ready,'车间领料单'],['开工前 Gate 通过',gates,'产线 × 岗位']])+
- `<div class="mw-tiles mw-quick">${navButton('生产排程甘特图','pmc','schedule')}${navButton('QA/QC 审批','quality','qaQc')}${navButton('车间管理','production','workshop')}${navButton('仓库管理','warehouse','warehouseOps')}${navButton('排班','pmc','shift')}${navButton('系统设置','it','settings')}</div>`+
- head('进行中订单','完结订单自动转入销售部 → 历史订单')+grid(['订单号','产品','当前阶段','入口'],current)+
+ const content=cards([['进行中订单',totals,'首页只显示未完结订单'],['已开始生产',started,'含执行及后续阶段'],['待检与清洗报检',pending,'质量任务'],['待备料',ready,'车间领料单'],['开工前 Gate 通过',gates,'产线 × 岗位']])+
+ `<div class="mw-tiles mw-quick">${navButton('生产排程甘特图','pmc','schedule')}${navButton('QA/QC 审批','quality','qaQc')}${navButton('车间管理','production','workshop')}${navButton('仓库管理','warehouse','warehouseOps')}${navButton('历史订单','sales','orderHistory')}${navButton('排班','pmc','shift')}${navButton('系统设置','it','settings')}</div>`+
+ head('进行中订单',`${historyOrders.length} 张已完结订单已自动归档到销售部 → 历史订单`)+grid(['订单号','产品','当前阶段','入口'],current)+
  head('全厂最近操作记录','全厂统一查看；每张订单的完整历史在订单流程详情')+globalAuditTable();
  return wrap('overview','工厂运行总览','订单、产线、质量、仓储、排班与已确认工时的共同视图','',content);
 }
