@@ -71,10 +71,8 @@ function receiveFinishedGoods(order,qty=finishedUnitsForOrder(order)){
 }
 function qualityFlag(code,kind,record){let lot=getBatch(code);if(lot){lot.quality=kind;lot.note=record||'';}}
 function nonconform(source,ref,material,reason,qty=0){if(S.ncr.some(n=>n.source===source&&n.ref===ref))return;S.ncr.unshift({id:id('NCR'),source,ref,material,reason,qty,status:'待处置',disposal:'',createdAt:stamp()});if(material)qualityFlag(material,'冻结','检验不合格')}
-function syncFlowInspections(){for(const o of ctx.data.orders){const stage=ops().flows[o.id]?.stage;if(!['semi_qc','final_qc'].includes(stage))continue;let phase=stage==='semi_qc'?'半成品':'成品';if(S.inspections.some(x=>x.order===o.id&&x.phase===phase&&x.status==='待判定'))continue;
- // 原有流程判定可能已经完成；只有到达报检阶段且没有同阶段记录才生成。
- if(S.inspections.some(x=>x.order===o.id&&x.phase===phase&&x.status==='合格'))continue;
- S.inspections.unshift({id:id('QC'),order:o.id,phase,material:o.product,batch:'',status:'待判定',source:'生产报检',date:today()});}}
+function ensureFlowInspection(orderId,phase){const existing=S.inspections.find(x=>x.order===orderId&&x.phase===phase&&!['已作废'].includes(x.status));if(existing)return existing;const o=ctx.data.orders.find(x=>x.id===orderId);if(!o)return null;const rec={id:id('QC'),order:o.id,phase,material:o.product,batch:'',status:'待判定',source:'生产报检',date:today()};S.inspections.unshift(rec);ctx.save();return rec}
+function syncFlowInspections(){for(const o of ctx.data.orders){const stage=ops().flows[o.id]?.stage;if(!['semi_qc','final_qc'].includes(stage))continue;ensureFlowInspection(o.id,stage==='semi_qc'?'半成品':'成品')}}
 function supports(feature){return Object.prototype.hasOwnProperty.call(labels,feature)}
 function render(feature){syncFlowInspections(); const f={overview:overviewPage,qaQc:qualityPage,workshop:workshopPage,warehouseOps:warehousePage,shift:shiftPage,hours:hoursPage,sop:standardsPage,settings:settingsPage}[feature];return f?f():''}
 function pendingForDept(dept){const out=[];const push=(arr,feature,k,filter,title)=>{for(const r of arr.filter(filter))out.push({kind:'mod',feature,id:r.id,title,detail:r.reason||r.material||r.order||r.title||r.type||'',status:r.status})};
@@ -87,7 +85,7 @@ function pendingForDept(dept){const out=[];const push=(arr,feature,k,filter,titl
 function qualityPage(){const t=currentTab.qaQc||'decision';let content='',toolbar='';
  if(t==='decision'){
  toolbar=btn('新建报检单','form:inspection','','primary');
- content=note('含来料、半成品与成品')+grid(['报检单','来源','对象 / 订单','批次','状态','处理'],S.inspections.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.source),esc(r.material||r.order),esc(r.batch||'—'),status(r.status),r.status==='待判定'?btn('合格','qc:pass',r.id,'primary')+btn('不合格','qc:fail',r.id):esc(r.result||'已记录')])));
+ content=note('生产流程到“配制报检 / 包装报检”后会自动生成对应报检单；这里是实际 QC 判定入口。')+grid(['报检单','阶段','关联订单','对象','批次','状态','处理'],S.inspections.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.phase||'来料'),esc(r.order||'—'),esc(r.material||'—'),esc(r.batch||'—'),status(r.status),r.status==='待判定'?btn('判定合格','qc:pass',r.id,'primary')+btn('判定不合格','qc:fail',r.id):esc(r.result||'已记录')])));
  }else if(t==='sampling'){
  toolbar=btn('发起抽检','form:sample','','primary');
  content=note('抽检异常自动生成不合格品处置单')+grid(['抽检单','抽检对象','项目','数量','结论','操作'],S.samples.map(r=>row([esc(r.id),esc(r.batch||r.material),esc(r.item),esc(r.qty),status(r.status),r.status==='待判定'?btn('合格','sample:pass',r.id,'primary')+btn('不合格','sample:fail',r.id):'—'])));
@@ -323,6 +321,7 @@ function hasCleaningPass(task){return S.cleanReports.some(r=>r.task===task&&r.st
 function hasFlowInspection(orderId,phase){return S.inspections.some(r=>r.order===orderId&&r.phase===phase&&r.status==='合格')}
 function blockedFromFlow(material){return S.batches.filter(x=>x.material===material&&x.counted&&x.quality!=='合格').reduce((a,x)=>a+Number(x.qty),0)}
 function onPurchaseReceipt(idValue){return S.incoming.some(r=>r.purchase===idValue&&r.status==='已入库')}
+function openQualityRecord(idValue){currentTab.qaQc='decision';ctx.openFeature('qaQc','quality');setTimeout(()=>{const row=[...document.querySelectorAll('.mw-table tbody tr')].find(x=>x.textContent.includes(idValue));row?.scrollIntoView({block:'center',behavior:'smooth'});row?.classList.add('mw-highlight');},40)}
 function openTodo(item){const map={inspection:'decision',clean:'clean',ncr:'ncr',incoming:'incoming',request:'pick',outbound:'outbound',roster:'plan',dispute:'dispute'};const page=item.feature;currentTab[page]=map[item.kind]||tabs[page]?.[0]?.[0];ctx.openFeature(page,item.dept);setTimeout(()=>{const row=[...document.querySelectorAll('.mw-table tbody tr')].find(x=>x.textContent.includes(item.id));row?.scrollIntoView({block:'center',behavior:'smooth'});row?.classList.add('mw-highlight');},30)}
-window.FactoryModules={init,render,supports,handleClick,submitForm,pendingForDept,openTodo,hasCleaningPass,hasFlowInspection,blockedFromFlow,onPurchaseReceipt,receiveFinishedGoods,get state(){return S}};
+window.FactoryModules={init,render,supports,handleClick,submitForm,pendingForDept,openTodo,openQualityRecord,ensureFlowInspection,hasCleaningPass,hasFlowInspection,blockedFromFlow,onPurchaseReceipt,receiveFinishedGoods,get state(){return S}};
 })();
