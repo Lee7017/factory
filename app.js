@@ -25,7 +25,7 @@ const people=access.staff.map(p=>[p.id,p.name,p.dept,p.title]);
 const ability=['配料','搅拌','灌装','包装','在线检验','设备换型','清洗','叉车'];
 const initial={role:'employee',dept:'it',feature:null,expanded:'it',home:true,orders:[{id:'SO-2026-1023-018',product:'720g/L 百菌清悬浮剂',spec:'5L × 4桶',qty:3000,unit:'L',status:'待排产',owner:'生产计划与物料控制部（PMC）'},{id:'SO-2026-1106-003',product:'500g/L 悬浮剂 B',spec:'1L × 12瓶',qty:1800,unit:'L',status:'待评审',owner:'销售部'}],tasks:[{id:'TK-001',type:'清洗',line:'L01 配制一线',status:'待复核',category:'非生产任务'},{id:'TK-002',type:'配制',line:'L01 配制一线',status:'待开始',category:'生产任务'},{id:'TK-003',type:'调机调线',line:'S03-4# 瓶装线',status:'待开始',category:'非生产任务'},{id:'TK-004',type:'包装',line:'S03-4# 瓶装线',status:'待开始',category:'生产任务'}],leaves:[{id:'LV-001',person:'员工',range:'2026-11-10 ~ 2026-11-11',reason:'个人事务',status:'待人事审批'}],messages:[{id:1,title:'待处理 · 生产任务',text:'TK-002 配制任务等待生产车间承接',dept:'production',date:'11月06日 09:18',unread:true,feature:'tasks'},{id:2,title:'待处理 · 请假申请',text:'LV-001 请假单等待人事审核',dept:'hr',date:'11月06日 09:05',unread:true,feature:'leaveApproval'},{id:3,title:'排程已更新',text:'SO-2026-1023-018 已生成正式排程草稿',dept:'pmc',date:'11月06日 08:50',unread:true,feature:'schedule'}],payroll:[{id:'OT-001',name:'李明',type:'加班',basis:'4 小时',status:'待人事复核',amount:'—'},{id:'IN-001',name:'王强',type:'生产激励',basis:'合格 900 单位',status:'待财务核准',amount:'—'}],approvals:[],offices:{},chatThreads:{},plans:[]};
 access.init(departments,features);
-let data;try{data=Object.assign({},structuredClone(initial),JSON.parse(localStorage.getItem('factory-workspace-v2')||'{}'))}catch{data=JSON.parse(JSON.stringify(initial))}data.offices=data.offices&&typeof data.offices==='object'?data.offices:{};data.chatThreads=data.chatThreads&&typeof data.chatThreads==='object'?data.chatThreads:{};data.plans=Array.isArray(data.plans)?data.plans:[];let q='',drawer=false;
+let data;try{data=Object.assign({},structuredClone(initial),JSON.parse(localStorage.getItem('factory-workspace-v2')||'{}'))}catch{data=JSON.parse(JSON.stringify(initial))}data.offices=data.offices&&typeof data.offices==='object'?data.offices:{};data.chatThreads=data.chatThreads&&typeof data.chatThreads==='object'?data.chatThreads:{};data.plans=Array.isArray(data.plans)?data.plans:[];let drawer=false;
 if(data.dept==='tech')data.dept='it';
 if(data.dept==='ehs'){data.dept='hr';data.feature=null;}
 if(data.expanded==='tech')data.expanded='it';
@@ -37,7 +37,13 @@ for(const order of data.orders||[])if(order.owner==='PMC 办公室')order.owner=
 const allowed=(dept,feat,action='view')=>access.has(dept,feat,action);
 const ops=window.FactoryOperations;
 ops.init({data,save,access,toast,flashDenied,render,openFeature});window.FactoryGantt.init({data,save,access,render,flashDenied});window.FactoryModules.init({data,save,access,toast,render,openFeature,ops});
-function navRender(){const node=$('nav');node.innerHTML=departments.filter(d=>(d.name+' '+d.features.map(f=>features[f]||f).join(' ')).toLowerCase().includes(q)).map(d=>`<div class="nav-dept"><button class="dept-row ${!data.home&&data.dept===d.id?'active':''}" data-dept="${d.id}"><span class="dept-ico">${icon(d.icon)}</span><strong>${e(d.name)}</strong></button></div>`).join('')||'<div class="empty-state">没有匹配的部门</div>'}
+function navRender(){
+ const node=$('nav');
+ // 首页总览作为第一个方形卡片，与全部部门共用相同的布局和选中态。
+ const home=`<div class="nav-dept nav-home"><button type="button" class="dept-row ${data.home?'active':''}" data-nav-home aria-current="${data.home?'page':'false'}"><span class="dept-ico">${icon('feature-overview')}</span><strong>首页总览</strong></button></div>`;
+ const tiles=departments.map(d=>`<div class="nav-dept"><button type="button" class="dept-row ${!data.home&&data.dept===d.id?'active':''}" data-dept="${d.id}" aria-current="${!data.home&&data.dept===d.id?'page':'false'}"><span class="dept-ico">${icon(d.icon)}</span><strong>${e(d.name)}</strong></button></div>`).join('');
+ node.innerHTML=home+tiles;
+}
 const deptURL=id=>`${location.origin}${location.pathname}#/departments/${id}`;
 const homeHash=()=>`#/overview`;
 const pageHash=(dept,feat)=>`#/departments/${dept}${feat?'/'+feat:''}`;
@@ -253,7 +259,8 @@ function drawMessages(){updateUnread();$('message-list').innerHTML=data.messages
 function toggleDrawer(open){drawer=open;$('notify-drawer').classList.toggle('open',drawer);$('drawer-shade').classList.toggle('visible',drawer);if(drawer)drawMessages()}
 function closeSidebar(){$('sidebar').classList.remove('open');$('shade').classList.remove('visible')}
 document.addEventListener('click',ev=>{
-const homeCrumb=ev.target.closest('[data-breadcrumb-home]');if(homeCrumb){openHome();return;}
+const homeTile=ev.target.closest('[data-nav-home]');if(homeTile){openHome();return;}
+ const homeCrumb=ev.target.closest('[data-breadcrumb-home]');if(homeCrumb){openHome();return;}
 const deptCrumb=ev.target.closest('[data-breadcrumb-dept]');if(deptCrumb){openDept(deptCrumb.dataset.breadcrumbDept);return;}
 const tabBtn=ev.target.closest('[data-dept-tab]');if(tabBtn){deptTabs[data.dept]=tabBtn.dataset.deptTab;render();return;}
 const modBtn=ev.target.closest('[data-module-action]');if(modBtn){window.FactoryModules.handleClick(modBtn);return;}
@@ -289,7 +296,6 @@ if(ev.target.closest('#close-modal')||ev.target.closest('#cancel-modal')||ev.tar
 document.addEventListener('submit',ev=>{if(window.FactoryModules.submitForm(ev))return;if(ops.submitForm(ev))return;if(ev.target.id==='chat-form'){ev.preventDefault();submitChat()}});
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&window._chatPeer)closeChat()});
 document.addEventListener('input',ev=>{if(ev.target.id!=='dept-member-search')return;const term=ev.target.value.trim().toLowerCase();let found=0;document.querySelectorAll('#dept-member-grid [data-member-search]').forEach(card=>{const ok=card.dataset.memberSearch.includes(term);card.hidden=!ok;if(ok)found++});const empty=document.querySelector('#dept-members-no-results');if(empty)empty.hidden=found>0;});
-$('dept-search').addEventListener('input',ev=>{q=ev.target.value.trim().toLowerCase();navRender()});
 
 document.addEventListener('change',ev=>{const lookup={'perm-employee':'employee','perm-position':'position','perm-dept':'dept'};const key=lookup[ev.target.id];if(key){access.updateSelection(key,ev.target.value);render();}});
 window.addEventListener('popstate',loadAddress);window.addEventListener('hashchange',loadAddress);
