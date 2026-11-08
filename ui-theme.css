@@ -366,3 +366,29 @@ button,input,select,textarea{font-family:inherit;color:inherit}
  .gantt-lane strong{font-size:12.5px}.gantt-lane small{font-size:11.5px}.gantt-bar strong{font-size:11.5px}.gantt-bar small{font-size:10px}
  .access-table th,.access-table td{font-size:12.5px}
 }
+
+
+/* 跟踪卡点：有权限定位订单泛黄；无权限时功能格沿用泛红提示。 */
+.feature-row{position:relative}
+.feature-row.access-denied-flash::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:rgba(207,35,35,.14);
+  box-shadow:inset 0 0 0 1px rgba(171,31,31,.30);
+  animation:denied-red-fade .9s ease-out both
+}
+.bottleneck-track-highlight{position:relative;animation:bottleneck-yellow-row 3.2s ease-out both}
+.bottleneck-track-highlight>td{
+  background:rgba(255,214,64,.22)!important;
+  box-shadow:inset 0 1px 0 rgba(180,137,0,.18),inset 0 -1px 0 rgba(180,137,0,.18)
+}
+.bottleneck-track-highlight:not(tr){
+  background:rgba(255,214,64,.20)!important;
+  box-shadow:inset 0 0 0 1px rgba(180,137,0,.20),0 10px 28px rgba(130,97,0,.08)!important
+}
+@keyframes bottleneck-yellow-row{
+  0%{filter:none}
+  12%{filter:brightness(1.015)}
+  72%{filter:none}
+  100%{filter:none}
+}
+@media(prefers-reduced-motion:reduce){.bottleneck-track-highlight{animation:none}}
