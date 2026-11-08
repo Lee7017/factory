@@ -22,8 +22,9 @@ const available=()=>orders().filter(p=>['待到货','部分到货','到货处理
 const button=(text,action,record='',style='')=>`<button type="button" class="proc-btn ${style}" data-proc-action="${esc(action)}" data-proc-id="${esc(record)}">${esc(text)}</button>`;
 const tag=s=>`<span class="proc-status ${['已入库','已通过','合格待入库'].includes(s)?'is-done':''}">${esc(s)}</span>`;
 const authorized=cap=>ctx.access.has(...cap);
-const manager=()=>ctx.access.assigned(user().id).some(x=>['purchase_manager','developer'].includes(x));
-const canApprove=p=>authorized(['purchase','purchase','approve'])&&manager()&&p.createdBy!==user().id;
+// 采购审批只读取权限矩阵，并检查申请人与审批人不得相同。
+const canApprove=p=>p?.status==='待审批'&&Boolean(p.createdBy)&&p.createdBy!==user().id&&authorized(['purchase','purchase','approve']);
+const canEdit=p=>Boolean(p)&&['草稿','已驳回'].includes(p.status)&&p.createdBy===user().id&&authorized(['purchase','purchase','edit']);
 function syncStatus(p){
  if(!p||['草稿','待审批'].includes(p.status))return;
  const n=numbers(p);
@@ -31,6 +32,8 @@ function syncStatus(p){
 }
 function migrate(){
  for(const p of orders()){
+  // 仅识别系统自带的 PO-001 样例，避免无创建人信息导致初始化示例无法审批。
+  if(p.id==='PO-001'&&!p.createdBy&&p.supplier==='包材供应商'){p.createdBy='system-seed';p.createdName='系统预置样例'}
   p.qty=Number(p.qty)||0;
   if(p.status==='已入库'&&!shipments(p.id).length)continue;
   if(['待到货','部分到货','到货处理中','已入库'].includes(p.status))syncStatus(p);
@@ -39,32 +42,37 @@ function migrate(){
  ctx.save();
 }
 function renderPurchases(){
+ const pending=orders().filter(p=>p.status==='待审批');
+ const mine=pending.filter(canApprove);
+ const pendingInfo=pending.length?`<div class="proc-approval-banner"><strong>${mine.length?`待我审批 ${mine.length} 张采购单`:`待审批 ${pending.length} 张采购单`}</strong><span>${mine.length?'你具有这些采购单的审批权限，请在下方办理。':'当前员工没有可审批的采购单。须由拥有采购审批权限、且不是创建人的员工办理。'}</span></div>`:'';
  const rows=orders().map(p=>{
   const n=numbers(p),isAwaiting=p.status==='待审批';
   let actions=button('查看采购单','viewPurchase',p.id);
-  if(['草稿','已驳回'].includes(p.status))actions+=button('编辑','editPurchase',p.id)+button('提交审批','submitLegacy',p.id,'primary');
+  if(canEdit(p))actions+=button('编辑并重新送审','editPurchase',p.id);
   if(isAwaiting&&canApprove(p))actions+=button('审批通过','approve',p.id,'primary')+button('驳回','reject',p.id);
   const actor=p.createdName||'历史单据';
-  const progress=p.status==='待审批'?'等待采购主管审批':`已入库 ${money(n.stored)} / 已登记 ${money(n.registered)} / 采购 ${money(n.ordered)}`;
+  const progress=p.status==='待审批'?(p.createdBy?'等待其他有审批权限的员工办理':'缺少创建人记录，需先核实单据来源'): `已入库 ${money(n.stored)} / 已登记 ${money(n.registered)} / 采购 ${money(n.ordered)}`;
   return `<tr><td><strong>${esc(p.id)}</strong><small class="proc-sub">创建人：${esc(actor)}</small></td><td>${esc(p.material)}</td><td>${money(p.qty)}</td><td>${esc(p.supplier||'—')}</td><td>${tag(p.status)}<small class="proc-sub">${progress}</small></td><td><div class="proc-actions">${actions}</div></td></tr>`;
  }).join('');
- return `<div class="ops-workbench proc-page"><div class="proc-top"><div><strong>采购单</strong><p>采购员创建即提交审批；采购主管审核；仓库处理到货，质量部负责检验。</p></div>${button('新建采购单','newPurchase','','primary')}</div><div class="op-table-wrap"><table class="op-table"><thead><tr><th>采购单</th><th>物料</th><th>采购数量</th><th>供应商</th><th>到货进度 / 状态</th><th>操作</th></tr></thead><tbody>${rows||'<tr><td colspan="6">暂无采购单</td></tr>'}</tbody></table></div></div>`;
+ return `<div class="ops-workbench proc-page"><div class="proc-top"><div><strong>采购单</strong><p>采购员创建即提交审批；采购主管审核；仓库处理到货，质量部负责检验。</p></div>${authorized(['purchase','purchase','create'])?button('新建采购单','newPurchase','','primary'):''}</div>${pendingInfo}<div class="op-table-wrap"><table class="op-table"><thead><tr><th>采购单</th><th>物料</th><th>采购数量</th><th>供应商</th><th>到货进度 / 状态</th><th>操作</th></tr></thead><tbody>${rows||'<tr><td colspan="6">暂无采购单</td></tr>'}</tbody></table></div></div>`;
 }
 function renderIncoming(){
+ const canReceive=authorized(['warehouse','warehouseOps','create']);
+ const canStore=authorized(['warehouse','warehouseOps','execute']);
  const poRows=available().map(p=>{
   const n=numbers(p);
-  return `<tr><td><strong>${esc(p.id)}</strong></td><td>${esc(p.material)}</td><td>${money(p.qty)}</td><td>${money(n.registered)}</td><td><strong>${money(n.remaining)}</strong></td><td>${button('登记本次到货','newReceipt',p.id,'primary')}</td></tr>`;
+  return `<tr><td><strong>${esc(p.id)}</strong></td><td>${esc(p.material)}</td><td>${money(p.qty)}</td><td>${money(n.registered)}</td><td><strong>${money(n.remaining)}</strong></td><td>${canReceive?button('登记本次到货','newReceipt',p.id,'primary'):'<span class="proc-muted">等待仓库收货</span>'}</td></tr>`;
  }).join('');
  const received=arrivals().map(r=>{
   const qc=M.state.inspections.find(i=>i.incoming===r.id);
   const action=button('查看到货单','viewReceipt',r.id);
   let next='';
-  if(['待比对','比对差异','待报检'].includes(r.status))next=button('更正实收','legacyCorrect',r.id)+button('确认到货并送检','legacyInspect',r.id);
+  if(canStore&&['待比对','比对差异','待报检'].includes(r.status))next=button('更正实收','legacyCorrect',r.id)+button('确认到货并送检','legacyInspect',r.id);
   if(r.status==='待QC')next=button('查看检验单','showInspection',r.id);
-  if(r.status==='合格待入库')next=button('确认入库','storeReceipt',r.id,'primary');
+  if(canStore&&r.status==='合格待入库')next=button('确认入库','storeReceipt',r.id,'primary');
   return `<tr><td><strong>${esc(r.id)}</strong></td><td>${esc(r.purchase)}</td><td>${esc(r.material)} · ${money(r.actualQty??r.qty)}</td><td>${esc(r.supplierLot||'—')}</td><td>${tag(r.status)}${qc?`<small class="proc-sub">${esc(qc.id)} · ${esc(qc.status)}</small>`:''}</td><td><div class="proc-actions">${action}${next}</div></td></tr>`;
  }).join('');
- return {tools:available().length?button('登记到货','newReceipt','','primary'):'<span class="proc-muted">已审批采购单暂无未登记数量</span>',
+ return {tools:available().length&&canReceive?button('登记到货','newReceipt','','primary'):'<span class="proc-muted">已审批采购单暂无未登记数量</span>',
  content:`<div class="proc-page"><p class="proc-help">仓库按实际到货登记，一张采购单可分多次送货。登记后自动生成 QC 来料检验单，检验合格才可确认入库。</p><div class="mw-section-head"><h3>可登记到货的采购单</h3><span>剩余数量实时扣除已登记的在途 / 待检数量</span></div><div class="mw-table-scroll"><table class="mw-table"><thead><tr><th>采购单</th><th>物料</th><th>采购数量</th><th>已登记</th><th>可登记</th><th>操作</th></tr></thead><tbody>${poRows||'<tr><td colspan="6" class="mw-empty">暂无可登记的采购单。等待采购主管审批，或已有到货正在处理。</td></tr>'}</tbody></table></div><div class="mw-section-head proc-second"><h3>到货记录</h3><span>每次到货都是独立单据，可以查看和追踪</span></div><div class="mw-table-scroll"><table class="mw-table"><thead><tr><th>到货单</th><th>采购单</th><th>物料 / 实收</th><th>供应商批次</th><th>状态 / 质检</th><th>操作</th></tr></thead><tbody>${received||'<tr><td colspan="6" class="mw-empty">暂无到货记录</td></tr>'}</tbody></table></div></div>`};
 }
 function host(){let h=document.getElementById('proc-modal-host');if(!h){h=document.createElement('div');h.id='proc-modal-host';document.body.append(h)}return h;}
@@ -100,12 +108,14 @@ function saveForm(form){
  if(kind==='purchase'){
   const qty=Number(values.qty),material=values.material,supplier=String(values.supplier||'').trim();
   if(!material||!Number.isFinite(qty)||qty<=0||!supplier)return error('请填写采购物料、供应商和大于 0 的数量。');
+  if(idValue? !canEdit(orders().find(p=>p.id===idValue)) : !authorized(['purchase','purchase','create']))return error('当前员工没有创建或修改这张采购单的权限。');
   const old=orders().find(x=>x.id===idValue);
-  if(old){if(!['草稿','已驳回'].includes(old.status))return error('采购单已经送审，不能直接编辑。');Object.assign(old,{material,qty,supplier,status:'待审批',createdBy:user().id,createdName:user().name,submittedAt:new Date().toISOString(),history:[{action:'采购员创建并送审',from:'purchase',person:user().name,at:new Date().toLocaleString('zh-CN')}]});(old.history??=[]).push({action:'采购员创建并送审',from:'purchase',person:user().name,at:new Date().toLocaleString('zh-CN')})}
+  if(old){Object.assign(old,{material,qty,supplier,status:'待审批',submittedAt:new Date().toISOString()});(old.history??=[]).push({action:'原创建人编辑并重新送审',from:'purchase',person:user().name,at:new Date().toLocaleString('zh-CN')})}
   else orders().unshift({id:id('PO'),material,qty,supplier,status:'待审批',createdBy:user().id,createdName:user().name,submittedAt:new Date().toISOString(),history:[{action:'采购员创建并送审',from:'purchase',person:user().name,at:new Date().toLocaleString('zh-CN')}]});
   close();renderNow();ctx.toast('采购单已创建并提交，等待采购主管审批。','purchase');return;
  }
  if(kind==='receipt'){
+  if(!authorized(['warehouse','warehouseOps','create']))return error('需要仓库收货权限。');
   const p=available().find(x=>x.id===values.purchase),qty=Number(values.qty);
   if(!p)return error('采购单状态已变化，请关闭窗口后重新选择。');
   if(!Number.isFinite(qty)||qty<=0||qty>numbers(p).remaining+0.000001)return error(`本次实收必须大于 0，且不能超过剩余 ${money(numbers(p).remaining)}。`);
@@ -154,15 +164,15 @@ function trackShortage(orderId){
 function onAction(el){const action=el.dataset.procAction,ref=el.dataset.procId;
  if(action==='close'){close();return}
  if(action==='newPurchase'){if(!authorized(['purchase','purchase','create']))return;newPurchase();return}
- if(action==='editPurchase'){const p=orders().find(x=>x.id===ref);if(p?.createdBy&&p.createdBy!==user().id&&!manager())return error('只能由原采购员修改采购单。');newPurchase(p);return}
- if(action==='newReceipt'){if(!authorized(['warehouse','warehouseOps','create']))return error('到货登记由仓库人员办理，请切换到仓库人员。');newReceipt(ref);return}
+ if(action==='editPurchase'){const p=orders().find(x=>x.id===ref);if(!canEdit(p))return error('只有原创建人且具有采购修改权限，才能修改草稿或被驳回的采购单。');newPurchase(p);return}
+ if(action==='newReceipt'){if(!authorized(['warehouse','warehouseOps','create']))return error('到货登记需要仓库收货权限，应由有权限的仓库员工办理。');newReceipt(ref);return}
  if(action==='viewPurchase'){detailsPurchase(ref);return}
  if(action==='viewReceipt'){detailsReceipt(ref);return}
  if(action==='showInspection'){const rec=arrivals().find(r=>r.id===ref),qc=M.state.inspections.find(x=>x.incoming===rec?.id);if(qc){close();M.openQualityRecord(qc.id)}return}
- if(action==='submitLegacy'){const p=orders().find(x=>x.id===ref);if(!p||!['草稿','已驳回'].includes(p.status))return;p.createdBy=user().id;p.createdName=user().name;p.status='待审批';(p.history??=[]).push({action:'采购员修改后重新送审',from:'purchase',person:user().name,at:new Date().toLocaleString('zh-CN')});renderNow();return}
+ if(action==='submitLegacy'){const p=orders().find(x=>x.id===ref);if(!canEdit(p))return error('只有原创建人且具有采购修改权限，才能重新提交。');p.status='待审批';(p.history??=[]).push({action:'原创建人重新送审',from:'purchase',person:user().name,at:new Date().toLocaleString('zh-CN')});renderNow();return}
  if(action==='approve'||action==='reject'){
   const p=orders().find(x=>x.id===ref);if(!p||p.status!=='待审批')return;
-  if(!canApprove(p))return error('只能由有审批权限的采购主管审批，且创建人不能审批自己的单据。');
+  if(!canApprove(p))return error('当前员工没有这张单据的审批权限，或属于创建人。请由另一位获得采购审批权限的员工办理。');
   if(action==='approve'){p.status='待到货';p.approvedBy=user().name;p.approvedAt=new Date().toISOString()}else p.status='已驳回';(p.history??=[]).push({action:action==='approve'?'采购主管审批通过':'采购主管驳回',from:'purchase',person:user().name,at:new Date().toLocaleString('zh-CN')});
   renderNow();noticeFlow({ref:p.id,docType:'采购单',action:action==='approve'?'采购主管审批通过':'采购主管驳回',from:'purchase',to:action==='approve'?'warehouse':'purchase',status:p.status,next:action==='approve'?'等待仓库按实际到货登记':'采购员核对后重新提交',nextOpen:action==='approve'?{dept:'warehouse',feature:'warehouseIncoming',record:p.id}:{dept:'purchase',feature:'purchase'}});return;
  }
