@@ -345,7 +345,7 @@ button,input,select,textarea{font-family:inherit;color:inherit}
 .flow-state span,.flow-history-row,.flow-history-row small,.flow-bottom span{font-size:12.5px;color:#55575d}
 .flow-state b,.flow-history-title strong,.flow-history-action{font-size:13px;color:#33353a}
 .flow-bottom button{font-size:13px;color:#34363b;background:rgba(255,255,255,.52);border-color:rgba(20,20,22,.10)}
-.flow-bottom .flow-open-doc{background:#202124;border-color:#202124;color:#fff}
+.flow-bottom .flow-open-doc{background:rgba(255,255,255,.52);border-color:rgba(20,20,22,.10);color:#34363b}.flow-bottom .flow-continue{background:#202124;border-color:#202124;color:#fff;box-shadow:0 8px 22px rgba(12,12,14,.12)}.flow-bottom .flow-continue:hover{background:#36363a;color:#fff}
 
 /* Motion */
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}
