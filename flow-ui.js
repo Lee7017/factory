@@ -101,7 +101,6 @@ function show(entry){
  const action=entry.action||'操作完成',operator=entry.operator||history.at(-1)?.person||'当前用户',at=entry.at||history.at(-1)?.at||currentTime();
  activeContinue=entry.nextOpen||nextTargets[action]||(doc.dept&&doc.feature?{dept:doc.dept,feature:doc.feature}:null);
  activeTrackRef=doc.ref;
- const openButton=doc.dept&&doc.feature?`<button type="button" class="flow-open-doc" data-flow-open-dept="${clean(doc.dept)}" data-flow-open-feature="${clean(doc.feature)}">查看这张单据</button>`:'';
  host.innerHTML=`<div class="flow-veil" aria-hidden="true"></div><section class="flow-window" role="status" aria-label="业务流转结果">
    <div class="flow-window-top"><div class="flow-signal"><span class="flow-signal-dot">✓</span><span>单据流转已更新</span></div><button type="button" class="flow-close" data-flow-close aria-label="关闭流转提示">×</button></div>
    <header class="flow-document">
@@ -111,14 +110,14 @@ function show(entry){
    </header>
    <div class="flow-path">
      <div class="flow-node"><small>${same?'处理部门':'本次处理部门'}</small><strong>${clean(from)}</strong></div>
-     <div class="flow-travel"><span class="flow-route-line"></span><span class="flow-route-arrow">${same?'·':'→'}</span></div>
-     <div class="flow-node flow-node-dest ${same?'is-same':'is-next'}"><small>${same?'当前仍由该部门处理':'下一处理部门'}</small><strong>${clean(to)}</strong></div>
+     <div class="flow-travel"><span class="flow-route-line" aria-hidden="true"></span><svg class="flow-route-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" /></svg></div>
+     <div class="flow-node flow-node-dest ${same?'is-same':'is-next'}"><small>${same?'当前仍由该部门处理':'下一处理部门'}</small><strong>${clean(to)}</strong>${same?'':`<svg class="flow-marquee-outline" aria-hidden="true"><rect x="2" y="2" width="100%" height="100%" rx="8" /></svg>`}</div>
    </div>
    <div class="flow-state"><span>当前状态 <b>${clean(entry.status||'已更新')}</b></span><span>下一步 <b>${clean(entry.next||'查看对应业务记录')}</b></span></div>
    <div class="flow-history-title"><strong>这张单据怎么走到这里</strong><span>${history.length} 条近期记录</span></div>
    <div class="flow-history">${history.length?history.map((h,i)=>`<div class="flow-history-row"><span class="flow-history-dot ${i===history.length-1?'is-current':''}"></span><span class="flow-history-dept">${clean(label(h.from||h.dept))}</span><span class="flow-history-action">${clean(h.action||'状态更新')}</span><small>${clean(h.at||'')}</small></div>`).join(''):'<div class="flow-history-empty">当前是这张单据的第一条业务记录</div>'}</div>
    <div class="flow-action-receipt"><span>刚刚执行</span><strong>${clean(action)}</strong><small>${clean(operator)} · ${clean(at)}</small></div>
-   <footer class="flow-bottom"><span>点击弹窗外区域可关闭</span><div class="flow-bottom-actions">${openButton}<button type="button" class="flow-continue" data-flow-track>跟踪卡点 →</button></div></footer>
+   <footer class="flow-bottom"><span>点击弹窗外区域可关闭</span><div class="flow-bottom-actions"><button type="button" class="flow-continue" data-flow-track>跟踪卡点 →</button></div></footer>
  </section>`;
  host.classList.remove('flow-dismiss');host.classList.add('flow-visible');
 }
@@ -127,8 +126,6 @@ function fromAudit(row,history,defaultDept){const rule=routes[row.type]||Object.
  const newer=rule?.[2]||'查看对应单据状态和待办';show({ref:row.ref,action:row.type,from,to,next:newer,nextOpen:nextTargets[row.type]||Object.entries(nextTargets).find(([key])=>String(row.type).includes(key))?.[1],status:row.detail||'已记录',summary:row.detail||'',operator:row.by||'当前用户',at:row.time||'',history});}
 document.addEventListener('click',ev=>{
  if(ev.target.classList.contains('flow-veil')){dismiss();return;}
- const open=ev.target.closest('[data-flow-open-dept]');
- if(open){const dept=open.dataset.flowOpenDept,feature=open.dataset.flowOpenFeature;dismiss();if(dept&&feature)location.hash=`#/departments/${dept}/${feature}`;return;}
  if(ev.target.closest('[data-flow-track]')){
   const target=activeContinue?{...activeContinue}:null,ref=activeTrackRef;
   dismiss();
