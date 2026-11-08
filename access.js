@@ -20,7 +20,7 @@ const positions=[
  {id:'ehs',name:'EHS 专员',dept:'ehs',features:['ehs.safety','hr.leave']},
  {id:'finance',name:'财务专员',dept:'finance',features:['finance.payroll','finance.finance','hr.leave']},
  {id:'it',name:'信息化管理员',dept:'it',features:['it.settings','it.productSettings','it.dictionarySettings','it.permissions','it.employees','it.catalog','hr.leave']},
- {id:'executive',name:'总经办',dept:'leadership',features:['leadership.overview','leadership.approvals','hr.leave']},
+ {id:'executive',name:'总经办',dept:'leadership',features:['leadership.approvals','hr.leave']},
  {id:'developer',name:'开发人员',dept:'it',features:['*']}
 ];
 // 每名员工均可管理本人工时，岗位及其余个人授权仍按并集计算。
