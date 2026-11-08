@@ -437,7 +437,7 @@ body{
   width:100%;aspect-ratio:1/1;min-height:120px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:10px;padding:11px 7px;text-align:center;
-  background:rgba(255,255,255,.56);
+  background:rgba(255,255,255,.72);
   border:1px solid rgba(35,46,39,.10);border-radius:16px;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.75);
   backdrop-filter:blur(12px) saturate(135%);-webkit-backdrop-filter:blur(12px) saturate(135%);
@@ -454,12 +454,12 @@ body{
   display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;
 }
 #nav .dept-row:hover{
-  background:rgba(255,255,255,.63);border-color:rgba(43,104,65,.18);
+  background:rgba(255,255,255,.78);border-color:rgba(43,104,65,.18);
   box-shadow:0 8px 20px rgba(28,62,43,.06),inset 0 1px 0 rgba(255,255,255,.92);
   transform:translateY(-1px);
 }
 #nav .dept-row.active{
-  background:rgba(255,255,255,.69);border-color:rgba(39,111,66,.34);
+  background:rgba(255,255,255,.83);border-color:rgba(39,111,66,.34);
   box-shadow:0 9px 26px rgba(42,99,63,.10),inset 0 1px 0 rgba(255,255,255,.96);
 }
 #nav .dept-row.active .dept-ico{background:rgba(220,240,224,.55);color:#1a4830}
@@ -637,12 +637,12 @@ body{
 .sidebar{
   background:
     radial-gradient(ellipse 145% 44% at 14% 21%,
-      rgba(85,170,116,.25) 0%,rgba(132,198,152,.10) 52%,transparent 90%),
+      rgba(85,170,116,.19) 0%,rgba(132,198,152,.07) 52%,transparent 90%),
     radial-gradient(ellipse 155% 50% at 87% 74%,
-      rgba(214,95,109,.22) 0%,rgba(231,146,151,.09) 49%,transparent 91%),
+      rgba(214,95,109,.17) 0%,rgba(231,146,151,.05) 49%,transparent 91%),
     radial-gradient(ellipse 115% 40% at 52% 49%,
-      rgba(168,180,152,.08),transparent 85%),
-    rgba(255,255,255,.72);
+      rgba(168,180,152,.06),transparent 85%),
+    rgba(255,255,255,.86);
   background-attachment:local;
   backdrop-filter:blur(28px) saturate(150%);
   -webkit-backdrop-filter:blur(28px) saturate(150%);
@@ -651,49 +651,50 @@ body{
   .sidebar{
     background:
       radial-gradient(ellipse 145% 44% at 14% 21%,
-        rgba(85,170,116,.22),rgba(132,198,152,.08) 52%,transparent 90%),
+        rgba(85,170,116,.16),rgba(132,198,152,.06) 52%,transparent 90%),
       radial-gradient(ellipse 155% 50% at 87% 74%,
-        rgba(214,95,109,.19),rgba(231,146,151,.07) 49%,transparent 91%),
-      rgba(255,255,255,.83);
+        rgba(214,95,109,.15),rgba(231,146,151,.05) 49%,transparent 91%),
+      rgba(255,255,255,.89);
   }
 }
 
-/* V30 · 去掉部门首页重复标题，部门说明收进顶部导航信息按钮。 */
+/* V31 · 部门介绍浮层脱离顶部导航，不被导航文字和裁剪样式影响。 */
 .main-content.is-dept-home .page-heading{display:none}
 .dept-crumb-group{display:inline-flex;align-items:center;gap:2px;min-width:0;flex:0 1 auto}
 .dept-crumb-group>.crumb-dept{min-width:0;overflow:hidden;text-overflow:ellipsis;max-width:min(44vw,430px)}
-.dept-info-wrap{position:relative;display:inline-flex;align-items:center;flex:0 0 auto}
 .dept-info-trigger{
-  width:27px;height:27px;display:grid;place-items:center;padding:0;
+  width:27px;height:27px;flex:0 0 27px;display:grid;place-items:center;padding:0;
   border:1px solid transparent;border-radius:9px;background:transparent;
   color:#636a67;cursor:pointer;
   transition:background .16s,border-color .16s,color .16s
 }
 .dept-info-trigger .ico{width:15px;height:15px;stroke-width:1.8}
 .dept-info-trigger:hover,.dept-info-trigger:focus-visible,.dept-info-trigger[aria-expanded="true"]{
-  background:rgba(255,255,255,.68);border-color:rgba(28,51,36,.14);color:#2b5037;
-  outline-offset:2px
+  background:rgba(255,255,255,.68);border-color:rgba(28,51,36,.14);
+  color:#2b5037;outline-offset:2px
 }
 .dept-info-popover{
-  position:absolute;right:-20px;top:calc(100% + 9px);z-index:35;
-  display:none;flex-direction:column;gap:6px;
-  width:max-content;max-width:min(340px,calc(100vw - 24px));padding:13px 15px;
-  background:rgba(255,255,255,.90);
-  border:1px solid rgba(44,74,53,.13);border-radius:13px;
-  box-shadow:0 14px 40px rgba(22,43,29,.14),inset 0 1px 0 rgba(255,255,255,.94);
+  position:fixed;z-index:90;display:flex;flex-direction:column;gap:6px;
+  width:320px;max-width:calc(100vw - 24px);box-sizing:border-box;
+  margin:0;padding:13px 15px;
+  background:rgba(255,255,255,.95);
+  border:1px solid rgba(44,74,53,.13);border-radius:12px;
+  box-shadow:0 14px 40px rgba(22,43,29,.14),inset 0 1px 0 rgba(255,255,255,.96);
   backdrop-filter:blur(24px) saturate(140%);
   -webkit-backdrop-filter:blur(24px) saturate(140%);
-  white-space:normal;line-height:1.55;color:#37413b
+  white-space:normal;overflow-wrap:anywhere;line-height:1.5;color:#37413b;text-align:left
 }
-.dept-info-popover strong{font-size:12.5px;font-weight:720;color:#202824}
-.dept-info-popover span{font-size:12px;color:#515d54}
-.dept-info-wrap:hover .dept-info-popover,.dept-info-wrap.is-open .dept-info-popover{display:flex}
+.dept-info-popover[hidden]{display:none!important}
+.dept-info-popover strong{
+  display:block;font-size:13px;font-weight:720;color:#202824;
+  white-space:normal;overflow:visible;line-height:1.4
+}
+.dept-info-popover .dept-info-description{
+  display:block;font-size:12px;color:#515d54;
+  white-space:normal;overflow-wrap:anywhere;line-height:1.6
+}
 @media(max-width:650px){
   .dept-crumb-group>.crumb-dept{max-width:38vw}
-  .dept-info-trigger{width:30px;height:30px}
-  .dept-info-popover{left:-82px;right:auto;max-width:min(290px,calc(100vw - 28px))}
-}
-@media(hover:none){
-  /* 触屏设备只通过点击切换说明，避免浏览器模拟 hover 后一直显示。 */
-  .dept-info-wrap:not(.is-open):hover .dept-info-popover{display:none}
+  .dept-info-trigger{width:30px;height:30px;flex-basis:30px}
+  .dept-info-popover{width:290px;max-width:calc(100vw - 24px)}
 }
