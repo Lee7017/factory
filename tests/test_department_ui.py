@@ -70,7 +70,7 @@ class DepartmentUiTest(unittest.TestCase):
         self.assertIn("<strong>部门花名簿</strong>", self.app)
         self.assertIn('class="dept-roster-office"', self.app)
         self.assertEqual(self.app.count('class="office-location"'), 1)
-        self.assertIn("data-action=\\"editOffice\\"", self.app)
+        self.assertIn('data-action="editOffice"', self.app)
         self.assertIn("if(op==='saveOffice')", self.app)
         self.assertIn(".dept-roster-office .office-location", self.theme)
         self.assertNotIn('<div class="dept-hub"><div class="office-location"', self.app)
