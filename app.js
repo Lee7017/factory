@@ -179,7 +179,7 @@ function switchEmployee(id){
  render();updateAddress(data.dept);toggleUserMenu(false);
 }
 function toggleUserMenu(force){const menu=$('user-menu'),trigger=$('user-menu-toggle');const show=typeof force==='boolean'?force:menu.hidden;menu.hidden=!show;trigger.setAttribute('aria-expanded',String(show));}
-function render(){let d=departments.find(x=>x.id===data.dept)||departments[0];const f=data.feature;navRender();updateUserHeader();if(data.home){data.feature=null;crumbsHome();$('view').innerHTML=window.FactoryModules.render('overview');save();return}crumbs(d,f);if(f&&!allowed(d.id,f)){data.feature=null;return render()}$('view').innerHTML=!f?deptHome(d):window.FactoryModules.supports(f)?window.FactoryModules.render(f):(['permissions','leave','leaveApproval'].includes(f)?({permissions,leave,leaveApproval}[f])():ops.render(f));save()}
+function render(){let d=departments.find(x=>x.id===data.dept)||departments[0];const f=data.feature;navRender();updateUserHeader();if(data.home){data.feature=null;crumbsHome();try{$('view').innerHTML=window.FactoryModules?.render('overview')||overview()}catch(err){console.error('overview render failed',err);$('view').innerHTML=overview()}save();return}crumbs(d,f);if(f&&!allowed(d.id,f)){data.feature=null;return render()}$('view').innerHTML=!f?deptHome(d):window.FactoryModules.supports(f)?window.FactoryModules.render(f):(['permissions','leave','leaveApproval'].includes(f)?({permissions,leave,leaveApproval}[f])():ops.render(f));save()}
 const deniedFlashTimers=new WeakMap();
 function flashDenied(target){
   if(!target)return;
