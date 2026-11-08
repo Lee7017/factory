@@ -51,7 +51,7 @@ function updateAddress(dept,feat){if(location.hash!==pageHash(dept,feat))history
 function updateHomeAddress(){if(location.hash!==homeHash())history.pushState(null,'',homeHash());}
 function crumbs(d,f){
  const root=$('breadcrumbs');
- root.innerHTML=`<button type="button" class="crumb-link crumb-home" data-breadcrumb-home>工厂管理系统</button><span class="crumb-sep">/</span><button type="button" class="crumb-link crumb-dept" data-breadcrumb-dept="${e(d.id)}">${e(d.name)}</button>${f?`<span class="crumb-sep">/</span><strong class="crumb-current">${e(features[f])}</strong>`:''}`;
+ root.innerHTML=`<button type="button" class="crumb-link crumb-home" data-breadcrumb-home>工厂管理系统</button><span class="crumb-sep">/</span><span class="dept-crumb-group"><button type="button" class="crumb-link crumb-dept" data-breadcrumb-dept="${e(d.id)}">${e(d.name)}</button><span class="dept-info-wrap"><button type="button" class="dept-info-trigger" data-dept-info-toggle aria-label="查看${e(d.name)}介绍" aria-expanded="false" aria-controls="dept-description-popover" title="部门介绍">${icon('info')}</button><span class="dept-info-popover" id="dept-description-popover" role="tooltip"><strong>${e(d.name)}</strong><span>${e(d.description)}</span></span></span></span>${f?`<span class="crumb-sep">/</span><strong class="crumb-current">${e(features[f])}</strong>`:''}`;
  $('view-title').textContent=f?features[f]:d.name;$('view-description').textContent=f?featureHint(f):d.description
 }
 function crumbsHome(){
@@ -186,7 +186,7 @@ function switchEmployee(id){
  render();updateAddress(data.dept);toggleUserMenu(false);
 }
 function toggleUserMenu(force){const menu=$('user-menu'),trigger=$('user-menu-toggle');const show=typeof force==='boolean'?force:menu.hidden;menu.hidden=!show;trigger.setAttribute('aria-expanded',String(show));}
-function render(){let d=departments.find(x=>x.id===data.dept)||departments[0];const f=data.feature;navRender();updateUserHeader();if(data.home){data.feature=null;crumbsHome();try{$('view').innerHTML=window.FactoryModules?.render('overview')||overview()}catch(err){console.error('overview render failed',err);$('view').innerHTML=overview()}save();return}crumbs(d,f);if(f&&!allowed(d.id,f)){data.feature=null;return render()}$('view').innerHTML=!f?deptHome(d):window.FactoryModules.supports(f)?window.FactoryModules.render(f):(['permissions','leave','leaveApproval'].includes(f)?({permissions,leave,leaveApproval}[f])():ops.render(f));save()}
+function render(){let d=departments.find(x=>x.id===data.dept)||departments[0];const f=data.feature;$('view').parentElement.classList.toggle('is-dept-home',!data.home&&!f);navRender();updateUserHeader();if(data.home){data.feature=null;crumbsHome();try{$('view').innerHTML=window.FactoryModules?.render('overview')||overview()}catch(err){console.error('overview render failed',err);$('view').innerHTML=overview()}save();return}crumbs(d,f);if(f&&!allowed(d.id,f)){data.feature=null;return render()}$('view').innerHTML=!f?deptHome(d):window.FactoryModules.supports(f)?window.FactoryModules.render(f):(['permissions','leave','leaveApproval'].includes(f)?({permissions,leave,leaveApproval}[f])():ops.render(f));save()}
 const deniedFlashTimers=new WeakMap();
 function flashDenied(target){
   if(!target)return;
@@ -259,6 +259,19 @@ function drawMessages(){updateUnread();$('message-list').innerHTML=data.messages
 function toggleDrawer(open){drawer=open;$('notify-drawer').classList.toggle('open',drawer);$('drawer-shade').classList.toggle('visible',drawer);if(drawer)drawMessages()}
 function closeSidebar(){$('sidebar').classList.remove('open');$('shade').classList.remove('visible')}
 document.addEventListener('click',ev=>{
+ const infoTrigger=ev.target.closest('[data-dept-info-toggle]');
+ if(infoTrigger){
+   const wrap=infoTrigger.closest('.dept-info-wrap');
+   const open=!wrap.classList.contains('is-open');
+   wrap.classList.toggle('is-open',open);
+   infoTrigger.setAttribute('aria-expanded',String(open));
+   return;
+ }
+ const openInfo=document.querySelector('.dept-info-wrap.is-open');
+ if(openInfo&&!openInfo.contains(ev.target)){
+   openInfo.classList.remove('is-open');
+   openInfo.querySelector('[data-dept-info-toggle]')?.setAttribute('aria-expanded','false');
+ }
 const homeTile=ev.target.closest('[data-nav-home]');if(homeTile){openHome();return;}
  const homeCrumb=ev.target.closest('[data-breadcrumb-home]');if(homeCrumb){openHome();return;}
 const deptCrumb=ev.target.closest('[data-breadcrumb-dept]');if(deptCrumb){openDept(deptCrumb.dataset.breadcrumbDept);return;}
@@ -294,7 +307,17 @@ let m=ev.target.closest('[data-message]');if(m){let x=data.messages.find(x=>Stri
 if(ev.target.closest('#close-modal')||ev.target.closest('#cancel-modal')||ev.target.id==='modal-screen')closeModal();
 });
 document.addEventListener('submit',ev=>{if(window.FactoryModules.submitForm(ev))return;if(ops.submitForm(ev))return;if(ev.target.id==='chat-form'){ev.preventDefault();submitChat()}});
-document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&window._chatPeer)closeChat()});
+document.addEventListener('keydown',ev=>{
+ if(ev.key!=='Escape')return;
+ const openInfo=document.querySelector('.dept-info-wrap.is-open');
+ if(openInfo){
+   openInfo.classList.remove('is-open');
+   const trigger=openInfo.querySelector('[data-dept-info-toggle]');
+   trigger?.setAttribute('aria-expanded','false');
+   trigger?.blur();
+ }
+ if(window._chatPeer)closeChat();
+});
 document.addEventListener('input',ev=>{if(ev.target.id!=='dept-member-search')return;const term=ev.target.value.trim().toLowerCase();let found=0;document.querySelectorAll('#dept-member-grid [data-member-search]').forEach(card=>{const ok=card.dataset.memberSearch.includes(term);card.hidden=!ok;if(ok)found++});const empty=document.querySelector('#dept-members-no-results');if(empty)empty.hidden=found>0;});
 
 document.addEventListener('change',ev=>{const lookup={'perm-employee':'employee','perm-position':'position','perm-dept':'dept'};const key=lookup[ev.target.id];if(key){access.updateSelection(key,ev.target.value);render();}});
