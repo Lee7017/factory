@@ -92,3 +92,24 @@
  .dept-feature-panel .feature-list>:nth-last-child(-n+3){border-bottom:1px solid #e4e5e8}
  .dept-feature-panel .feature-list>:last-child{border-bottom:0}
 }
+
+
+/* V22 流转画面：单据身份优先，本次操作降到最底部 */
+.flow-document{margin:16px 0 18px;padding:0 2px 16px;border-bottom:1px solid #edf0f3}
+.flow-document-type{display:block;font-size:12px;font-weight:700;color:#697583;margin-bottom:5px}
+.flow-document-id{display:block;font-size:25px;line-height:1.25;color:#202833;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.flow-document-summary{margin:7px 0 0;color:#687482;font-size:13px;line-height:1.55}
+.flow-action-receipt{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;margin-top:15px;padding:10px 12px;border:1px solid #e8ebef;background:#fafbfc;border-radius:7px;color:#7c8793}
+.flow-action-receipt>span{font-size:11px}
+.flow-action-receipt>strong{font-size:12px;color:#56616e;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flow-action-receipt>small{font-size:10.5px;color:#929ba4;white-space:nowrap}
+.flow-bottom-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.flow-bottom .flow-open-doc{background:#303741;border-color:#303741;color:#fff}
+.flow-bottom .flow-open-doc:hover{background:#424b57;border-color:#424b57}
+.flow-timer{animation-duration:6.5s}
+.flow-signal{color:#697583}.flow-signal-dot{background:#4b5663}
+@media(max-width:520px){
+ .flow-document{margin-top:12px}.flow-document-id{font-size:20px}.flow-document-summary{font-size:12px}
+ .flow-action-receipt{grid-template-columns:auto minmax(0,1fr)}.flow-action-receipt>small{grid-column:2}
+ .flow-bottom{align-items:flex-start;flex-direction:column}.flow-bottom-actions{width:100%}.flow-bottom-actions button{flex:1}
+}
