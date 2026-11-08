@@ -57,12 +57,13 @@ function getBatch(id){return S.batches.find(b=>b.id===id)}
 function getRequest(id){return S.materialRequests.find(r=>r.id===id)}
 function getReceipt(id){return S.incoming.find(r=>r.id===id)}
 function productCodeForOrder(order){const p=ops().products?.find(x=>x.category==='成品'&&x.name===order?.product);return p?.id||(String(order?.product||'').includes('500g/L')?'FG-002':'FG-001')}
+function finishedUnitsForOrder(order){const m=String(order?.spec||'').match(/([\d.]+)\s*L\s*[×xX*]\s*(\d+)/);const perCase=m?Number(m[1])*Number(m[2]):20;return Math.ceil(Number(order?.qty||0)/Math.max(perCase,0.000001))}
 function ensureStoredOrderBatches(){
  for(const o of ctx.data.orders||[]){if(ops().flows?.[o.id]?.stage!=='stored')continue;if(S.batches.some(b=>b.order===o.id&&b.source==='生产入库'))continue;
-  S.batches.unshift({id:id('LOT'),material:productCodeForOrder(o),group:'成品',qty:Math.ceil(Number(o.qty||0)/20),unit:'箱',received:today(),expiry:'',quality:'合格',order:o.id,source:'生产入库',counted:true});
+  S.batches.unshift({id:id('LOT'),material:productCodeForOrder(o),group:'成品',qty:finishedUnitsForOrder(o),unit:'箱',received:today(),expiry:'',quality:'合格',order:o.id,source:'生产入库',counted:true});
  }
 }
-function receiveFinishedGoods(order,qty){
+function receiveFinishedGoods(order,qty=finishedUnitsForOrder(order)){
  let existing=S.batches.find(b=>b.order===order.id&&b.source==='生产入库');if(existing)return existing;
  const material=productCodeForOrder(order),b={id:id('LOT'),material,group:'成品',qty:Number(qty),unit:'箱',received:today(),expiry:'',quality:'合格',order:order.id,source:'生产入库',counted:true};
  S.batches.unshift(b);ops().stock[material]=(ops().stock[material]||0)+Number(qty);
