@@ -74,7 +74,7 @@ class DepartmentUiTest(unittest.TestCase):
         self.assertIn("if(op==='saveOffice')", self.app)
         self.assertIn(".dept-roster-office .office-location", self.theme)
         self.assertNotIn('<div class="dept-hub"><div class="office-location"', self.app)
-        self.assertIn("20261108-sidebar-blend-v29", self.index)
+        self.assertIn("20261108-dept-info-v30", self.index)
 
     def test_sidebar_red_green_blend(self):
         sidebar = self.theme.split("/* V29 · 左侧栏也使用红绿底光", 1)[1]
@@ -83,7 +83,22 @@ class DepartmentUiTest(unittest.TestCase):
         self.assertIn("rgba(255,255,255,.72)", sidebar)
         self.assertIn("backdrop-filter:blur(28px) saturate(150%)", sidebar)
         self.assertIn("@media(max-width:860px)", sidebar)
-        self.assertIn("20261108-sidebar-blend-v29", self.index)
+        self.assertIn("20261108-dept-info-v30", self.index)
+
+    def test_department_heading_moves_to_topbar(self):
+        self.assertIn('id="ic-info"', self.index)
+        self.assertIn('data-dept-info-toggle', self.app)
+        self.assertIn('aria-expanded="false"', self.app)
+        self.assertIn('class="dept-info-popover"', self.app)
+        self.assertIn('class="dept-crumb-group"', self.app)
+        self.assertIn("${e(d.description)}", self.app)
+        self.assertIn("classList.toggle('is-dept-home',!data.home&&!f)", self.app)
+        self.assertIn(".main-content.is-dept-home .page-heading{display:none}", self.theme)
+        self.assertIn(".dept-info-wrap:hover .dept-info-popover", self.theme)
+        self.assertIn(".dept-info-wrap.is-open .dept-info-popover", self.theme)
+        self.assertIn("@media(hover:none)", self.theme)
+        self.assertIn("if(ev.key!=='Escape')return;", self.app)
+        self.assertIn("20261108-dept-info-v30", self.index)
 
     def test_square_grid_and_visible_glass(self):
         self.assertIn("grid-template-columns:repeat(2,minmax(0,1fr))", self.theme)
