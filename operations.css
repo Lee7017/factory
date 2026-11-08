@@ -17,3 +17,22 @@
 .op-quality-link em{font-style:normal;font-size:11.5px;color:#4c5966;white-space:nowrap}
 .op-quality-link.is-empty{cursor:default;background:#fafbfc;color:#7b848e;border-style:dashed}
 @media(max-width:620px){.op-quality-links{grid-template-columns:1fr}.op-quality-link{min-height:66px}}
+
+/* Shortage action dialog: frosted-glass surface, without hiding the underlying workbench. */
+.op-shortage-modal{width:min(650px,calc(100vw - 28px));padding:24px 26px;max-height:calc(100vh - 32px);overflow:auto;background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.85);box-shadow:0 30px 100px rgba(16,20,28,.2),inset 0 1px 0 rgba(255,255,255,.8);backdrop-filter:blur(26px) saturate(160%);-webkit-backdrop-filter:blur(26px) saturate(160%)}
+.op-shortage-modal .op-modal-head{margin-bottom:10px}
+.op-shortage-intro{color:#656b75;font-size:13px;line-height:1.8;margin:0 0 18px}
+.op-shortage-table{border:1px solid rgba(48,56,70,.12);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.55)}
+.op-shortage-labels,.op-shortage-row{display:grid;grid-template-columns:minmax(92px,1.2fr) repeat(3,minmax(52px,1fr));gap:8px;align-items:center;padding:11px 14px;font-size:13px}
+.op-shortage-labels{background:rgba(244,245,248,.8);color:#6b7280;font-size:11px;font-weight:650}
+.op-shortage-row{border-top:1px solid rgba(48,56,70,.08);color:#343942}
+.op-shortage-row span,.op-shortage-labels span:not(:first-child),.op-shortage-missing{text-align:right}
+.op-shortage-missing{color:#a63d39}
+.op-shortage-purchases{margin-top:17px}
+.op-shortage-purchases h3{font-size:12px;color:#424a56;margin:0 0 9px}
+.op-shortage-purchases p{display:flex;gap:9px;flex-wrap:wrap;font-size:12px;margin:6px 0;color:#626a74}
+.op-shortage-purchases strong{color:#343942}
+.op-shortage-none{font-size:12px;color:#95502e;margin:14px 0 0;line-height:1.7}
+.op-shortage-hint{margin:15px 0 18px;border-left:3px solid rgba(99,113,137,.5);padding:9px 12px;background:rgba(245,247,250,.62);border-radius:0 8px 8px 0;color:#505864;font-size:12px;line-height:1.8}
+.op-shortage-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;border-top:1px solid rgba(49,53,66,.1);padding-top:15px}
+@media(max-width:540px){.op-shortage-modal{padding:17px}.op-shortage-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.op-shortage-actions .op-button:first-child{grid-column:1/-1}.op-shortage-actions .op-button{white-space:normal}.op-shortage-labels,.op-shortage-row{padding:10px 9px;font-size:11px;grid-template-columns:minmax(70px,1.2fr) repeat(3,minmax(42px,1fr))}}
