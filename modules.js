@@ -4,14 +4,14 @@
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=s=>document.querySelector(s);
 const labels={overview:'工厂运行总览',qaQc:'QA/QC 审批',workshop:'车间管理',warehouseOps:'仓库管理',shift:'排班',hours:'我的工时',sop:'操作标准卡',settings:'系统设置'};
-const tabs={qaQc:[['decision','报检判定'],['sampling','抽检'],['clean','清洗报检'],['ncr','不合格品处置'],['qualityStock','质量库存']],workshop:[['request','领料 / 退库'],['doubleSign','到料接收双签'],['dispute','工时申诉审批'],['rework','返洗 / 返工']],warehouseOps:[['batches','库存批次'],['incoming','来料比对 · 报检入库'],['pick','备料执行 · FIFO'],['returns','退库接收'],['ledger','月末收发存']],shift:[['plan','排班编排'],['people','员工排班'],['stats','排班统计'],['products','订单产品统计'],['report','订单日报表']],hours:[['mine','我的工时'],['appeals','工时申诉']],sop:[['cards','受控操作标准卡'],['executions','执行记录']],settings:[['org','权限与组织'],['process','流程与工艺'],['product','产品与物料'],['dictionary','基础字典']]};
+const tabs={qaQc:[['decision','报检判定'],['sampling','抽检'],['clean','清洗报检'],['ncr','不合格品处置'],['qualityStock','质量库存']],workshop:[['request','领料 / 退库'],['doubleSign','到料接收双签'],['dispute','工时申诉审批'],['rework','返洗 / 返工']],warehouseOps:[['batches','库存批次'],['incoming','来料比对 · 报检入库'],['pick','备料执行 · FIFO'],['outbound','成品出库'],['returns','退库接收'],['ledger','月末收发存']],shift:[['plan','排班编排'],['people','员工排班'],['stats','排班统计'],['products','订单产品统计'],['report','订单日报表']],hours:[['mine','我的工时'],['appeals','工时申诉']],sop:[['cards','受控操作标准卡'],['executions','执行记录']],settings:[['org','权限与组织'],['process','流程与工艺'],['product','产品与物料'],['dictionary','基础字典']]};
 const snapshot=[['原辅料','756','7559999829.5428'],['品牌包材','387','3869994301.6000'],['非品牌包材','468','4679999184.0000'],['半成品','225','2.4960'],['成品','2077','16.0000']];
 const stagesOrder=['draft','review','approved','trial','formal','reserved','issued','blending','semi_qc','semi_ok','packaging','final_qc','inspected','released','stored'];
 const stamp=()=>new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
 const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
 let ctx, S, currentTab={}, form=null, message='',modDialogOpen=false;
-function init(context){ctx=context;ctx.data.modules??={version:18,inspections:[],samples:[],cleanReports:[],ncr:[],batches:[],incoming:[],materialRequests:[],returns:[],disputes:[],roster:[],hours:[],standards:[],executions:[],dictionary:[{id:'DICT-01',group:'班次',name:'日班',value:'08:00–16:00',active:true},{id:'DICT-02',group:'班次',name:'夜班',value:'16:00–00:00',active:true}],ledger:[],rules:{cleanQC:true,requireDoubleSign:true,fifo:true,requireSkill:true,requireLeave:true}};
- S=ctx.data.modules; for(const [key,value] of Object.entries({inspections:[],samples:[],cleanReports:[],ncr:[],batches:[],incoming:[],materialRequests:[],returns:[],disputes:[],roster:[],hours:[],standards:[],executions:[],dictionary:[],ledger:[],rules:{}}))S[key]??=value;
+function init(context){ctx=context;ctx.data.modules??={version:18,inspections:[],samples:[],cleanReports:[],ncr:[],batches:[],incoming:[],outbound:[],materialRequests:[],returns:[],disputes:[],roster:[],hours:[],standards:[],executions:[],dictionary:[{id:'DICT-01',group:'班次',name:'日班',value:'08:00–16:00',active:true},{id:'DICT-02',group:'班次',name:'夜班',value:'16:00–00:00',active:true}],ledger:[],rules:{cleanQC:true,requireDoubleSign:true,fifo:true,requireSkill:true,requireLeave:true}};
+ S=ctx.data.modules; for(const [key,value] of Object.entries({inspections:[],samples:[],cleanReports:[],ncr:[],batches:[],incoming:[],outbound:[],materialRequests:[],returns:[],disputes:[],roster:[],hours:[],standards:[],executions:[],dictionary:[],ledger:[],rules:{}}))S[key]??=value;
  S.rules={cleanQC:true,requireDoubleSign:true,fifo:true,requireSkill:true,requireLeave:true,...S.rules};ctx.save();}
 const me=()=>ctx.access.current();
 const ops=()=>ctx.ops.state;
@@ -41,7 +41,7 @@ function completeWithFlow(){if(!pendingAudit)return;const row=pendingAudit;pendi
 function done(str){message=str;close();ctx.save();ctx.render();completeWithFlow();}
 function save(str){message=str;ctx.save();ctx.render();completeWithFlow()}
 const id=prefix=>`${prefix}-${Date.now().toString().slice(-7)}-${Math.floor(Math.random()*900+100)}`;
-const orderOptions=()=>ctx.data.orders.map(o=>[o.id,`${o.id} · ${o.product}`]);
+const orderOptions=()=>ctx.data.orders.filter(o=>ops().flows[o.id]?.stage!=='stored').map(o=>[o.id,`${o.id} · ${o.product}`]);
 const taskOptions=type=>ctx.data.tasks.filter(t=>!type||t.type===type).map(t=>[t.id,`${t.id} · ${t.type} · ${t.line}`]);
 const staffOptions=()=>ctx.access.staff.map(x=>[x.id,`${x.name} · ${x.title}`]);
 const materialOptions=()=>[...new Set(['RM-001','RM-002','AD-001','PK-001','PK-002','CO-001',...ops().products.map(p=>p.id),...S.batches.map(b=>b.material)])];
@@ -60,7 +60,7 @@ function supports(feature){return Object.prototype.hasOwnProperty.call(labels,fe
 function render(feature){syncFlowInspections(); const f={overview:overviewPage,qaQc:qualityPage,workshop:workshopPage,warehouseOps:warehousePage,shift:shiftPage,hours:hoursPage,sop:standardsPage,settings:settingsPage}[feature];return f?f():''}
 function pendingForDept(dept){const out=[];const push=(arr,feature,k,filter,title)=>{for(const r of arr.filter(filter))out.push({kind:'mod',feature,id:r.id,title,detail:r.reason||r.material||r.order||r.title||r.type||'',status:r.status})};
  if(dept==='quality'){push(S.inspections,'qaQc','inspection',r=>r.status==='待判定','报检待判定');push(S.cleanReports,'qaQc','clean',r=>r.status==='待判定','清洗待报检');push(S.ncr,'qaQc','ncr',r=>r.status==='待处置','不合格品待处置')}
- if(dept==='warehouse'){push(S.incoming,'warehouseOps','incoming',r=>!['已入库','已驳回'].includes(r.status),'到货待处理');push(S.materialRequests,'warehouseOps','request',r=>['待备料','待仓库签发','待仓库接收'].includes(r.status),'领退料待办理')}
+ if(dept==='warehouse'){push(S.incoming,'warehouseOps','incoming',r=>!['已入库','已驳回'].includes(r.status),'到货待处理');push(S.materialRequests,'warehouseOps','request',r=>['待备料','待仓库签发','待仓库接收'].includes(r.status),'领退料待办理');push(S.outbound,'warehouseOps','outbound',r=>r.status==='待出库','成品待出库')}
  if(dept==='production')push(S.materialRequests,'workshop','request',r=>r.status==='待车间签收','车间到料待签收');
  if(dept==='pmc')push(S.roster,'shift','roster',r=>r.gate!=='已通过','开工前检查待完成');
  if(dept==='hr')push(S.disputes,'hours','dispute',r=>r.status==='待审批','工时申诉待审批');
