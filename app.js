@@ -211,7 +211,7 @@ function drawMessages(){updateUnread();$('message-list').innerHTML=data.messages
 function toggleDrawer(open){drawer=open;$('notify-drawer').classList.toggle('open',drawer);$('drawer-shade').classList.toggle('visible',drawer);if(drawer)drawMessages()}
 function closeSidebar(){$('sidebar').classList.remove('open');$('shade').classList.remove('visible')}
 document.addEventListener('click',ev=>{
-const homeCrumb=ev.target.closest('[data-breadcrumb-home]');if(homeCrumb){openFeature('overview','leadership',homeCrumb);return;}
+const homeCrumb=ev.target.closest('[data-breadcrumb-home]');if(homeCrumb){if(allowed('leadership','overview'))openFeature('overview','leadership',homeCrumb);else openDept(data.dept);return;}
 const deptCrumb=ev.target.closest('[data-breadcrumb-dept]');if(deptCrumb){openDept(deptCrumb.dataset.breadcrumbDept);return;}
 const tabBtn=ev.target.closest('[data-dept-tab]');if(tabBtn){deptTabs[data.dept]=tabBtn.dataset.deptTab;render();return;}
 const modBtn=ev.target.closest('[data-module-action]');if(modBtn){window.FactoryModules.handleClick(modBtn);return;}
