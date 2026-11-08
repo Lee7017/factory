@@ -43,6 +43,16 @@ class DepartmentUiTest(unittest.TestCase):
         self.assertIn("['it','bom','edit']", self.operations)
         self.assertNotIn("case 'safety':", self.operations)
 
+    def test_compact_desktop_density_without_page_zoom(self):
+        desktop = self.theme.split("/* V24 · 80% desktop density.", 1)[1]
+        self.assertIn("@media (min-width:861px)", desktop)
+        self.assertIn(".sidebar{width:240px;flex:0 0 240px}", desktop)
+        self.assertIn(".main-content{max-width:1250px;padding:25px 25px 32px}", desktop)
+        self.assertIn("min-height:142px", desktop)
+        self.assertIn("width:46px;height:46px", desktop)
+        self.assertNotRegex(desktop, r"(?<![\\w-])zoom\\s*:")
+        self.assertNotIn("scale(0.8)", desktop)
+
     def test_square_grid_and_visible_glass(self):
         self.assertIn("grid-template-columns:repeat(2,minmax(0,1fr))", self.theme)
         self.assertIn("aspect-ratio:1/1", self.theme)
