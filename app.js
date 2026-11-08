@@ -3,21 +3,21 @@ const $=id=>document.getElementById(id),e=s=>String(s??'').replace(/[&<>"']/g,c=
 const access=window.FactoryAccess;
 const icon=(id,cls='ico')=>`<svg aria-hidden="true" class="${cls}"><use href="#ic-${id}"></use></svg>`;
 const departments=[
- {id:'hr',name:'人事行政办公室',icon:'users',description:'员工自助、培训档案、请假与考勤',features:['leave','hours','leaveApproval','employees','skills','payroll']},
+ {id:'hr',name:'人事行政办公室',icon:'users',description:'员工自助、培训档案、请假与考勤',features:['leave','hours','hoursAppeal','leaveApproval','employees','skills','payroll']},
  {id:'sales',name:'销售部',icon:'sales',description:'销售订单、客户需求、订单评审与历史订单',features:['orders','orderReview','orderHistory']},
- {id:'pmc',name:'生产计划与物料控制部（PMC）',icon:'pmc',description:'生产计划、物料齐套、产线排程及清洗与调机调线安排',features:['schedule','kitting','shift']},
+ {id:'pmc',name:'生产计划与物料控制部（PMC）',icon:'pmc',description:'生产计划、物料齐套、产线排程及人员班次安排',features:['schedule','kitting','shift','shiftPeople','shiftStats','orderProductStats','orderDailyReport']},
  {id:'purchase',name:'采购 / 供应链部',icon:'purchase',description:'采购申请、供应商与到货协同',features:['purchase']},
- {id:'warehouse',name:'仓库 / 物流部',icon:'warehouse',description:'库存批号、出入库和车间发料',features:['inventory','warehouseOps','issue']},
- {id:'quality',name:'质量部 QA / QC',icon:'quality',description:'报检判定、抽检、不合格处置与 QA 放行',features:['qaQc','release']},
- {id:'production',name:'生产车间',icon:'production',description:'配制与包装、清洗、批次卡及排班',features:['workshop','tasks','batch','shift','skills','incentive']},
- {id:'tech',name:'工艺技术部',icon:'tech',description:'工艺模板、产品与物料 BOM',features:['sop','templates','bom','catalog']},
+ {id:'warehouse',name:'仓库 / 物流部',icon:'warehouse',description:'库存批次、来料收货、备料、出库、退库与收发存',features:['warehouseOps','warehouseIncoming','warehousePick','warehouseOutbound','warehouseReturns','warehouseLedger','inventory','issue']},
+ {id:'quality',name:'质量部 QA / QC',icon:'quality',description:'报检判定、抽检、清洗报检、不合格处置与 QA 放行',features:['qaQc','qaSampling','qaCleanInspection','qaNcr','qaQualityStock','release']},
+ {id:'production',name:'生产车间',icon:'production',description:'领退料、到料接收、返洗返工、生产任务与班组管理',features:['workshop','workshopReceive','workshopDispute','workshopRework','tasks','batch','shift','skills','incentive']},
+ {id:'tech',name:'工艺技术部',icon:'tech',description:'操作标准、执行记录、工艺模板、产品与物料 BOM',features:['sop','sopExecutions','templates','bom','catalog']},
  {id:'engineering',name:'设备工程部',icon:'engineering',description:'设备维护、调机调线和非生产工单',features:['engineering']},
  {id:'ehs',name:'EHS 安全环保部',icon:'ehs',description:'风险排查、安全检查和整改记录',features:['safety']},
  {id:'finance',name:'财务部',icon:'finance',description:'应收应付、加班费和激励工资审核',features:['payroll','finance']},
- {id:'it',name:'信息化 / 主数据管理',icon:'it',description:'员工权限、账号与基础数据维护',features:['settings','permissions','employees','catalog']},
+ {id:'it',name:'信息化 / 主数据管理',icon:'it',description:'权限组织、流程规则、产品物料和基础字典维护',features:['permissions','employees','settings','productSettings','dictionarySettings','catalog']},
  {id:'leadership',name:'总经办',icon:'leadership',description:'经营驾驶舱、审批与重点事项',features:['overview','approvals']}
 ];
-const features={overview:'工厂运行总览',hours:'我的工时',sop:'操作标准卡',qaQc:'QA/QC 审批',workshop:'车间管理',warehouseOps:'仓库管理',settings:'系统设置',leave:'我的请假',leaveApproval:'请假审批',employees:'员工档案',skills:'员工技能矩阵',payroll:'加班费 / 激励工资',orders:'销售订单',orderReview:'订单评审',orderHistory:'历史订单',schedule:'生产排程',kitting:'物料齐套',shift:'排班 · 产线×岗位',purchase:'采购申请',inventory:'库存与批号',issue:'领料与发料',inspection:'检验任务',release:'QA 放行',tasks:'生产 / 非生产任务',batch:'生产批次卡',incentive:'生产激励提报',templates:'工艺模板',bom:'BOM 关系',catalog:'产品与产线',engineering:'设备与调机调线',safety:'EHS 安全检查',finance:'财务审核',permissions:'员工权限矩阵',approvals:'总经办审批'};
+const features={overview:'工厂运行总览',hours:'我的工时',hoursAppeal:'工时申诉',sop:'操作标准卡',sopExecutions:'标准卡执行记录',qaQc:'报检判定',qaSampling:'抽检',qaCleanInspection:'清洗报检',qaNcr:'不合格品处置',qaQualityStock:'质量库存',workshop:'车间领料 / 退库',workshopReceive:'到料接收双签',workshopDispute:'工时申诉审批',workshopRework:'返洗 / 返工',warehouseOps:'库存批次',warehouseIncoming:'来料比对 · 报检入库',warehousePick:'备料执行 · FIFO',warehouseOutbound:'成品出库',warehouseReturns:'退库接收',warehouseLedger:'月末收发存',settings:'流程与工艺设置',productSettings:'产品与物料设置',dictionarySettings:'基础字典',leave:'我的请假',leaveApproval:'请假审批',employees:'员工档案',skills:'员工技能矩阵',payroll:'加班费 / 激励工资',orders:'销售订单',orderReview:'订单评审',orderHistory:'历史订单',schedule:'生产排程',kitting:'物料齐套',shift:'排班编排',shiftPeople:'员工排班',shiftStats:'排班统计',orderProductStats:'订单产品统计',orderDailyReport:'订单日报表',purchase:'采购申请',inventory:'库存与生产入库',issue:'领料与发料',inspection:'检验任务',release:'QA 放行',tasks:'生产 / 非生产任务',batch:'生产批次卡',incentive:'生产激励提报',templates:'工艺模板',bom:'BOM 关系',catalog:'产品与产线',engineering:'设备与调机调线',safety:'EHS 安全检查',finance:'财务审核',permissions:'员工权限矩阵',approvals:'总经办审批'};
 const baseItems=[
  ['FG-001','720g/L 百菌清悬浮剂','成品','5L × 4桶','桶'],['FG-002','500g/L 悬浮剂 B','成品','1L × 12瓶','箱'],['SF-001','百菌清配制半成品','半成品','720g/L','L'],['SF-002','悬浮剂配制半成品 B','半成品','500g/L','L'],['RM-001','主剂 A','原料','工业级','kg'],['RM-002','主剂 B','原料','工业级','kg'],['AD-001','分散剂','辅料','25kg/袋','kg'],['AD-002','稳定剂','辅料','20kg/袋','kg'],['PK-001','5L 包装桶','包材','5L','个'],['PK-002','外箱','包材','4桶/箱','个'],['CO-001','清洗耗材','耗材','通用','套'],['SP-001','泵用密封件','备件','通用','个']
 ].map(([id,name,type,spec,unit])=>({id,name,type,spec,unit}));
@@ -35,7 +35,7 @@ for(const order of data.orders||[])if(order.owner==='PMC 办公室')order.owner=
 const allowed=(dept,feat,action='view')=>access.has(dept,feat,action);
 const ops=window.FactoryOperations;
 ops.init({data,save,access,toast,flashDenied,render,openFeature});window.FactoryGantt.init({data,save,access,render,flashDenied});window.FactoryModules.init({data,save,access,toast,render,openFeature,ops});
-function navRender(){const node=$('nav');node.innerHTML=departments.filter(d=>(d.name+' '+d.features.map(f=>features[f]).join(' ')).toLowerCase().includes(q)).map(d=>{let open=data.expanded===d.id;return `<div class="nav-dept"><button class="dept-row ${open?'open active':''}" data-dept="${d.id}" aria-expanded="${open}"><span class="dept-ico">${icon(d.icon)}</span><strong>${e(d.name)}</strong>${icon('chevron','ico chevron')}</button>${open?`<div class="sub-nav">${d.features.map(f=>`<button data-feature="${f}" data-feature-dept="${d.id}" class="${data.feature===f&&data.dept===d.id?'selected':''} ${!allowed(d.id,f)?'locked':''}"><span>${e(features[f])}</span>${allowed(d.id,f)?'':icon('lock')}</button>`).join('')}</div>`:''}</div>`}).join('')||'<div class="empty-state">没有匹配的部门或功能</div>'}
+function navRender(){const node=$('nav');node.innerHTML=departments.filter(d=>(d.name+' '+d.features.map(f=>features[f]||f).join(' ')).toLowerCase().includes(q)).map(d=>`<div class="nav-dept"><button class="dept-row ${data.dept===d.id?'active':''}" data-dept="${d.id}"><span class="dept-ico">${icon(d.icon)}</span><strong>${e(d.name)}</strong></button></div>`).join('')||'<div class="empty-state">没有匹配的部门</div>'}
 const deptURL=id=>`${location.origin}${location.pathname}#/departments/${id}`;
 const pageHash=(dept,feat)=>`#/departments/${dept}${feat?'/'+feat:''}`;
 function updateAddress(dept,feat){if(location.hash!==pageHash(dept,feat))history.pushState(null,'',pageHash(dept,feat));}
@@ -136,7 +136,7 @@ function submitChat(){
  const key=chatKey(peer);(data.chatThreads[key]||(data.chatThreads[key]=[])).push({from:access.current().id,text:content,time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})});
  save();openChat(peer);
 }
-function featureHint(f){return ({overview:'订单、产线、质量、物料及人员运行状态',hours:'本人管理岗与辅助工时、班次工时确认',sop:'标准操作步骤、版本、执行确认及签名',qaQc:'生产报检单在这里判定：来料、半成品、成品、清洗报检、抽检与不合格处置',workshop:'领料、双签接收、结余退库、工时审批、返洗返工',warehouseOps:'来料比对、报检入库、批次效期、FIFO、成品出库、收发存',shift:'产线×岗位排班、技能与请假校验、开工前检查',settings:'权限组织、流程工艺、产品物料及基础字典',leave:'员工自助发起并查看请假记录',leaveApproval:'人事审批请假单及结果通知',employees:'员工身份、岗位与组织关系',skills:'技能等级、工种与资质有效期',payroll:'加班申请、激励计量与审批',orders:'产品 · 规格 · 数量 · 交期',orderReview:'订单提交、评审与审批',orderHistory:'已完结订单、完成时间与完整流转记录',schedule:'时间、产线、配制包装、清洗、调机调线及质检任务',kitting:'库存齐套与批号预留',shift:'根据技能资质安排生产工位',purchase:'采购申请与到货协同',inventory:'成品、半成品及原辅包分类',issue:'按正式任务领料、发料、签收',inspection:'来料、半成品、成品检验',release:'成品 QC 合格后的 QA 最终放行',tasks:'配制、包装、清洗、调机调线',batch:'生产实绩与批次过程记录',incentive:'按合格计量提报激励',templates:'受控模板、版本、一键填充',bom:'成品与半成品及原辅料关系',catalog:'产品、规格、产线、品类关系',engineering:'非生产任务、设备维护',safety:'安全巡检与整改闭环',finance:'财务审核记录和汇总',permissions:'个人 × 操作权限，独立授权',approvals:'高风险权限与经营决策'}[f]||'业务操作与记录')}
+function featureHint(f){return ({overview:'订单、产线、质量、物料及人员运行状态',hours:'本人管理岗与辅助工时、班次工时确认',hoursAppeal:'本人对工时计算结果发起申诉并查看处理结果',sop:'受控操作步骤、版本、审核与发布',sopExecutions:'标准卡执行人、版本、签名与执行时间',qaQc:'来料、半成品与成品报检单的 QC 判定',qaSampling:'按批次执行抽检并记录判定结果',qaCleanInspection:'清洗任务报检、判定与返洗衔接',qaNcr:'隔离、返洗、返工、报废等不合格品处置',qaQualityStock:'待检、合格、冻结等质量库存状态',workshop:'车间发起领料与结余退库申请',workshopReceive:'仓库签发后由车间人员完成到料接收双签',workshopDispute:'车间管理人员审批员工工时申诉',workshopRework:'根据质量异常发起返洗或返工任务',warehouseOps:'库存批次、效期、质量状态与冻结管理',warehouseIncoming:'采购到货、来料比对、报检和入库确认',warehousePick:'按合格批次和 FIFO 执行生产备料',warehouseOutbound:'按订单成品批次执行销售出库',warehouseReturns:'接收生产结余退库并回补原批次',warehouseLedger:'按月查看收入、发出、结存与批次流水',shift:'产线×岗位排班、技能与请假校验、开工前检查',settings:'清洗报检、双签、FIFO、技能与请假等流程规则',productSettings:'产品、物料主数据、BOM 与产线关系入口',dictionarySettings:'班次、工种、物料分类、检验项目等基础字典',leave:'员工自助发起并查看请假记录',leaveApproval:'人事审批请假单及结果通知',employees:'员工身份、岗位与组织关系',skills:'技能等级、工种与资质有效期',payroll:'加班申请、激励计量与审批',orders:'产品 · 规格 · 数量 · 交期',orderReview:'订单提交、评审与审批',orderHistory:'已完结订单、完成时间与完整流转记录',schedule:'时间、产线、配制包装、清洗、调机调线及质检任务',kitting:'库存齐套与批号预留',shift:'按产线 × 岗位编排班次并执行开工前 Gate',shiftPeople:'按员工查看日期、岗位、产线和班次',shiftStats:'查看排班数量、Gate 通过率与人员覆盖',orderProductStats:'按订单汇总已确认工时与参与员工',orderDailyReport:'按日期和订单查看已确认工时报表',purchase:'采购申请与到货协同',inventory:'成品、半成品及原辅包分类',issue:'按正式任务领料、发料、签收',inspection:'来料、半成品、成品检验',release:'成品 QC 合格后的 QA 最终放行',tasks:'配制、包装、清洗、调机调线',batch:'生产实绩与批次过程记录',incentive:'按合格计量提报激励',templates:'受控模板、版本、一键填充',bom:'成品与半成品及原辅料关系',catalog:'产品、规格、产线、品类关系',engineering:'非生产任务、设备维护',safety:'安全巡检与整改闭环',finance:'财务审核记录和汇总',permissions:'个人 × 操作权限，独立授权',approvals:'高风险权限与经营决策'}[f]||'业务操作与记录')}
 function orders(){return `${panel('销售订单',`<div class="toolbar"><input class="field field-search" id="table-search" placeholder="搜索订单号 / 产品…"><div class="toolbar-actions">${action('新增订单','newOrder','','btn-primary')}</div></div>${table(['订单号','产品','规格','数量','责任部门','状态','操作'],data.orders.map(o=>[`<strong>${e(o.id)}</strong>`,e(o.product),e(o.spec),`${o.qty.toLocaleString()} ${o.unit}`,o.owner,tag(o.status),action('查看','detailOrder',o.id)]))}`,'产品 · 规格 · 数量')}`}
 function tasks(){return `${panel('生产任务 / 非生产任务',`<div class="info-bar">生产任务：<b>配制、包装</b>。非生产任务：<b>清洗、调机调线</b>。非生产任务有独立工单，原则上不计入产量。</div>${table(['任务号','分类','任务类型','产线','状态','操作'],data.tasks.map(t=>[`<strong>${t.id}</strong>`,e(t.category),`<strong>${e(t.type)}</strong>`,e(t.line),tag(t.status),action('查看 / 处理','task',t.id)]))}`,'4 种任务类型')}`}
 function catalog(){return `${panel('产品与物料分类',`<div class="toolbar"><input class="field field-search" placeholder="搜索产品编码 / 规格…" id="table-search">${action('查看关联产线','lines')}</div>${table(['编码','名称','分类','规格','单位'],baseItems.map(i=>[`<strong>${i.id}</strong>`,e(i.name),tag(i.type),e(i.spec),e(i.unit)]))}`,'成品 / 半成品 / 原料 / 辅料 / 包材 / 耗材 / 备件')}${panel('产品与生产线关联',table(['产线','任务类型','适配产品','状态'],lines.map(l=>l.map((v,i)=>i===3?tag(v):e(v)))),'可产关系校验')}`}
@@ -179,7 +179,7 @@ function flashDenied(target){
 }
 function openDept(id){
   if(!departments.some(d=>d.id===id))return;
-  data.dept=id;data.feature=null;data.expanded=data.expanded===id?null:id;render();updateAddress(id);closeSidebar();
+  data.dept=id;data.feature=null;data.expanded=id;render();updateAddress(id);closeSidebar();
 }
 function openFeature(feat,dept,trigger){
   let d=dept||data.dept;
@@ -241,7 +241,7 @@ if(ev.target.closest('#close-modal')||ev.target.closest('#cancel-modal')||ev.tar
 document.addEventListener('submit',ev=>{if(window.FactoryModules.submitForm(ev))return;if(ops.submitForm(ev))return;if(ev.target.id==='chat-form'){ev.preventDefault();submitChat()}});
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&window._chatPeer)closeChat()});
 document.addEventListener('input',ev=>{if(ev.target.id!=='dept-member-search')return;const term=ev.target.value.trim().toLowerCase();let found=0;document.querySelectorAll('#dept-member-grid [data-member-search]').forEach(card=>{const ok=card.dataset.memberSearch.includes(term);card.hidden=!ok;if(ok)found++});const empty=document.querySelector('#dept-members-no-results');if(empty)empty.hidden=found>0;});
-$('dept-search').addEventListener('input',ev=>{q=ev.target.value.trim().toLowerCase();if(q){let d=departments.find(d=>(d.name+' '+d.features.map(f=>features[f]).join(' ')).toLowerCase().includes(q));if(d)data.expanded=d.id}navRender()});
+$('dept-search').addEventListener('input',ev=>{q=ev.target.value.trim().toLowerCase();navRender()});
 
 document.addEventListener('change',ev=>{const lookup={'perm-employee':'employee','perm-position':'position','perm-dept':'dept'};const key=lookup[ev.target.id];if(key){access.updateSelection(key,ev.target.value);render();}});
 window.addEventListener('popstate',loadAddress);window.addEventListener('hashchange',loadAddress);
