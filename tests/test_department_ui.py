@@ -53,12 +53,24 @@ class DepartmentUiTest(unittest.TestCase):
         self.assertNotRegex(desktop, r"(?<![\\w-])zoom\\s*:")
         self.assertNotIn("scale(0.8)", desktop)
 
+    def test_home_overview_is_first_square_tile_and_search_removed(self):
+        self.assertNotIn('class="nav-label"', self.index)
+        self.assertNotIn('class="nav-search"', self.index)
+        self.assertNotIn('id="dept-search"', self.index)
+        self.assertNotIn("getElementById('dept-search')", self.app)
+        self.assertIn('data-nav-home', self.app)
+        self.assertIn("icon('feature-overview')", self.app)
+        self.assertIn("<strong>首页总览</strong>", self.app)
+        self.assertIn("node.innerHTML=home+tiles;", self.app)
+        self.assertIn("if(homeTile){openHome();return;}", self.app)
+        self.assertIn('class="dept-row', self.app)
+
     def test_square_grid_and_visible_glass(self):
         self.assertIn("grid-template-columns:repeat(2,minmax(0,1fr))", self.theme)
         self.assertIn("aspect-ratio:1/1", self.theme)
         self.assertIn("backdrop-filter:blur(20px)", self.theme)
         self.assertIn("rgba(63,165,105,.38)", self.theme)
-        self.assertIn("11 个部门 · 功能按权限开放", self.index)
+        self.assertIn("功能按部门及岗位权限开放", self.index)
 
 
 if __name__ == "__main__":
