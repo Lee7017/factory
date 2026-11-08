@@ -15,7 +15,7 @@ const departments=[
  {id:'ehs',name:'EHS 安全环保部',icon:'ehs',description:'风险排查、安全检查和整改记录',features:['safety']},
  {id:'finance',name:'财务部',icon:'finance',description:'应收应付、加班费和激励工资审核',features:['payroll','finance']},
  {id:'it',name:'信息化 / 主数据管理',icon:'it',description:'权限组织、流程规则、产品物料和基础字典维护',features:['permissions','employees','settings','productSettings','dictionarySettings','catalog']},
- {id:'leadership',name:'总经办',icon:'leadership',description:'经营驾驶舱、审批与重点事项',features:['overview','approvals']}
+ {id:'leadership',name:'总经办',icon:'leadership',description:'跨部门审批与重点事项',features:['approvals']}
 ];
 const features={overview:'工厂运行总览',hours:'我的工时',hoursAppeal:'工时申诉',sop:'操作标准卡',sopExecutions:'标准卡执行记录',qaQc:'报检判定',qaSampling:'抽检',qaCleanInspection:'清洗报检',qaNcr:'不合格品处置',qaQualityStock:'质量库存',workshop:'车间领料 / 退库',workshopReceive:'到料接收双签',workshopDispute:'工时申诉审批',workshopRework:'返洗 / 返工',warehouseOps:'库存批次',warehouseIncoming:'来料比对 · 报检入库',warehousePick:'备料执行 · FIFO',warehouseOutbound:'成品出库',warehouseReturns:'退库接收',warehouseLedger:'月末收发存',settings:'流程与工艺设置',productSettings:'产品与物料设置',dictionarySettings:'基础字典',leave:'我的请假',leaveApproval:'请假审批',employees:'员工档案',skills:'员工技能矩阵',payroll:'加班费 / 激励工资',orders:'销售订单',orderReview:'订单评审',orderHistory:'历史订单',schedule:'生产排程',kitting:'物料齐套',shift:'排班编排',shiftPeople:'员工排班',shiftStats:'排班统计',orderProductStats:'订单产品统计',orderDailyReport:'订单日报表',purchase:'采购申请',inventory:'库存与生产入库',issue:'领料与发料',inspection:'检验任务',release:'QA 放行',tasks:'生产 / 非生产任务',batch:'生产批次卡',incentive:'生产激励提报',templates:'工艺模板',bom:'BOM 关系',catalog:'产品与产线',engineering:'设备与调机调线',safety:'EHS 安全检查',finance:'财务审核',permissions:'员工权限矩阵',approvals:'总经办审批'};
 const baseItems=[
@@ -25,7 +25,7 @@ const lines=[['L01 配制一线','配制','SF-001 / SF-002','可用'],['L02 配�
 const formerPeople=[['E001','陈雯','人事行政办公室','人事主管'],['E002','李明','生产车间','配制工'],['E003','王强','生产车间','包装工'],['E004','张敏','生产车间','班组长'],['E005','赵凯','生产车间','配料工'],['E006','刘洋','质量部','QA 检验员'],['E007','周琳','生产计划与物料控制部（PMC）','计划员'],['E008','吴建','设备工程部','设备工程师'],['E009','孙浩','仓库 / 物流部','仓管员'],['E010','林静','信息化 / 主数据管理','信息化管理员']];
 const people=access.staff.map(p=>[p.id,p.name,p.dept,p.title]);
 const ability=['配料','搅拌','灌装','包装','在线检验','设备换型','清洗','叉车'];
-const initial={role:'employee',dept:'it',feature:null,expanded:'it',orders:[{id:'SO-2026-1023-018',product:'720g/L 百菌清悬浮剂',spec:'5L × 4桶',qty:3000,unit:'L',status:'待排产',owner:'生产计划与物料控制部（PMC）'},{id:'SO-2026-1106-003',product:'500g/L 悬浮剂 B',spec:'1L × 12瓶',qty:1800,unit:'L',status:'待评审',owner:'销售部'}],tasks:[{id:'TK-001',type:'清洗',line:'L01 配制一线',status:'待复核',category:'非生产任务'},{id:'TK-002',type:'配制',line:'L01 配制一线',status:'待开始',category:'生产任务'},{id:'TK-003',type:'调机调线',line:'S03-4# 瓶装线',status:'待开始',category:'非生产任务'},{id:'TK-004',type:'包装',line:'S03-4# 瓶装线',status:'待开始',category:'生产任务'}],leaves:[{id:'LV-001',person:'员工',range:'2026-11-10 ~ 2026-11-11',reason:'个人事务',status:'待人事审批'}],messages:[{id:1,title:'待处理 · 生产任务',text:'TK-002 配制任务等待生产车间承接',dept:'production',date:'11月06日 09:18',unread:true,feature:'tasks'},{id:2,title:'待处理 · 请假申请',text:'LV-001 请假单等待人事审核',dept:'hr',date:'11月06日 09:05',unread:true,feature:'leaveApproval'},{id:3,title:'排程已更新',text:'SO-2026-1023-018 已生成正式排程草稿',dept:'pmc',date:'11月06日 08:50',unread:true,feature:'schedule'}],payroll:[{id:'OT-001',name:'李明',type:'加班',basis:'4 小时',status:'待人事复核',amount:'—'},{id:'IN-001',name:'王强',type:'生产激励',basis:'合格 900 单位',status:'待财务核准',amount:'—'}],approvals:[],offices:{},chatThreads:{},plans:[]};
+const initial={role:'employee',dept:'it',feature:null,expanded:'it',home:true,orders:[{id:'SO-2026-1023-018',product:'720g/L 百菌清悬浮剂',spec:'5L × 4桶',qty:3000,unit:'L',status:'待排产',owner:'生产计划与物料控制部（PMC）'},{id:'SO-2026-1106-003',product:'500g/L 悬浮剂 B',spec:'1L × 12瓶',qty:1800,unit:'L',status:'待评审',owner:'销售部'}],tasks:[{id:'TK-001',type:'清洗',line:'L01 配制一线',status:'待复核',category:'非生产任务'},{id:'TK-002',type:'配制',line:'L01 配制一线',status:'待开始',category:'生产任务'},{id:'TK-003',type:'调机调线',line:'S03-4# 瓶装线',status:'待开始',category:'非生产任务'},{id:'TK-004',type:'包装',line:'S03-4# 瓶装线',status:'待开始',category:'生产任务'}],leaves:[{id:'LV-001',person:'员工',range:'2026-11-10 ~ 2026-11-11',reason:'个人事务',status:'待人事审批'}],messages:[{id:1,title:'待处理 · 生产任务',text:'TK-002 配制任务等待生产车间承接',dept:'production',date:'11月06日 09:18',unread:true,feature:'tasks'},{id:2,title:'待处理 · 请假申请',text:'LV-001 请假单等待人事审核',dept:'hr',date:'11月06日 09:05',unread:true,feature:'leaveApproval'},{id:3,title:'排程已更新',text:'SO-2026-1023-018 已生成正式排程草稿',dept:'pmc',date:'11月06日 08:50',unread:true,feature:'schedule'}],payroll:[{id:'OT-001',name:'李明',type:'加班',basis:'4 小时',status:'待人事复核',amount:'—'},{id:'IN-001',name:'王强',type:'生产激励',basis:'合格 900 单位',status:'待财务核准',amount:'—'}],approvals:[],offices:{},chatThreads:{},plans:[]};
 access.init(departments,features);
 let data;try{data=Object.assign({},structuredClone(initial),JSON.parse(localStorage.getItem('factory-workspace-v2')||'{}'))}catch{data=JSON.parse(JSON.stringify(initial))}data.offices=data.offices&&typeof data.offices==='object'?data.offices:{};data.chatThreads=data.chatThreads&&typeof data.chatThreads==='object'?data.chatThreads:{};data.plans=Array.isArray(data.plans)?data.plans:[];let q='',drawer=false;
 const deptTabs={};
@@ -35,14 +35,22 @@ for(const order of data.orders||[])if(order.owner==='PMC 办公室')order.owner=
 const allowed=(dept,feat,action='view')=>access.has(dept,feat,action);
 const ops=window.FactoryOperations;
 ops.init({data,save,access,toast,flashDenied,render,openFeature});window.FactoryGantt.init({data,save,access,render,flashDenied});window.FactoryModules.init({data,save,access,toast,render,openFeature,ops});
-function navRender(){const node=$('nav');node.innerHTML=departments.filter(d=>(d.name+' '+d.features.map(f=>features[f]||f).join(' ')).toLowerCase().includes(q)).map(d=>`<div class="nav-dept"><button class="dept-row ${data.dept===d.id?'active':''}" data-dept="${d.id}"><span class="dept-ico">${icon(d.icon)}</span><strong>${e(d.name)}</strong></button></div>`).join('')||'<div class="empty-state">没有匹配的部门</div>'}
+function navRender(){const node=$('nav');node.innerHTML=departments.filter(d=>(d.name+' '+d.features.map(f=>features[f]||f).join(' ')).toLowerCase().includes(q)).map(d=>`<div class="nav-dept"><button class="dept-row ${!data.home&&data.dept===d.id?'active':''}" data-dept="${d.id}"><span class="dept-ico">${icon(d.icon)}</span><strong>${e(d.name)}</strong></button></div>`).join('')||'<div class="empty-state">没有匹配的部门</div>'}
 const deptURL=id=>`${location.origin}${location.pathname}#/departments/${id}`;
+const homeHash=()=>`#/overview`;
 const pageHash=(dept,feat)=>`#/departments/${dept}${feat?'/'+feat:''}`;
 function updateAddress(dept,feat){if(location.hash!==pageHash(dept,feat))history.pushState(null,'',pageHash(dept,feat));}
+function updateHomeAddress(){if(location.hash!==homeHash())history.pushState(null,'',homeHash());}
 function crumbs(d,f){
  const root=$('breadcrumbs');
  root.innerHTML=`<button type="button" class="crumb-link crumb-home" data-breadcrumb-home>工厂管理系统</button><span class="crumb-sep">/</span><button type="button" class="crumb-link crumb-dept" data-breadcrumb-dept="${e(d.id)}">${e(d.name)}</button>${f?`<span class="crumb-sep">/</span><strong class="crumb-current">${e(features[f])}</strong>`:''}`;
  $('view-title').textContent=f?features[f]:d.name;$('view-description').textContent=f?featureHint(f):d.description
+}
+function crumbsHome(){
+ const root=$('breadcrumbs');
+ root.innerHTML='<button type="button" class="crumb-link crumb-home" data-breadcrumb-home>工厂管理系统</button><span class="crumb-sep">/</span><strong class="crumb-current">工厂运行总览</strong>';
+ $('view-title').textContent='工厂运行总览';
+ $('view-description').textContent=featureHint('overview');
 }
 function panel(title,contents,extra=''){return `<section class="panel"><div class="section-title">${title}<small>${extra}</small></div>${contents}</section>`}
 function table(columns,rows){return `<div class="table-wrap"><table class="data-table"><thead><tr>${columns.map(c=>`<th>${e(c)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map(x=>`<td>${x??''}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`}
@@ -171,7 +179,7 @@ function switchEmployee(id){
  render();updateAddress(data.dept);toggleUserMenu(false);
 }
 function toggleUserMenu(force){const menu=$('user-menu'),trigger=$('user-menu-toggle');const show=typeof force==='boolean'?force:menu.hidden;menu.hidden=!show;trigger.setAttribute('aria-expanded',String(show));}
-function render(){let d=departments.find(x=>x.id===data.dept)||departments[0];const f=data.feature;crumbs(d,f);navRender();updateUserHeader();if(f&&!allowed(d.id,f)){data.feature=null;return render()}$('view').innerHTML=!f?deptHome(d):window.FactoryModules.supports(f)?window.FactoryModules.render(f):(['permissions','leave','leaveApproval'].includes(f)?({permissions,leave,leaveApproval}[f])():ops.render(f));save()}
+function render(){let d=departments.find(x=>x.id===data.dept)||departments[0];const f=data.feature;navRender();updateUserHeader();if(data.home){data.feature=null;crumbsHome();$('view').innerHTML=window.FactoryModules.render('overview');save();return}crumbs(d,f);if(f&&!allowed(d.id,f)){data.feature=null;return render()}$('view').innerHTML=!f?deptHome(d):window.FactoryModules.supports(f)?window.FactoryModules.render(f):(['permissions','leave','leaveApproval'].includes(f)?({permissions,leave,leaveApproval}[f])():ops.render(f));save()}
 const deniedFlashTimers=new WeakMap();
 function flashDenied(target){
   if(!target)return;
@@ -183,7 +191,7 @@ function flashDenied(target){
 }
 function openDept(id){
   if(!departments.some(d=>d.id===id))return;
-  data.dept=id;data.feature=null;data.expanded=id;render();updateAddress(id);closeSidebar();
+  data.home=false;data.dept=id;data.feature=null;data.expanded=id;render();updateAddress(id);closeSidebar();
 }
 function openFeature(feat,dept,trigger){
   let d=dept||data.dept;
@@ -192,26 +200,28 @@ function openFeature(feat,dept,trigger){
     flashDenied(trigger||document.querySelector(`#nav [data-feature="${feat}"][data-feature-dept="${d}"]`)||document.querySelector(`#nav [data-dept="${d}"]`));
     return;
   }
-  data.dept=d;data.expanded=d;data.feature=feat;render();updateAddress(d,feat);closeSidebar();window.scrollTo({top:0,behavior:'smooth'});
+  data.home=false;data.dept=d;data.expanded=d;data.feature=feat;render();updateAddress(d,feat);closeSidebar();window.scrollTo({top:0,behavior:'smooth'});
 }
 
+function openHome(update=true){data.home=true;data.feature=null;render();if(update)updateHomeAddress();closeSidebar();window.scrollTo({top:0,behavior:'smooth'})}
 function loadAddress(){
+  if(location.hash==='#/overview'){data.home=true;data.feature=null;render();return}
   const match=location.hash.match(/^#\/departments\/([a-z]+)(?:\/([a-zA-Z]+))?$/);
   if(!match)return;
   const d=departments.find(x=>x.id===match[1]);if(!d)return;
   const feat=match[2];if(feat&&(!d.features.includes(feat)||!allowed(d.id,feat)))return;
-  data.dept=d.id;data.expanded=d.id;data.feature=feat||null;render();
+  data.home=false;data.dept=d.id;data.expanded=d.id;data.feature=feat||null;render();
 }
 function modal(title,body,fields='',handler=''){let host=$('modal-host');host.innerHTML=`<div class="modal-screen" id="modal-screen"><div class="modal-box"><button class="icon-btn modal-close" id="close-modal" aria-label="关闭">${icon('close')}</button><div class="eyebrow">FACTORY OS / WORKSPACE</div><h2>${e(title)}</h2><p class="modal-description">${e(body)}</p>${fields?`<div class="modal-content">${fields}</div>`:''}<div class="modal-foot"><button class="btn btn-quiet" id="cancel-modal">取消</button>${handler?`<button class="btn btn-primary" data-action="${handler}">确认</button>`:action('知道了','close')}</div></div></div>`}
 function closeModal(){$('modal-host').innerHTML=''}
 function field(label,id,type='text',value='',other=''){return `<div class="form-group"><label for="${id}">${e(label)}</label><input class="field" id="${id}" type="${type}" value="${e(value)}" ${other}></div>`}
-function reset(){if(!confirm('重置本浏览器内的数据和消息？'))return;data=JSON.parse(JSON.stringify(initial));data.offices={};data.chatThreads={};access.reset();ops.init({data,save,access,toast,flashDenied,render,openFeature});window.FactoryGantt.init({data,save,access,render,flashDenied});window.FactoryModules.init({data,save,access,toast,render,openFeature,ops});data.dept='it';data.expanded='it';save();render();updateAddress('it');updateUnread();toast('本地数据已重置')}
+function reset(){if(!confirm('重置本浏览器内的数据和消息？'))return;data=JSON.parse(JSON.stringify(initial));data.offices={};data.chatThreads={};access.reset();ops.init({data,save,access,toast,flashDenied,render,openFeature});window.FactoryGantt.init({data,save,access,render,flashDenied});window.FactoryModules.init({data,save,access,toast,render,openFeature,ops});data.dept='it';data.expanded='it';data.home=true;save();render();updateHomeAddress();updateUnread();toast('本地数据已重置')}
 function updateUnread(){let n=data.messages.filter(m=>m.unread).length;$('unread-badge').textContent=n;$('unread-badge').classList.toggle('zero',n===0);$('drawer-unread').textContent=n}
 function drawMessages(){updateUnread();$('message-list').innerHTML=data.messages.map(m=>{let d=departments.find(d=>d.id===m.dept);return `<div class="message ${m.unread?'unread':''}" data-message="${m.id}"><span class="message-icon">${icon(d?.icon||'bell')}</span><div class="message-main"><strong>${e(m.title)}</strong><p>${e(m.text)}</p><small>${e(m.date)} · ${e(d?.name||'系统消息')}</small></div>${icon('arrow','ico tiny')}</div>`}).join('')||'<div class="empty-state">暂无消息</div>'}
 function toggleDrawer(open){drawer=open;$('notify-drawer').classList.toggle('open',drawer);$('drawer-shade').classList.toggle('visible',drawer);if(drawer)drawMessages()}
 function closeSidebar(){$('sidebar').classList.remove('open');$('shade').classList.remove('visible')}
 document.addEventListener('click',ev=>{
-const homeCrumb=ev.target.closest('[data-breadcrumb-home]');if(homeCrumb){if(allowed('leadership','overview'))openFeature('overview','leadership',homeCrumb);else openDept(data.dept);return;}
+const homeCrumb=ev.target.closest('[data-breadcrumb-home]');if(homeCrumb){openHome();return;}
 const deptCrumb=ev.target.closest('[data-breadcrumb-dept]');if(deptCrumb){openDept(deptCrumb.dataset.breadcrumbDept);return;}
 const tabBtn=ev.target.closest('[data-dept-tab]');if(tabBtn){deptTabs[data.dept]=tabBtn.dataset.deptTab;render();return;}
 const modBtn=ev.target.closest('[data-module-action]');if(modBtn){window.FactoryModules.handleClick(modBtn);return;}
@@ -241,7 +251,7 @@ if(op==='match')return toast('已按技能矩阵筛选适岗候选人','producti
 if(op==='newOvertime')return modal('提交加班申请','加班费由人事复核、财务核准后确认。工资计价参数以实际核准规则为准。',`<div class="form-grid">${field('员工姓名','ot-name','text','当前员工')}${field('加班小时数','ot-hours','number','2','min="0.5" step="0.5"')}</div>`,'submitOvertime');if(op==='submitOvertime'){let hours=Number($('ot-hours').value);if(!hours)return toast('请填写加班时长','hr');let id='OT-'+Date.now().toString().slice(-5);data.payroll.unshift({id,name:$('ot-name').value||'当前员工',type:'加班',basis:`${hours} 小时`,status:'待人事复核',amount:'—'});message('加班申请待复核',`${id} 已提交`,'hr','payroll');closeModal();render();return toast('加班申请已提交','hr')}return}
 let nav=ev.target.closest('[data-dept]');if(nav)return openDept(nav.dataset.dept,nav);
 let feat=ev.target.closest('[data-feature]');if(feat)return openFeature(feat.dataset.feature,feat.dataset.featureDept,feat);
-let m=ev.target.closest('[data-message]');if(m){let x=data.messages.find(x=>String(x.id)===m.dataset.message);if(x){x.unread=false;save();updateUnread();toggleDrawer(false);openFeature(x.feature||'overview',x.dept)}}
+let m=ev.target.closest('[data-message]');if(m){let x=data.messages.find(x=>String(x.id)===m.dataset.message);if(x){x.unread=false;save();updateUnread();toggleDrawer(false);if(x.feature)openFeature(x.feature,x.dept);else openHome()}}
 if(ev.target.closest('#close-modal')||ev.target.closest('#cancel-modal')||ev.target.id==='modal-screen')closeModal();
 });
 document.addEventListener('submit',ev=>{if(window.FactoryModules.submitForm(ev))return;if(ops.submitForm(ev))return;if(ev.target.id==='chat-form'){ev.preventDefault();submitChat()}});
@@ -253,5 +263,5 @@ document.addEventListener('change',ev=>{const lookup={'perm-employee':'employee'
 window.addEventListener('popstate',loadAddress);window.addEventListener('hashchange',loadAddress);
 
 $('user-menu-toggle').addEventListener('click',()=>toggleUserMenu());document.addEventListener('click',ev=>{if(!ev.target.closest('.user-account'))toggleUserMenu(false)});document.addEventListener('keydown',ev=>{if(ev.key==='Escape')toggleUserMenu(false)});$('notify-btn').addEventListener('click',()=>toggleDrawer(true));$('drawer-close').addEventListener('click',()=>toggleDrawer(false));$('drawer-shade').addEventListener('click',()=>toggleDrawer(false));$('read-all').addEventListener('click',()=>{data.messages.forEach(x=>x.unread=false);save();drawMessages();toast('全部消息已标记已读')});$('reset-local').addEventListener('click',reset);$('mobile-menu').addEventListener('click',()=>{$('sidebar').classList.add('open');$('shade').classList.add('visible')});$('shade').addEventListener('click',closeSidebar);
-$('view').addEventListener('input',ev=>{if(ev.target.id==='table-search'){let search=ev.target.value.trim().toLowerCase();$('view').querySelectorAll('.data-table tbody tr').forEach(row=>row.style.display=row.textContent.toLowerCase().includes(search)?'':'none')}});updateUnread();render();loadAddress();
+$('view').addEventListener('input',ev=>{if(ev.target.id==='table-search'){let search=ev.target.value.trim().toLowerCase();$('view').querySelectorAll('.data-table tbody tr').forEach(row=>row.style.display=row.textContent.toLowerCase().includes(search)?'':'none')}});updateUnread();if(!location.hash)history.replaceState(null,'','#/overview');loadAddress();
 })();
