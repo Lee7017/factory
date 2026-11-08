@@ -92,7 +92,7 @@ function applyFlow(key,id,button){const o=orderBy(id),step=orderActions[key];if(
   for(const [m,n] of Object.entries(reserved))S.stock[m]-=n;
   delete S.reservations[id];
  }
- if(key==='receipt'){const qty=Math.ceil(o.qty/20);if(window.FactoryModules?.receiveFinishedGoods)window.FactoryModules.receiveFinishedGoods(o,qty);else {const stockId='FG-001';S.stock[stockId]=(S.stock[stockId]||0)+qty}}
+ if(key==='receipt'){const m=String(o.spec||'').match(/([\d.]+)\s*L\s*[×xX*]\s*(\d+)/),perCase=m?Number(m[1])*Number(m[2]):20,qty=Math.ceil(Number(o.qty||0)/Math.max(perCase,0.000001));if(window.FactoryModules?.receiveFinishedGoods)window.FactoryModules.receiveFinishedGoods(o,qty);else {const stockId=String(o.product||'').includes('500g/L')?'FG-002':'FG-001';S.stock[stockId]=(S.stock[stockId]||0)+qty}}
  if(key==='formal'){S.flows[id].planLine=S.flows[id].planLine||'L01 配制一线';}
  S.flows[id].stage=next;
  o.status=({draft:'草稿',review:'待评审',approved:'待排产',trial:'试算完成',formal:'已排程',reserved:'已锁库',issued:'已发料',stored:'已完成'})[next]||stages[next];if(next==='stored'&&!o.completedAt)o.completedAt=now();
