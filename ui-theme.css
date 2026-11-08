@@ -1,0 +1,255 @@
+/* V15 — 统一浅色企业后台，不用黑白对撞的双栏 */
+:root{--page:#f6f7f9;--nav:#fff;--nav-soft:#f2f4f6;--nav-text:#424955;--nav-muted:#737b88;--hairline:#e4e7eb}
+html,body,.app-shell{background:var(--page)}
+.sidebar{background:#fff;color:#36404c;border-right:1px solid #e5e8ec;box-shadow:none}
+.sidebar .brand-simple{height:66px;min-height:66px;margin:0;padding:0 20px;gap:11px;display:flex;align-items:center;border-bottom:1px solid var(--hairline);background:#fff}
+.brand-simple .brand-mark{width:30px;height:30px;display:grid;place-items:center;flex:0 0 30px;background:#292e36;color:#fff;border-radius:7px}
+.brand-simple .brand-mark svg{width:17px;height:17px}
+.brand-simple b{font-size:16px;font-weight:730;letter-spacing:.12px;color:#242a32;white-space:nowrap}
+.nav-label{padding:20px 19px 11px;color:#737b86;font-size:11px}.nav-label span{color:#9299a3}
+.nav-search{background:#f7f8fa;border-color:#e1e5e9;color:#858c97}
+.nav-search input{color:#303741}.nav-search input::placeholder{color:#959da6}
+.dept-nav{scrollbar-color:#d7dce3 transparent}
+.dept-row{color:#4b5360}
+.dept-row strong{font-size:12.5px;font-weight:580}
+.dept-row .dept-ico{color:#737d8a}
+.dept-row:hover{background:#f3f5f7;color:#232830}
+.dept-row.active,.dept-row.open{background:#eaeef2;color:#1f2730}
+.dept-row.active .dept-ico,.dept-row.open .dept-ico{color:#242c35}
+.dept-row .chevron{color:#9ca5b0}
+.sub-nav button{color:#66707d}
+.sub-nav button:hover{background:#f2f4f7;color:#202831}
+.sub-nav button.selected{background:#e4e8ee;color:#202630}
+.sub-nav button.locked{opacity:.58}
+.sub-nav button.locked:hover{background:#f5eeee;color:#a04a4a}
+.side-bottom{border-top:1px solid var(--hairline);background:#fff;color:#9aa1ac;font-size:11px}
+.topbar{background:#fff;border-bottom:1px solid var(--hairline)}
+.user-account{position:relative;min-width:0;padding-left:12px}
+.user-trigger{display:flex;align-items:center;gap:10px;min-width:0;max-width:220px;padding:5px 11px 5px 4px}
+.user-text{display:flex;flex-direction:column;gap:3px;min-width:0;max-width:112px}
+.user-text b,.user-text small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-trigger>.ico{display:block;flex:0 0 15px;width:15px;height:15px;margin-left:4px;color:#818996;transition:transform .16s}
+.user-trigger[aria-expanded=true]>.ico{transform:rotate(180deg)}
+.user-menu{position:absolute;right:0;top:calc(100% + 10px);width:min(320px,calc(100vw - 24px));padding:14px;background:#fff;border:1px solid #e1e5e9;border-radius:10px;box-shadow:0 14px 42px rgba(18,26,38,.14);z-index:80}
+.user-menu[hidden]{display:none!important}
+.employee-menu-title{font-size:13px;font-weight:690;color:#303641;margin:3px 3px 11px}
+.employee-chooser{display:flex;flex-direction:column;max-height:286px;overflow-y:auto;gap:3px;scrollbar-width:thin}
+.employee-option{display:flex;gap:10px;align-items:center;width:100%;padding:9px 8px;border:0;background:transparent;border-radius:7px;text-align:left;cursor:pointer;color:#3a424d}
+.employee-option:hover{background:#f2f4f6}.employee-option.active{background:#edf1f4}
+.employee-initial{display:grid;place-items:center;width:31px;height:31px;border-radius:7px;background:#e5e9ee;font-size:12px;font-weight:700;flex-shrink:0}
+.employee-option.active .employee-initial{background:#29303a;color:#fff}
+.employee-info{display:flex;flex-direction:column;min-width:0;gap:2px;flex:1}.employee-info strong{font-size:12px;font-weight:670}.employee-info small{font-size:10px;color:#7b8491;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.employee-option>.ico{height:15px;width:15px;flex-shrink:0}
+.employee-menu-note{font-size:11px;color:#87909b;line-height:1.6;margin:10px 4px}
+#reset-local{width:100%;margin-top:5px}
+/* 部门主页：业务功能占一整行，下面待办和成员并排 */
+.dept-overview{gap:14px}
+.dept-workspace-grid{display:flex;flex-direction:column;gap:14px;align-items:stretch}
+.dept-workspace-grid>.panel{width:100%;flex:none}
+.dept-workspace-grid>.panel .feature-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.dept-workspace-grid>.panel .feature-row{min-height:88px;padding:14px 16px;border-bottom:1px solid #edf0f3;border-right:1px solid #edf0f3;gap:10px}
+.dept-workspace-grid>.panel .feature-row:nth-child(3n){border-right:0}
+.dept-workspace-grid .dept-right-stack{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:14px;width:100%;align-items:start}
+.dept-workspace-grid .dept-right-stack>.panel{min-width:0}
+.team-member{min-height:67px}
+.dept-card-head{padding:14px 18px}
+.dept-card-head h3{font-size:14px}
+.office-location{min-height:51px}
+@media(max-width:1100px){.dept-workspace-grid>.panel .feature-list{grid-template-columns:repeat(2,minmax(0,1fr))}.dept-workspace-grid>.panel .feature-row:nth-child(3n){border-right:1px solid #edf0f3}.dept-workspace-grid>.panel .feature-row:nth-child(2n){border-right:0}}
+@media(max-width:700px){.dept-workspace-grid .dept-right-stack{display:flex;flex-direction:column;gap:12px}.dept-workspace-grid .dept-right-stack>.panel{width:100%}.dept-workspace-grid>.panel .feature-list{grid-template-columns:1fr}.dept-workspace-grid>.panel .feature-row{border-right:0!important;min-height:72px}.user-account{padding-left:8px}.user-trigger{gap:7px;padding-right:5px}.user-trigger>.ico{flex-basis:13px;width:13px;margin-left:0}.user-text{max-width:82px}}
+
+
+
+/* V21 readable grayscale theme: one authoritative final visual layer.
+   Glass only on global chrome; functional panels remain opaque and high contrast. */
+:root{
+  color-scheme:light;
+  --ink:#202124;--muted:#54565b;--soft:#686a70;
+  --page:#f3f3f4;--panel:#ffffff;--nav:#fdfdfd;--nav-soft:#f0f0f1;
+  --nav-text:#323438;--nav-muted:#5c5e63;--hairline:#d8d9dc;
+  --dash-border:#d8d9dc;--dash-text:#202124;--dash-muted:#57595d;
+  --line:#d8d9dc;--glass:rgba(255,255,255,.97);
+  --card-shadow:0 1px 3px rgba(18,18,18,.045);
+}
+html,body,.app-shell{background:var(--page);color:var(--ink)}
+html{font-size:15px}
+body{font-size:15px;line-height:1.55;-webkit-font-smoothing:auto;text-rendering:optimizeLegibility}
+button,input,select,textarea{font-family:inherit;color:inherit}
+:where(button,a,input,select,textarea,[tabindex]):focus-visible{outline:2px solid #4a4a4d;outline-offset:2px}
+/* Shell: frosted chrome, not frosted content. */
+.sidebar{width:260px;flex-basis:260px;background:rgba(251,251,252,.97);border-right:1px solid var(--hairline);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.topbar{background:rgba(252,252,253,.97);border-bottom:1px solid var(--hairline);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.sidebar .brand-simple{background:transparent;border-color:var(--hairline);padding-left:20px;padding-right:15px}
+.brand-simple b{font-size:17px;font-weight:750;color:#202124}
+.nav-label{font-size:12px;font-weight:700;color:#505156;padding-top:17px;padding-bottom:9px}
+.nav-label span{font-size:12px;color:#606268}
+.nav-search{background:#f5f5f6;border:1px solid #d6d7da;min-height:39px;color:#53565d}
+.nav-search input{font-size:13.5px;color:#2a2b2e}
+.nav-search input::placeholder{color:#64666b;opacity:1}
+.dept-row{min-height:43px;color:#333438;padding:9px 11px}
+.dept-row strong{font-size:14px;font-weight:600;line-height:1.45;color:inherit}
+.dept-row .dept-ico{color:#55585d}
+.dept-row:hover{background:#eeeeef;color:#202124}
+.dept-row.open,.dept-row.active{background:#e6e6e8;color:#202124}
+.dept-row .chevron{color:#5e6065}
+.sub-nav button{font-size:13px;min-height:37px;color:#525459;padding-top:8px;padding-bottom:8px}
+.sub-nav button:hover{background:#eeeeef;color:#25262a}
+.sub-nav button.selected{background:#dfdfe2;color:#202124;font-weight:700}
+.sub-nav button.locked{opacity:1;color:#686a70}
+.sub-nav button.locked .ico{color:#63656a}
+.side-bottom,.side-version{font-size:12px;color:#64666b}
+.breadcrumbs,.breadcrumbs strong{font-size:13px;color:#393a3f}
+.breadcrumbs span{color:#62646a}
+.user-text b{font-size:14px;color:#25262a}
+.user-text small{font-size:12px;color:#55575d}
+.user-trigger>.ico{color:#53555a}
+.user-menu{background:rgba(255,255,255,.98);border-color:#d7d7da;box-shadow:0 10px 35px rgba(20,20,20,.12);backdrop-filter:blur(8px)}
+.employee-menu-title{font-size:14px;color:#28292d}
+.employee-option{min-height:43px;color:#343539}
+.employee-info strong{font-size:13.5px;color:#27282c}
+.employee-info small,.employee-menu-note{font-size:12px;color:#5e6066}
+/* Headings and content labels, using real contrast rather than faint gray. */
+.main-content{max-width:1480px;padding-top:31px}
+.page-heading h1{font-size:26px;font-weight:740;letter-spacing:-.25px;color:#202124}
+.page-heading p{font-size:14px;color:#55575c;margin-top:6px}
+.office-location{background:#fff;border-color:#d9dadd;min-height:58px}
+.office-location .office-label{color:#55575d;font-size:13px}
+.office-location strong{font-size:13.5px;color:#33353a;font-weight:600}
+.office-location .office-unset{color:#585a60}
+.office-location button{border:1px solid #d8d9dc;background:#fff;color:#33353a;min-height:35px;font-size:13px}
+.footer,.footer span{font-size:12px;color:#5e6066}
+/* Department tabs and original horizontal feature rows. */
+.dept-hub-tabs{background:#e9e9eb;border-color:#d8d9dc;gap:5px}
+.dept-hub-tab{font-size:14px;font-weight:640;color:#4b4c51;min-height:46px}
+.dept-hub-tab:hover{background:#f7f7f8;color:#202124}
+.dept-hub-tab[aria-selected="true"]{background:#fff;border-color:#d6d7da;color:#1f2023;font-weight:750;box-shadow:0 1px 4px #00000010}
+.dept-hub-tab em,.dept-hub-tab[aria-selected="true"] em{font-size:12px;color:#404247;background:#e6e6e8}
+.dept-feature-panel,.dept-members,.dept-todo-lane,.panel,.op-table-wrap,.mw-content,.gantt-panel{border-color:#d9dadd;box-shadow:0 1px 2px rgba(20,20,20,.025)}
+.dept-feature-panel .feature-row{min-height:99px;padding:17px 16px;border-color:#e3e3e5}
+.dept-feature-panel .feature-row:hover{background:#f6f6f7}
+.feature-row .feature-glyph{background:#f1f1f2;border-color:#dcdde0;color:#4e5054}
+.dept-feature-panel .feature-row .feature-copy strong{font-size:15px;color:#222327;font-weight:700}
+.dept-feature-panel .feature-row .feature-copy small{font-size:13px;color:#55575c;white-space:normal;line-height:1.5;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.dept-feature-panel .feature-row .feature-side{color:#57595d}
+.feature-row.is-locked,.dept-feature-panel .feature-row.is-locked,.dept-todo-card.is-locked{opacity:1}
+.feature-row.is-locked .feature-copy strong{color:#46484d}
+.feature-row.is-locked .feature-copy small{color:#606268}
+.feature-row.is-locked .feature-side,.feature-row.is-locked .feature-glyph{color:#66686d}
+/* Team and todo pages: stronger secondary text, more generous click targets. */
+.dept-members-head strong{font-size:15px;color:#27282c}
+.dept-members-head small{font-size:13px;color:#595b60}
+.dept-members-search{font-size:14px;border-color:#d3d4d7;color:#222428;background:#fff;min-height:40px}
+.dept-members-search::placeholder{color:#64666b;opacity:1}
+.dept-member-card{border-color:#dddddf;min-height:85px}
+.dept-member-card strong{font-size:14.5px;color:#242529}
+.dept-member-card small{font-size:13px;color:#585a5f}
+.dept-member-card .member-chat{font-size:13px;color:#46484d}
+.dept-hub-empty{font-size:13.5px;color:#606268}
+.dept-todo-lane{background:#f7f7f8}
+.dept-todo-head{font-size:14px;color:#2d2e32;border-color:#dedee0}
+.dept-todo-head em{font-size:12px;color:#44464b}
+.dept-todo-card{border-color:#dcdde0;min-height:128px}
+.dept-todo-card .todo-code{font-size:12.5px;color:#55575d}
+.dept-todo-card strong{font-size:14px;color:#24262a}
+.dept-todo-card small{font-size:13px;color:#53555a}
+.dept-todo-card .todo-status{font-size:12.5px;color:#44464a}
+.dept-todo-void{font-size:13px;color:#5e6065;border-color:#d6d7da}
+/* Business workspace: legible data tables, forms, actions and status. */
+.ops-workbench,.mw-page{color:#28292c}
+.ops-heading,.mw-head,.op-subsection,.mw-metric,.mw-snapshot{border-color:#d9dadd;background:#fff}
+.ops-heading strong,.mw-head-info strong{font-size:17px;color:#242529}
+.ops-heading small,.mw-head-info>span{font-size:13.5px;color:#54565c}
+.op-button,.mw-btn,.btn{font-size:13px;min-height:37px;border-color:#d2d3d6;color:#303137}
+.op-button:hover,.mw-btn:hover{background:#eeeeef;border-color:#b4b5b9}
+.op-button.primary,.mw-btn.primary{background:#2b2c30;color:#fff;border-color:#2b2c30}
+.op-button.primary:hover,.mw-btn.primary:hover{background:#424348}
+.op-table,.mw-table,.data-table{font-size:13.5px;color:#2c2d31}
+.op-table th,.mw-table th,.data-table th{font-size:13px;font-weight:700;color:#4d4f54;background:#f2f2f3;border-color:#dfe0e2;line-height:1.45}
+.op-table td,.mw-table td,.data-table td{font-size:13.5px;color:#303237;line-height:1.55;border-color:#e3e4e6}
+.op-table strong,.mw-table strong{color:#242529}
+.op-badge,.mw-status,.tag{font-size:12.5px;color:#424449;border-color:#d3d4d7;background:#ebebed}
+.op-badge.complete,.mw-status.mw-ok{background:#e8ebe8;color:#2d4431;border-color:#cbd3cb}
+.op-rule,.mw-feedback,.ops-status-bar,.info-bar{font-size:13px;color:#4c4e53;background:#f2f2f3;border-color:#dedfe1}
+.op-rule strong{color:#323338}
+.op-muted,.op-inline-note,.mw-data-note{font-size:12.5px;color:#5f6167}
+.mw-section-head h3,.op-subsection h3{font-size:16px;color:#242529}
+.mw-section-head span,.mw-metric>span,.mw-snapshot>small,.mw-metric small{font-size:12.5px;color:#55575d}
+.mw-snapshot span{font-size:13px;color:#333439}
+.mw-snapshot>div{font-size:12.5px;color:#484a4f}
+.mw-metric strong,.mw-snapshot strong{color:#242529}
+.mw-table .mw-btn{font-size:12.5px;min-height:34px}
+.mw-tabs .mw-btn{font-size:13px}
+.op-history summary,.mw-rule span{font-size:13px;color:#37383d}
+.op-history>div{font-size:12.5px;color:#53555a}
+.op-field,.mw-field{font-size:13.5px;color:#3f4146}
+.op-field input,.op-field select,.mw-field input,.mw-field select,.field{border-color:#cdd0d4;background:#fff;color:#26282c;font-size:14px}
+.op-field input:focus,.op-field select:focus,.mw-field input:focus,.mw-field select:focus,.field:focus{border-color:#606268;box-shadow:0 0 0 2px rgba(60,60,62,.09)}
+.op-modal,.mw-modal,.modal-box{background:rgba(255,255,255,.99);border-color:#d4d5d9;backdrop-filter:blur(8px)}
+.op-modal-head h2,.mw-modal h2{font-size:18px;color:#222327}
+.op-detail,.op-detail p,.op-detail h4{font-size:13.5px;color:#484a50}
+.op-flow-step{font-size:13px;color:#42444a}
+.op-flow-step small{font-size:12px;color:#5a5c62}
+/* Production timeline axes, bars and explanatory labels. */
+.gantt-panel-head h2{font-size:18px;color:#25262b}
+.gantt-panel-head p,.gantt-foot,.gantt-legend-item{font-size:13px;color:#505258}
+.gantt-controls :is(input,select,button){font-size:13px}
+.gantt-row-label,.gantt-axis-label,.gantt-lane-label{color:#36383d}
+/* Flow animation should be readable, without saturated blue-gray haze. */
+.flow-window{background:rgba(255,255,255,.99);border-color:#d2d3d7}
+.flow-window h2{color:#25262b}
+.flow-doc,.flow-node small,.flow-state span,.flow-history-row,.flow-history-row small,.flow-bottom span{font-size:12.5px;color:#55575d}
+.flow-node strong{font-size:15px;color:#292a2f}
+.flow-state b,.flow-history-title strong,.flow-history-action{font-size:13px;color:#33353a}
+.flow-bottom button{font-size:13px;color:#34363b;background:#f0f0f1;border-color:#d2d3d7}
+/* Keep motion and actual permission feedback, while reducing eye fatigue. */
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}
+@media(max-width:1180px){.sidebar{width:248px;flex-basis:248px}}
+@media(max-width:860px){.sidebar{width:260px;flex-basis:260px}.main-content{padding-top:23px}}
+@media(max-width:650px){
+ body{font-size:14px}
+ .page-heading h1{font-size:23px;line-height:1.35}
+ .page-heading p{font-size:13.5px}
+ .main-content{padding-top:21px}
+ .dept-hub-tab{font-size:13px;min-width:0}
+ .dept-feature-panel .feature-row{min-height:85px;padding:14px}
+ .dept-feature-panel .feature-row .feature-copy strong{font-size:14.5px}
+ .dept-feature-panel .feature-row .feature-copy small{font-size:12.5px}
+ .user-text b{font-size:13px}.user-text small{font-size:11.5px}
+ .breadcrumbs,.breadcrumbs strong{font-size:12.5px}
+ .op-table th,.mw-table th{font-size:12.5px}
+ .op-table td,.mw-table td{font-size:13px}
+ .dept-member-card small{font-size:12.5px}
+}
+
+/* Workbench details that were still rendering at 10–11px. */
+.access-description{font-size:13.5px;color:#505258;background:#f5f5f6;border-color:#dfe0e2;line-height:1.6}
+.access-table th,.access-table td{font-size:13px;color:#36383d;padding-top:12px;padding-bottom:12px}
+.access-table th{font-size:12.5px;color:#46484d}
+.access-table .permission-toggle{min-height:34px;font-size:12.5px;color:#323439;border-color:#d2d3d6}
+.access-table .permission-source,.access-table .tag{font-size:12.5px;color:#53555b}
+.access-side .access-side-head h2,.access-main .access-main-head h2{font-size:16px}
+.access-side .access-field-label,.access-side h3{font-size:13px;color:#4c4e54}
+.access-side select,.access-assigned-list button,.access-role-options button{font-size:13px}
+.access-selected-user strong{font-size:14px}
+.access-selected-user small{font-size:12px;color:#55575d}
+.access-role-details summary,.access-rights-count{font-size:13px;color:#414349}
+.gantt-lane strong{font-size:13px;color:#282a2e}
+.gantt-lane small{font-size:12px;color:#55575d}
+.gantt-head .gantt-lane{font-size:12.5px;color:#4f5157}
+.gantt-tick{font-size:11.5px;color:#505258}
+.gantt-bar{height:43px;top:10px;padding:4px 7px}
+.gantt-bar strong{font-size:12px;line-height:1.35}
+.gantt-bar small{font-size:10.5px;line-height:1.3;opacity:1}
+.gantt-bar.category-clean{color:#2b2d31}
+.gantt-legend{font-size:12.5px;color:#55575b}
+.gantt-foot{font-size:13px;color:#4e5055}
+.gantt-dialog label{font-size:13.5px;color:#46484d}
+.gantt-dialog select,.gantt-dialog input{font-size:14px}
+.gantt-dialog footer button{font-size:13px;min-height:37px}
+@media(max-width:740px){
+ .gantt-lane strong{font-size:12.5px}
+ .gantt-lane small{font-size:11.5px}
+ .gantt-bar strong{font-size:11.5px}
+ .gantt-bar small{font-size:10px}
+ .access-table th,.access-table td{font-size:12.5px}
+}
