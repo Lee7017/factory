@@ -212,7 +212,7 @@ function globalAuditTable(){
  const opLogs=(ctx.data.ops?.logs||[]).map(x=>({when:x.at,ts:x.ts||0,dept:x.dept||'',action:x.action,ref:x.ref,person:x.person,source:'操作'}));
  const moduleLogs=S.ledger.map(x=>({when:x.time,ts:x.ts||0,dept:x.dept||'',action:x.type,ref:x.ref,person:x.by,source:'单据'}));
  const all=[...opLogs,...moduleLogs].sort((a,b)=>b.ts-a.ts).slice(0,30);
- const deptName=dept=>ctx.access?.departments?.find?.(d=>d.id===dept)?.name||({sales:'销售部',pmc:'生产计划与物料控制部（PMC）',production:'生产车间',quality:'质量部 QA / QC',warehouse:'仓库 / 物流部',purchase:'采购 / 供应链部',hr:'人事行政办公室',finance:'财务部',it:'信息化 / 工艺技术部',tech:'信息化 / 工艺技术部',leadership:'总经办',engineering:'设备工程部',ehs:'已停用部门'}[dept]||'—');
+ const deptName=dept=>ctx.access?.departments?.find?.(d=>d.id===dept)?.name||({sales:'销售部',pmc:'生产计划与物料控制部（PMC）',production:'生产车间',quality:'质量部 QA / QC',warehouse:'仓库 / 物流部',purchase:'采购 / 供应链部',hr:'人事行政办公室',finance:'财务部',it:'信息化部',tech:'信息化部',leadership:'总经办',engineering:'设备工程部',ehs:'已停用部门'}[dept]||'—');
  return grid(['时间','处理部门','操作','单据编号','操作人'],all.map(x=>row([esc(x.when||'—'),esc(deptName(x.dept)),`<strong>${esc(x.action)}</strong>`,esc(x.ref||'—'),esc(x.person||'—')])));
 }
 function overviewPage(){const stages=ops().flows||{},activeOrders=ctx.data.orders.filter(o=>stages[o.id]?.stage!=='delivered'),historyOrders=ctx.data.orders.filter(o=>stages[o.id]?.stage==='delivered');const totals=activeOrders.length,started=activeOrders.filter(o=>stagesOrder.indexOf(stages[o.id]?.stage)>=stagesOrder.indexOf('issued')).length;
