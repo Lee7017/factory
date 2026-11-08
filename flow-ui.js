@@ -30,6 +30,33 @@ const routes={
  '岗位排班':['pmc','production','开工前 Gate 校验'],
  '不合格品处置':['quality','production','返洗、返工或报废执行']
 };
+const nextTargets={
+ '车间领料申请':{dept:'warehouse',feature:'warehousePick'},
+ '仓库 FIFO 备料':{dept:'warehouse',feature:'warehousePick'},
+ '仓库签发':{dept:'production',feature:'workshopReceive'},
+ '车间签收':{dept:'production',feature:'tasks'},
+ '结余退库申请':{dept:'warehouse',feature:'warehouseReturns'},
+ '仓库退库接收':{dept:'warehouse',feature:'warehouseOps'},
+ '创建报检单':{dept:'quality',feature:'qaQc'},
+ '清洗报检提交':{dept:'quality',feature:'qaCleanInspection'},
+ '清洗报检合格':{dept:'production',feature:'tasks'},
+ '清洗报检不合格':{dept:'production',feature:'workshopRework'},
+ '报检合格':{dept:'production',feature:'tasks'},
+ '报检不合格':{dept:'quality',feature:'qaNcr'},
+ '采购到货登记':{dept:'warehouse',feature:'warehouseIncoming'},
+ '来料比对':{dept:'quality',feature:'qaQc'},
+ '来料 QC 合格':{dept:'warehouse',feature:'warehouseIncoming'},
+ '来料入库确认':{dept:'warehouse',feature:'warehousePick'},
+ '采购单审批':{dept:'warehouse',feature:'warehouseIncoming'},
+ '成品出库单创建':{dept:'warehouse',feature:'warehouseOutbound'},
+ '成品销售出库':{dept:'sales',feature:'orderHistory'},
+ '填报工时':{dept:'hr',feature:'hours'},
+ '工时申诉提交':{dept:'production',feature:'workshopDispute'},
+ '工时申诉审批':{dept:'hr',feature:'hoursAppeal'},
+ '开工前 Gate 检查':{dept:'production',feature:'tasks'},
+ '岗位排班':{dept:'pmc',feature:'shift'},
+ '不合格品处置':{dept:'production',feature:'workshopRework'}
+};
 const docRules=[
  [/^SO-/,'销售订单','sales','orders'],
  [/^PO-/,'采购单','purchase','purchase'],
@@ -65,13 +92,14 @@ function docMeta(entry){
  };
 }
 function currentTime(){return new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
-let tid=null,fadeTimer=null;
+let tid=null,fadeTimer=null,activeContinue=null;
 function show(entry){
  const host=document.querySelector('#flow-transition-host');if(!host||!entry)return;
  clearTimeout(tid);clearTimeout(fadeTimer);
  const from=label(entry.from),to=label(entry.to||entry.from),history=Array.isArray(entry.history)?entry.history.slice(-5):[];
  const same=from===to,doc=docMeta(entry);
  const action=entry.action||'操作完成',operator=entry.operator||history.at(-1)?.person||'当前用户',at=entry.at||history.at(-1)?.at||currentTime();
+ activeContinue=entry.nextOpen||nextTargets[action]||(doc.dept&&doc.feature?{dept:doc.dept,feature:doc.feature}:null);
  const openButton=doc.dept&&doc.feature?`<button type="button" class="flow-open-doc" data-flow-open-dept="${clean(doc.dept)}" data-flow-open-feature="${clean(doc.feature)}">查看这张单据</button>`:'';
  host.innerHTML=`<div class="flow-veil" aria-hidden="true"></div><section class="flow-window" role="status" aria-label="业务流转结果">
    <div class="flow-window-top"><div class="flow-signal"><span class="flow-signal-dot">✓</span><span>单据流转已更新</span></div><button type="button" class="flow-close" data-flow-close aria-label="关闭流转提示">×</button></div>
@@ -89,18 +117,26 @@ function show(entry){
    <div class="flow-history-title"><strong>这张单据怎么走到这里</strong><span>${history.length} 条近期记录</span></div>
    <div class="flow-history">${history.length?history.map((h,i)=>`<div class="flow-history-row"><span class="flow-history-dot ${i===history.length-1?'is-current':''}"></span><span class="flow-history-dept">${clean(label(h.from||h.dept))}</span><span class="flow-history-action">${clean(h.action||'状态更新')}</span><small>${clean(h.at||'')}</small></div>`).join(''):'<div class="flow-history-empty">当前是这张单据的第一条业务记录</div>'}</div>
    <div class="flow-action-receipt"><span>刚刚执行</span><strong>${clean(action)}</strong><small>${clean(operator)} · ${clean(at)}</small></div>
-   <footer class="flow-bottom"><span>画面会自动消退</span><div class="flow-bottom-actions">${openButton}<button type="button" data-flow-close>继续操作</button></div></footer>
+   <footer class="flow-bottom"><span>画面会自动消退</span><div class="flow-bottom-actions">${openButton}<button type="button" class="flow-continue" data-flow-continue>继续操作 →</button></div></footer>
    <div class="flow-timer"></div>
  </section>`;
  host.classList.remove('flow-dismiss');host.classList.add('flow-visible');
  tid=setTimeout(()=>dismiss(),6500);
 }
-function dismiss(){const host=document.querySelector('#flow-transition-host');if(!host)return;host.classList.remove('flow-visible');host.classList.add('flow-dismiss');clearTimeout(tid);fadeTimer=setTimeout(()=>{if(!host.classList.contains('flow-visible'))host.innerHTML=''},450)}
+function dismiss(){const host=document.querySelector('#flow-transition-host');if(!host)return;host.classList.remove('flow-visible');host.classList.add('flow-dismiss');clearTimeout(tid);fadeTimer=setTimeout(()=>{if(!host.classList.contains('flow-visible')){host.innerHTML='';activeContinue=null}},450)}
 function fromAudit(row,history,defaultDept){const rule=routes[row.type]||Object.entries(routes).find(([key])=>String(row.type).includes(key))?.[1];let from=rule?.[0]||defaultDept||'当前部门',to=rule?.[1]||from;
- const newer=rule?.[2]||'查看对应单据状态和待办';show({ref:row.ref,action:row.type,from,to,next:newer,status:row.detail||'已记录',summary:row.detail||'',operator:row.by||'当前用户',at:row.time||'',history});}
+ const newer=rule?.[2]||'查看对应单据状态和待办';show({ref:row.ref,action:row.type,from,to,next:newer,nextOpen:nextTargets[row.type]||Object.entries(nextTargets).find(([key])=>String(row.type).includes(key))?.[1],status:row.detail||'已记录',summary:row.detail||'',operator:row.by||'当前用户',at:row.time||'',history});}
 document.addEventListener('click',ev=>{
  const open=ev.target.closest('[data-flow-open-dept]');
  if(open){const dept=open.dataset.flowOpenDept,feature=open.dataset.flowOpenFeature;dismiss();if(dept&&feature)location.hash=`#/departments/${dept}/${feature}`;return;}
+ if(ev.target.closest('[data-flow-continue]')){
+  const target=activeContinue;if(!target){dismiss();return}
+  const next={...target};dismiss();
+  if(next.action==='qualityRecord'&&next.record&&window.FactoryModules?.openQualityRecord){window.FactoryModules.openQualityRecord(next.record);return}
+  if(next.action==='purchaseReceipt'&&next.record&&window.FactoryModules?.startPurchaseReceipt){window.FactoryModules.startPurchaseReceipt(next.record);return}
+  if(next.dept&&next.feature)location.hash=`#/departments/${next.dept}/${next.feature}`;
+  return;
+ }
  if(ev.target.closest('[data-flow-close]'))dismiss();
 });
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape')dismiss()});
