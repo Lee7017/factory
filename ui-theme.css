@@ -657,3 +657,43 @@ body{
       rgba(255,255,255,.83);
   }
 }
+
+/* V30 · 去掉部门首页重复标题，部门说明收进顶部导航信息按钮。 */
+.main-content.is-dept-home .page-heading{display:none}
+.dept-crumb-group{display:inline-flex;align-items:center;gap:2px;min-width:0;flex:0 1 auto}
+.dept-crumb-group>.crumb-dept{min-width:0;overflow:hidden;text-overflow:ellipsis;max-width:min(44vw,430px)}
+.dept-info-wrap{position:relative;display:inline-flex;align-items:center;flex:0 0 auto}
+.dept-info-trigger{
+  width:27px;height:27px;display:grid;place-items:center;padding:0;
+  border:1px solid transparent;border-radius:9px;background:transparent;
+  color:#636a67;cursor:pointer;
+  transition:background .16s,border-color .16s,color .16s
+}
+.dept-info-trigger .ico{width:15px;height:15px;stroke-width:1.8}
+.dept-info-trigger:hover,.dept-info-trigger:focus-visible,.dept-info-trigger[aria-expanded="true"]{
+  background:rgba(255,255,255,.68);border-color:rgba(28,51,36,.14);color:#2b5037;
+  outline-offset:2px
+}
+.dept-info-popover{
+  position:absolute;right:-20px;top:calc(100% + 9px);z-index:35;
+  display:none;flex-direction:column;gap:6px;
+  width:max-content;max-width:min(340px,calc(100vw - 24px));padding:13px 15px;
+  background:rgba(255,255,255,.90);
+  border:1px solid rgba(44,74,53,.13);border-radius:13px;
+  box-shadow:0 14px 40px rgba(22,43,29,.14),inset 0 1px 0 rgba(255,255,255,.94);
+  backdrop-filter:blur(24px) saturate(140%);
+  -webkit-backdrop-filter:blur(24px) saturate(140%);
+  white-space:normal;line-height:1.55;color:#37413b
+}
+.dept-info-popover strong{font-size:12.5px;font-weight:720;color:#202824}
+.dept-info-popover span{font-size:12px;color:#515d54}
+.dept-info-wrap:hover .dept-info-popover,.dept-info-wrap.is-open .dept-info-popover{display:flex}
+@media(max-width:650px){
+  .dept-crumb-group>.crumb-dept{max-width:38vw}
+  .dept-info-trigger{width:30px;height:30px}
+  .dept-info-popover{left:-82px;right:auto;max-width:min(290px,calc(100vw - 28px))}
+}
+@media(hover:none){
+  /* 触屏设备只通过点击切换说明，避免浏览器模拟 hover 后一直显示。 */
+  .dept-info-wrap:not(.is-open):hover .dept-info-popover{display:none}
+}
