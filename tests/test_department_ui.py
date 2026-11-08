@@ -65,6 +65,17 @@ class DepartmentUiTest(unittest.TestCase):
         self.assertIn("if(homeTile){openHome();return;}", self.app)
         self.assertIn('class="dept-row', self.app)
 
+    def test_department_roster_contains_office_location(self):
+        self.assertIn("tab('members','部门花名簿',members.length)", self.app)
+        self.assertIn("<strong>部门花名簿</strong>", self.app)
+        self.assertIn('class="dept-roster-office"', self.app)
+        self.assertEqual(self.app.count('class="office-location"'), 1)
+        self.assertIn("data-action=\\"editOffice\\"", self.app)
+        self.assertIn("if(op==='saveOffice')", self.app)
+        self.assertIn(".dept-roster-office .office-location", self.theme)
+        self.assertNotIn('<div class="dept-hub"><div class="office-location"', self.app)
+        self.assertIn("20261108-roster-v28", self.index)
+
     def test_square_grid_and_visible_glass(self):
         self.assertIn("grid-template-columns:repeat(2,minmax(0,1fr))", self.theme)
         self.assertIn("aspect-ratio:1/1", self.theme)
