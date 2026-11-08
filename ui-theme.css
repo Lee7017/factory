@@ -631,3 +631,29 @@ body{
   .dept-roster-office .office-location{min-height:45px}
 }
 @media(max-width:560px){.dept-roster-office{padding:10px}}
+
+/* V29 · 左侧栏也使用红绿底光，和主内容区呼应。
+   大范围柔和径向渐变叠在半透明白底上，保留原来的模糊和玻璃卡片。 */
+.sidebar{
+  background:
+    radial-gradient(ellipse 145% 44% at 14% 21%,
+      rgba(85,170,116,.25) 0%,rgba(132,198,152,.10) 52%,transparent 90%),
+    radial-gradient(ellipse 155% 50% at 87% 74%,
+      rgba(214,95,109,.22) 0%,rgba(231,146,151,.09) 49%,transparent 91%),
+    radial-gradient(ellipse 115% 40% at 52% 49%,
+      rgba(168,180,152,.08),transparent 85%),
+    rgba(255,255,255,.72);
+  background-attachment:local;
+  backdrop-filter:blur(28px) saturate(150%);
+  -webkit-backdrop-filter:blur(28px) saturate(150%);
+}
+@media(max-width:860px){
+  .sidebar{
+    background:
+      radial-gradient(ellipse 145% 44% at 14% 21%,
+        rgba(85,170,116,.22),rgba(132,198,152,.08) 52%,transparent 90%),
+      radial-gradient(ellipse 155% 50% at 87% 74%,
+        rgba(214,95,109,.19),rgba(231,146,151,.07) 49%,transparent 91%),
+      rgba(255,255,255,.83);
+  }
+}
