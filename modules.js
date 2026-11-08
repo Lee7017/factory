@@ -85,9 +85,8 @@ function render(feature){syncFlowInspections();activeFeatureRoute=feature;const 
 function pendingForDept(dept){const out=[];const push=(arr,feature,k,filter,title)=>{for(const r of arr.filter(filter))out.push({kind:'mod',feature,id:r.id,title,detail:r.reason||r.material||r.order||r.title||r.type||'',status:r.status})};
  if(dept==='quality'){push(S.inspections,'qaQc','inspection',r=>r.status==='待判定','报检待判定');push(S.cleanReports,'qaCleanInspection','clean',r=>r.status==='待判定','清洗待报检');push(S.ncr,'qaNcr','ncr',r=>r.status==='待处置','不合格品待处置')}
  if(dept==='warehouse'){push(S.incoming,'warehouseIncoming','incoming',r=>!['已入库','已驳回'].includes(r.status),'到货待处理');push(S.materialRequests.filter(r=>r.type==='领料'),'warehousePick','request',r=>['待备料','待仓库签发'].includes(r.status),'领料待备料 / 签发');push(S.materialRequests.filter(r=>r.type==='退库'),'warehouseReturns','request',r=>r.status==='待仓库接收','退库待接收');push(S.outbound,'warehouseOutbound','outbound',r=>r.status==='待出库','成品待出库')}
- if(dept==='production')push(S.materialRequests,'workshopReceive','request',r=>r.status==='待车间签收','车间到料待签收');
+ if(dept==='production'){push(S.materialRequests,'workshopReceive','request',r=>r.status==='待车间签收','车间到料待签收');push(S.disputes,'workshopDispute','dispute',r=>r.status==='待审批','工时申诉待审批')}
  if(dept==='pmc')push(S.roster,'shift','roster',r=>r.gate!=='已通过','开工前检查待完成');
- if(dept==='hr')push(S.disputes,'hoursAppeal','dispute',r=>r.status==='待审批','工时申诉待审批');
  return out;}
 function qualityPage(){const t=currentTab.qaQc||'decision';let content='',toolbar='';
  if(t==='decision'){
@@ -199,14 +198,14 @@ function settingsPage(){const t=currentTab.settings||'org';let content='',tools=
  content=note('岗位权限与个人追加权限取并集，一个员工可兼任多个岗位')+`<div class="mw-tiles">${navButton('员工权限矩阵','it','permissions')}${navButton('员工档案','it','employees')}${navButton('我的工时','hr','hours')}</div>`;
  }else if(t==='process'){
  const rows=[['cleanQC','清洗必须报检合格才能复核完成'],['requireDoubleSign','车间领料必须仓库签发与车间签收'],['fifo','仓库发料按最早合格批次先出'],['requireSkill','排班须核对岗位技能等级'],['requireLeave','排班须核对已批准请假']];
- content=note('修改需系统设置权限；流程规则影响对应业务校验')+`<div class="mw-rule-list">${rows.map(([k,label])=>`<div class="mw-rule"><span>${esc(label)}</span>${btn(S.rules[k]?'已启用':'已停用','rule',k,S.rules[k]?'primary':'')}</div>`).join('')}</div>`+`<div class="mw-tiles">${navButton('工艺模板','tech','templates')}${navButton('操作标准卡','tech','sop')}${navButton('生产排程','pmc','schedule')}</div>`;
+ content=note('修改需流程与工艺设置权限；流程规则影响对应业务校验')+`<div class="mw-rule-list">${rows.map(([k,label])=>`<div class="mw-rule"><span>${esc(label)}</span>${btn(S.rules[k]?'已启用':'已停用','rule',k,S.rules[k]?'primary':'')}</div>`).join('')}</div>`+`<div class="mw-tiles">${navButton('工艺模板','tech','templates')}${navButton('操作标准卡','tech','sop')}${navButton('生产排程','pmc','schedule')}</div>`;
  }else if(t==='product'){
  content=note('产品、物料主数据，成品与半成品 BOM、产线关系')+`<div class="mw-tiles">${navButton('产品与产线','tech','catalog')}${navButton('BOM 关系','tech','bom')}${navButton('批次台账','warehouse','warehouseOps')}</div>`;
  }else{
  tools=btn('新增字典项','form:dictionary','','primary');
  content=note('按类型管理启用与停用，保留历史记录')+grid(['编号','分类','字典项','取值','状态','操作'],S.dictionary.map(r=>row([esc(r.id),esc(r.group),esc(r.name),esc(r.value),status(r.active?'已启用':'已停用'),btn(r.active?'停用':'启用','dictionary:toggle',r.id)])));
  }
- return wrap('settings','系统设置','权限与组织、流程与工艺、产品与物料、基础字典',tools,content);
+ return wrap('settings','配置工作台','流程规则、产品物料与基础字典',tools,content);
 }
 function globalAuditTable(){
  const opLogs=(ctx.data.ops?.logs||[]).map(x=>({when:x.at,ts:x.ts||0,dept:x.dept||'',action:x.action,ref:x.ref,person:x.person,source:'操作'}));
@@ -220,7 +219,7 @@ function overviewPage(){const stages=ops().flows||{},activeOrders=ctx.data.order
  const ready=S.materialRequests.filter(r=>r.status==='待备料').length, gates=S.roster.filter(r=>r.gate==='已通过').length;
  const current=activeOrders.map(o=>{const f=stages[o.id];return row([esc(o.id),esc(o.product),status(f?.stage||o.status),btn('查看流程','goto:sales:orders')])});
  const content=cards([['进行中订单',totals,'首页只显示未完结订单'],['已开始生产',started,'含执行及后续阶段'],['待检与清洗报检',pending,'质量任务'],['待备料',ready,'车间领料单'],['开工前 Gate 通过',gates,'产线 × 岗位']])+
- `<div class="mw-tiles mw-quick">${navButton('生产排程甘特图','pmc','schedule')}${navButton('QA/QC 审批','quality','qaQc')}${navButton('车间管理','production','workshop')}${navButton('仓库管理','warehouse','warehouseOps')}${navButton('历史订单','sales','orderHistory')}${navButton('排班','pmc','shift')}${navButton('系统设置','it','settings')}</div>`+
+ `<div class="mw-tiles mw-quick">${navButton('生产排程甘特图','pmc','schedule')}${navButton('报检判定','quality','qaQc')}${navButton('车间领料 / 退库','production','workshop')}${navButton('库存批次','warehouse','warehouseOps')}${navButton('历史订单','sales','orderHistory')}${navButton('排班编排','pmc','shift')}${navButton('流程与工艺设置','it','settings')}</div>`+
  head('进行中订单',`${historyOrders.length} 张已完结订单已自动归档到销售部 → 历史订单`)+grid(['订单号','产品','当前阶段','入口'],current)+
  head('全厂最近操作记录','全厂统一查看；每张订单的完整历史在订单流程详情')+globalAuditTable();
  return wrap('overview','工厂运行总览','订单、产线、质量、仓储、排班与已确认工时的共同视图','',content);
