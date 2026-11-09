@@ -21,7 +21,13 @@ const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+
 let ctx, S, currentTab={}, form=null, message='',modDialogOpen=false;
 function init(context){ctx=context;ctx.data.modules??={version:18,inspections:[],samples:[],cleanReports:[],ncr:[],batches:[],incoming:[],outbound:[],materialRequests:[],returns:[],disputes:[],roster:[],hours:[],standards:[],executions:[],dictionary:[{id:'DICT-01',group:'班次',name:'日班',value:'08:00–16:00',active:true},{id:'DICT-02',group:'班次',name:'夜班',value:'16:00–00:00',active:true}],ledger:[],rules:{cleanQC:true,requireDoubleSign:true,fifo:true,requireSkill:true,requireLeave:true}};
  S=ctx.data.modules; for(const [key,value] of Object.entries({inspections:[],samples:[],cleanReports:[],ncr:[],batches:[],incoming:[],outbound:[],materialRequests:[],returns:[],disputes:[],roster:[],hours:[],standards:[],executions:[],dictionary:[],ledger:[],rules:{}}))S[key]??=value;
- S.rules={cleanQC:true,requireDoubleSign:true,fifo:true,requireSkill:true,requireLeave:true,...S.rules};ensureStoredOrderBatches();ctx.save();}
+ S.rules={cleanQC:true,requireDoubleSign:true,fifo:true,requireSkill:true,...S.rules};ensureStoredOrderBatches();
+ // 修复旧版本按库存清零判断造成的已足量发货仍停留在仓库环节的问题。
+ for(const order of ctx.data.orders||[]){const flow=ops().flows?.[order.id];if(!flow||!['dispatch','shipping'].includes(flow.stage))continue;
+  const sent=S.outbound.filter(r=>r.order===order.id&&r.status==='已出库').reduce((n,r)=>n+Number(r.qty),0);
+  if(sent>0&&sent+0.00001>=finishedUnitsForOrder(order)){flow.stage='shipped';order.status='已发货';flow.audit??=[];flow.audit.push({at:stamp(),person:'系统',action:'修正历史发货进度',from:'warehouse',to:'sales',state:`累计已出库 ${sent} 箱，待客户收货确认`});}
+ }
+ ctx.save();}
 const me=()=>ctx.access.current();
 const ops=()=>ctx.ops.state;
 function receiptForPurchase(purchaseId){return S.incoming.find(r=>r.purchase===purchaseId&&r.status!=='已驳回')||null}
