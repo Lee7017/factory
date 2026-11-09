@@ -70,6 +70,45 @@ function showShortageDialog(o,shortages){
 function success(msg){notice='';ctx.save();ctx.render();ctx.toast(msg)}
 function stageOf(o){return S.flows[o.id]?.stage||'draft'}
 function stepIndex(stage){return Object.keys(stages).indexOf(stage)}
+function dayBeforeStart(orderId){
+ const entries=(S.gantt||[]).filter(x=>x.orderId===orderId&&x.type==='配制'&&x.start);
+ if(!entries.length)return null;
+ const start=entries.map(x=>String(x.start).slice(0,10)).sort()[0];
+ const date=new Date(start+'T12:00:00');
+ if(Number.isNaN(date.getTime()))return null;
+ date.setDate(date.getDate()-1);
+ return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');
+}
+function materialShortages(order){
+ return Object.entries(requirements(order)).map(([material,required])=>{
+  const reserved=Number(S.reservations?.[order.id]?.[material]||0);
+  const available=Math.max(0,availableStock(material)-(window.FactoryModules?.blockedFromFlow?.(material)||0));
+  return {material,required,available:available+reserved,missing:Math.max(0,required-available-reserved)};
+ }).filter(x=>x.missing>0.00001);
+}
+function checkPrestartMaterials(){
+ if(!S?.gantt?.length)return 0;
+ const today=new Date(),date=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
+ let changed=0;
+ for(const order of ctx.data.orders||[]){
+  const flow=S.flows?.[order.id];
+  if(!flow||!['formal','reserved'].includes(flow.stage))continue;
+  const deadline=dayBeforeStart(order.id);
+  if(!deadline||date<deadline)continue;
+  const missing=materialShortages(order);
+  if(!missing.length)continue;
+  // 已发料/进入生产的订单不允许回退；本检查只处理待锁库和预留阶段。
+  if(S.reservations?.[order.id])delete S.reservations[order.id];
+  flow.stage='trial';order.status='待重新排程';
+  flow.audit??=[];
+  const reason=missing.map(x=>x.material+' 缺 '+x.missing+'（需 '+x.required+'，可用 '+x.available+'）').join('；');
+  flow.audit.push({at:now(),person:'系统',action:'开工前一天物料不齐套，退回排程',from:'warehouse',to:'pmc',state:reason});
+  S.logs.unshift({at:now(),ts:Date.now(),person:'系统',dept:'pmc',action:'开工前一天物料不齐套，退回排程',ref:order.id,detail:reason});
+  changed++;
+ }
+ if(changed){S.logs=S.logs.slice(0,120);ctx.save();}
+ return changed;
+}
 function orderBy(id){return ctx.data.orders.find(x=>x.id===id)}
 function requirements(o){const raw=S.bom.find(x=>x.child==='RM-001')?.qty??.1,pack=S.bom.find(x=>x.child==='PK-001')?.qty??.25;return {'RM-001':Math.ceil(o.qty*raw),'PK-001':Math.ceil(o.qty*pack)}}
 function stageForOrder(o){return stages[stageOf(o)]||'未知状态'}
@@ -131,7 +170,15 @@ function applyFlow(key,id,button){const o=orderBy(id),step=orderActions[key];if(
  if(key==='receipt'){const m=String(o.spec||'').match(/([\d.]+)\s*L\s*[×xX*]\s*(\d+)/),perCase=m?Number(m[1])*Number(m[2]):20,qty=Math.ceil(Number(o.qty||0)/Math.max(perCase,0.000001));if(window.FactoryModules?.receiveFinishedGoods)window.FactoryModules.receiveFinishedGoods(o,qty);else {const stockId=String(o.product||'').includes('500g/L')?'FG-002':'FG-001';S.stock[stockId]=(S.stock[stockId]||0)+qty}}
  if(key==='notifyDelivery'&&!window.FactoryModules?.state?.batches?.some(b=>b.order===id&&b.source==='生产入库'))return warn('尚未找到该订单的成品入库批次，不能发起发货通知。');
  if(key==='confirmDelivery'){const shipments=window.FactoryModules?.state?.outbound?.filter(x=>x.order===id&&x.status==='已出库')||[];if(!shipments.length)return warn('仓库尚未确认出库，不能确认客户收货。')}
- if(key==='formal'){S.flows[id].planLine=S.flows[id].planLine||'L01 配制一线';}
+ if(key==='formal'){
+  const deadline=dayBeforeStart(id);
+  const today=new Date(),localDay=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
+  if(deadline&&localDay>=deadline){
+   const missing=materialShortages(o);
+   if(missing.length)return warn('距离计划开工不足一天，物料未齐套，不能重新发布正式排程。请调整排程日期或补齐物料：'+missing.map(x=>x.material+' 缺 '+x.missing).join('；'));
+  }
+  S.flows[id].planLine=S.flows[id].planLine||'L01 配制一线';
+ }
  S.flows[id].stage=next;
  let generatedInspection=null;
  if(next==='semi_qc'||next==='final_qc')generatedInspection=window.FactoryModules?.ensureFlowInspection?.(id,next==='semi_qc'?'半成品':'成品')||null;
@@ -276,5 +323,5 @@ function pendingForDept(dept){const out=[];const push=(o,feature,title,desc)=>ou
  return out;
 }
 function openTodo(item){ctx.openFeature(item.feature,item.dept);setTimeout(()=>{const row=document.querySelector(`[data-op-id="${CSS.escape(item.id)}"]`);if(row){row.closest('tr')?.scrollIntoView({block:'center',behavior:'smooth'});row.closest('tr')?.classList.add('op-focus');setTimeout(()=>row.closest('tr')?.classList.remove('op-focus'),2000)}},0)}
-window.FactoryOperations={init,render,handleClick,submitForm,pendingForDept,openTodo,getOrder:id=>ctx?.data?.orders?.find(o=>o.id===id)||null,get state(){return S},getStages:()=>({...stages})};
+window.FactoryOperations={init,render,handleClick,submitForm,pendingForDept,openTodo,checkPrestartMaterials,dayBeforeStart,materialShortages,getOrder:id=>ctx?.data?.orders?.find(o=>o.id===id)||null,get state(){return S},getStages:()=>({...stages})};
 })();
