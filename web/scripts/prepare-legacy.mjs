@@ -17,4 +17,5 @@ await writeFile(path.join(outputDir, "index.html"), document, "utf8")
 for (const name of ["legacy-embed.css", "legacy-bridge.js"]) {
   await copyFile(fileURLToPath(new URL(`../legacy/${name}`, import.meta.url)), path.join(outputDir, name))
 }
-console.log("Legacy factory assets prepared with 77 Lucide icons and iframe bridge.")
+await import("./scope-legacy-css.mjs")
+console.log("Legacy assets and React-scoped business styles prepared.")
