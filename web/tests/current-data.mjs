@@ -61,6 +61,8 @@ try{
    assert.ok(!saved.orders.some(o=>o.id==="SO-V2-OLD"||o.id==="SO-V2-OTHER"),"Old records must never be imported")
    assert.ok(await page.evaluate(()=>localStorage.getItem("factory-workspace-v2")!==null),"Old storage must be left untouched, not read or deleted")
    await page.reload({waitUntil:"networkidle"})
+   await page.evaluate(()=>{location.hash="#/overview"})
+   await page.locator(".dashboard-kpis .kpi-card").first().waitFor()
    assert.equal((await page.locator(".kpi-value").nth(1).textContent()).trim(),String(seed.orders.length+1).padStart(2,"0"))
    assert.deepEqual(errors,[])
    await page.close()
