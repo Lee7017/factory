@@ -80,6 +80,13 @@ try {
   const selector=page.locator("#perm-employee")
   await selector.waitFor({state:"visible"})
   await selector.selectOption("E009")
+  await page.waitForTimeout(350)
+  console.log("PERMISSION DEBUG",JSON.stringify(await page.evaluate(()=>({
+    selectedOption:document.querySelector("#perm-employee")?.value,
+    selectedEmployee:window.FactoryAccess?.selectedEmployee,
+    selectedText:document.querySelector(".access-selected-user strong")?.textContent,
+    title:document.querySelector(".page-title")?.textContent
+  }))))
   await page.waitForFunction(()=>document.querySelector(".access-selected-user strong")?.textContent==="孙浩",null,{timeout:6000})
   assert.equal(await page.locator(".access-selected-user strong").textContent(),"孙浩",
     "Employee selection updates access rights and the displayed employee")
