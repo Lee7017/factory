@@ -31,7 +31,7 @@ function init(context){ctx=context;ctx.data.modules??={version:18,inspections:[]
 const me=()=>ctx.access.current();
 const ops=()=>ctx.ops.state;
 const permitted=(dept,feature,action='view')=>ctx.access.has(dept,feature,action);
-function check(dept,feature,action='view'){if(permitted(dept,feature,action))return true;message='当前员工没有执行该操作的权限。';ctx.render();return false;}
+function check(dept,feature,action='view'){if(permitted(dept,feature,action))return true;message='';ctx.toast('当前员工没有执行该操作的权限。');return false;}
 const money=n=>Number(n).toLocaleString('zh-CN',{maximumFractionDigits:4});
 const status=s=>`<span class="mw-status ${/已|合格|通过|放行|正常|可用|完结/.test(s)?'mw-ok':/冻结|不合格|驳回|超期|冲突|拒绝/.test(s)?'mw-alert':''}">${esc(s)}</span>`;
 function btn(label,action,id='',variant=''){return `<button type="button" class="mw-btn ${variant}" data-module-action="${esc(action)}" data-mid="${esc(id)}">${esc(label)}</button>`}
@@ -41,7 +41,7 @@ function grid(columns,rows,empty='暂无记录，请通过上方操作按钮新�
 function row(values){return `<tr>${values.map(td).join('')}</tr>`}
 function wrap(page,title,intro,toolbar,content,stats=''){
  const commandbar=toolbar?`<div class="mw-commandbar"><div class="mw-actions">${toolbar}</div></div>`:'';
- return `<div class="mw-page" data-module-page="${esc(activeFeatureRoute||page)}">${commandbar}${stats}<section class="mw-content">${content}</section><div class="mw-feedback" role="status">${message?esc(message):'操作记录保存在当前浏览器；审批与库存变更会关联相应单据。'}</div></div>`;
+ return `<div class="mw-page" data-module-page="${esc(activeFeatureRoute||page)}">${commandbar}${stats}<section class="mw-content">${content}</section></div>`;
 }
 function cards(rows){return `<div class="mw-metrics">${rows.map(([label,value,sub])=>`<div class="mw-metric"><span>${esc(label)}</span><strong>${esc(value)}</strong><small>${esc(sub||'')}</small></div>`).join('')}</div>`}
 function head(label,extra=''){return `<div class="mw-section-head"><h3>${esc(label)}</h3><span>${esc(extra)}</span></div>`}
@@ -49,10 +49,10 @@ function note(extra=''){return extra?`<p class="mw-tab-note">${esc(extra)}</p>`:
 function field(key,label,kind='text',val='',options=[]){const control=kind==='select'?`<select name="${esc(key)}" id="m-${esc(key)}" required>${options.map(x=>{let [v,t]=Array.isArray(x)?x:[x,x];return `<option value="${esc(v)}" ${String(v)===String(val)?'selected':''}>${esc(t)}</option>`}).join('')}</select>`:kind==='textarea'?`<textarea name="${esc(key)}" id="m-${esc(key)}" rows="3" required>${esc(val)}</textarea>`:`<input name="${esc(key)}" id="m-${esc(key)}" type="${esc(kind)}" value="${esc(val)}" ${kind==='number'?'min="0.01" step="any"':''} required>`;return `<label class="mw-field"><span>${esc(label)}</span>${control}</label>`}
 function modal(title,fields,context){form=context;modDialogOpen=true;$('#modules-modal-host').innerHTML=`<div class="mw-overlay" data-module-action="closeModal"></div><section class="mw-modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><h2>${esc(title)}</h2>${btn('关闭','closeModal')}</header><form id="module-form"><div class="mw-modal-fields">${fields}</div><p class="mw-modal-error" aria-live="polite"></p><footer>${btn('取消','closeModal')}<button class="mw-btn primary" type="submit">${context?.kind==='outbound'?'确认本次出库':'保存并提交'}</button></footer></form></section>`}
 function close(){modDialogOpen=false;form=null;$('#modules-modal-host').innerHTML=''}
-function fail(str){const el=$('.mw-modal-error');if(el)el.textContent=str;else {message=str;ctx.render()};return false}
+function fail(str){const el=$('.mw-modal-error');if(el){el.textContent=str}else{message='';ctx.toast(str)}return false}
 function completeWithFlow(){if(!pendingAudit)return;const row=pendingAudit;pendingAudit=null;const recent=S.ledger.filter(x=>x.ref===row.ref).slice(0,5).reverse().map(x=>({at:x.time,from:x.dept||row.dept,action:x.type}));window.FactoryFlowUI?.fromAudit(row,recent,row.dept);}
-function done(str){message=str;close();ctx.save();ctx.render();completeWithFlow();}
-function save(str){message=str;ctx.save();ctx.render();completeWithFlow()}
+function done(str){const hasFlow=Boolean(pendingAudit);message='';close();ctx.save();ctx.render();if(!hasFlow)ctx.toast(str);completeWithFlow();}
+function save(str){const hasFlow=Boolean(pendingAudit);message='';ctx.save();ctx.render();if(!hasFlow)ctx.toast(str);completeWithFlow()}
 const id=prefix=>`${prefix}-${Date.now().toString().slice(-7)}-${Math.floor(Math.random()*900+100)}`;
 const orderOptions=()=>ctx.data.orders.filter(o=>ops().flows[o.id]?.stage!=='stored').map(o=>[o.id,`${o.id} · ${o.product}`]);
 const completedOrderOptions=()=>ctx.data.orders.filter(o=>['dispatch','shipping'].includes(ops().flows[o.id]?.stage)).map(o=>[o.id,`${o.id} · ${o.product}`]);

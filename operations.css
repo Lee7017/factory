@@ -3,7 +3,6 @@
 
 .op-form-error{grid-column:1/-1;color:#aa3d3d;background:#fff2f1;border:1px solid #efcece;border-radius:6px;padding:10px 12px;font-size:12px;margin:0 0 12px}
 /* 提示浮层不能拦截业务按钮点击 */
-#toast-host,#toast-host .toast-item{pointer-events:none}
 
 @media(max-width:740px){.op-table-wrap::before{content:'表格可以左右滑动查看操作按钮 →';display:block;text-align:right;background:#f8f9fa;color:#7c8590;font-size:11px;padding:7px 11px;border-bottom:1px solid #e8eaed}}
 

@@ -67,12 +67,12 @@ function revealDeptInfo(trigger,pin=false){
 }
 function crumbs(d,f){
  const root=$('breadcrumbs');
- root.innerHTML=`<button type="button" class="crumb-link crumb-home" data-breadcrumb-home>工厂管理系统</button><span class="crumb-sep">/</span><span class="dept-crumb-group"><button type="button" class="crumb-link crumb-dept" data-breadcrumb-dept="${e(d.id)}">${e(d.name)}</button><button type="button" class="dept-info-trigger" data-dept-info-toggle="${e(d.id)}" aria-label="查看${e(d.name)}介绍" aria-expanded="false" aria-controls="dept-description-popover">${icon('info')}</button></span>${f?`<span class="crumb-sep">/</span><strong class="crumb-current">${e(features[f])}</strong>`:''}`;
+ root.innerHTML=`<button type="button" class="crumb-link crumb-home" data-breadcrumb-home><span class="crumb-root-mark" aria-hidden="true"></span><span>工作台</span></button><span class="crumb-sep" aria-hidden="true"></span><span class="dept-crumb-group"><button type="button" class="crumb-link crumb-dept" data-breadcrumb-dept="${e(d.id)}"><span class="crumb-level-label">部门</span><span class="crumb-level-value">${e(d.name)}</span></button><button type="button" class="dept-info-trigger" data-dept-info-toggle="${e(d.id)}" aria-label="查看${e(d.name)}介绍" aria-expanded="false" aria-controls="dept-description-popover">${icon('info')}</button></span>${f?`<span class="crumb-sep" aria-hidden="true"></span><strong class="crumb-current" aria-current="page"><span class="crumb-level-label">功能</span><span class="crumb-level-value">${e(features[f])}</span></strong>`:''}`;
  $('view-title').textContent=f?features[f]:d.name;$('view-description').textContent=f?featureHint(f):d.description
 }
 function crumbsHome(){
  const root=$('breadcrumbs');
- root.innerHTML='<button type="button" class="crumb-link crumb-home" data-breadcrumb-home>工厂管理系统</button><span class="crumb-sep">/</span><strong class="crumb-current">工厂运行总览</strong>';
+ root.innerHTML='<button type="button" class="crumb-link crumb-home" data-breadcrumb-home><span class="crumb-root-mark" aria-hidden="true"></span><span>工作台</span></button><span class="crumb-sep" aria-hidden="true"></span><strong class="crumb-current" aria-current="page"><span class="crumb-level-label">总览</span><span class="crumb-level-value">工厂运行</span></strong>';
  $('view-title').textContent='工厂运行总览';
  $('view-description').textContent=featureHint('overview');
 }
@@ -80,7 +80,16 @@ function panel(title,contents,extra=''){return `<section class="panel"><div clas
 function table(columns,rows){return `<div class="table-wrap"><table class="data-table"><thead><tr>${columns.map(c=>`<th>${e(c)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map(x=>`<td>${x??''}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`}
 function tag(s){const dark=['执行中','已完成','审核通过','已发布','合格','可排班','已确认','可用'].includes(s);return `<span class="tag ${dark?'dark':''}">${e(s)}</span>`}
 function action(text,kind,payload='',css=''){return `<button class="btn btn-xs ${css}" data-action="${kind}" ${payload?`data-id="${e(payload)}"`:''}>${text}</button>`}
-function toast(message,dept='it'){const root=$('toast-host'),name=departments.find(d=>d.id===dept);let el=document.createElement('div');el.className='toast-item';el.innerHTML=`<span class="toast-icon">${icon(name?.icon||'check')}</span><span>${e(message)}</span>`;root.prepend(el);setTimeout(()=>el.remove(),3800);while(root.children.length>3)root.lastElementChild.remove()}
+let promptConfirmHandler=null;
+function closePrompt(){const host=$('prompt-host');if(host)host.innerHTML='';promptConfirmHandler=null}
+function systemPrompt(message,{title='系统提示',confirmLabel='知道了',cancelLabel='',onConfirm=null,tone='info'}={}){
+ const host=$('prompt-host');if(!host)return;
+ promptConfirmHandler=typeof onConfirm==='function'?onConfirm:null;
+ host.innerHTML=`<div class="factory-prompt-screen" data-prompt-backdrop><section class="factory-prompt factory-prompt-${e(tone)}" role="${onConfirm?'alertdialog':'dialog'}" aria-modal="true" aria-labelledby="factory-prompt-title"><header><div><span class="factory-prompt-kicker">FACTORY OS</span><h2 id="factory-prompt-title">${e(title)}</h2></div><button type="button" class="factory-prompt-close" data-prompt-close aria-label="关闭">×</button></header><p>${e(message)}</p><footer>${cancelLabel?`<button type="button" class="btn btn-quiet" data-prompt-close>${e(cancelLabel)}</button>`:''}<button type="button" class="btn btn-primary" ${onConfirm?'data-prompt-confirm':'data-prompt-close'}>${e(confirmLabel)}</button></footer></section></div>`;
+}
+function toast(message,dept='it'){const name=departments.find(d=>d.id===dept);systemPrompt(message,{title:name?.name?`${name.name}提示`:'系统提示'})}
+function confirmPrompt(message,onConfirm,{title='确认操作',confirmLabel='确认',cancelLabel='取消'}={}){systemPrompt(message,{title,confirmLabel,cancelLabel,onConfirm,tone:'confirm'})}
+window.FactoryPrompt={show:(message,options={})=>systemPrompt(message,options),confirm:(message,onConfirm,options={})=>confirmPrompt(message,onConfirm,options),close:closePrompt};
 function message(title,text,dept,feature){data.messages.unshift({id:Date.now(),title,text,dept,date:'刚刚',unread:true,feature});save();updateUnread();if(drawer)drawMessages()}
 function overview(){const stages=[['订单评审','sales'],['PMC 排程','pmc'],['采购齐套','purchase'],['仓库发料','warehouse'],['配制生产','production'],['半成品检验','quality'],['包装生产','production'],['成品入库','warehouse']];return `<div class="grid stats">${[['待办任务','18','跨部门待处理'],['生产任务','06','配制 / 包装'],['非生产任务','04','清洗 / 调机调线'],['已配置模板','05','含历史停用版']].map(([k,n,h],i)=>`<div class="panel stat"><div class="stat-top">${k}${icon(['pmc','production','engineering','tech'][i])}</div><strong>${n}</strong><span class="stat-foot">${h}</span></div>`).join('')}</div><div class="grid split">${panel('订单与批次主流程',`<div class="kpi-caption">SO-2026-1023-018 · 720g/L 百菌清悬浮剂 · 5L × 4桶 · 3,000 L</div><div class="task-timeline">${stages.map(([name,dept],i)=>`<div class="task-node ${i===1?'current':''}"><span class="step-id">STEP ${String(i+1).padStart(2,'0')}</span><span class="node-icon">${icon(departments.find(d=>d.id===dept).icon)}</span><b>${name}</b><small>${i===0?'已完成':i===1?'排程确认中':'等待流转'}</small></div>`).join('')}</div><div class="toolbar" style="margin:14px 0 0"><span class="small-note">本页面不连接后端审批与库存扣减服务。</span>${action('查看生产排程','nav','schedule')}</div>`,'08 个业务阶段')}${panel('最新业务动态',`<div class="activity-item"><span class="activity-mark">${icon('pmc')}</span><div><strong>PMC 排程方案已生成</strong><p>订单 SO-2026-1023-018 · 草稿</p></div><time>09:18</time></div><div class="activity-item"><span class="activity-mark">${icon('engineering')}</span><div><strong>设备工程部等待调线</strong><p>包装线 S03-4# · 待执行</p></div><time>09:05</time></div><div class="activity-item"><span class="activity-mark">${icon('quality')}</span><div><strong>半成品报检任务</strong><p>质量放行 · 待检验</p></div><time>08:42</time></div>`,'今日') }</div>${panel(departments.length+' 部门协同总览',`<div class="dept-summary">${departments.map(d=>`<div class="dept-summary-item"><span class="ico-wrap">${icon(d.icon)}</span><div><b>${e(d.name)}</b><small>${d.features.filter(f=>allowed(d.id,f)).length} / ${d.features.length} 项功能可用</small></div></div>`).join('')}</div>`,'按部门配置功能权限')}`}
 // 待办只从单据状态计算，不再用功能菜单伪造“工作事项”。
@@ -206,6 +215,7 @@ function render(){hideDeptInfo();let d=departments.find(x=>x.id===data.dept)||de
 const deniedFlashTimers=new WeakMap();
 function flashDenied(target){
   if(!target)return;
+  toast('当前员工没有执行该操作的权限。');
   target.classList.remove('access-denied-flash');
   void target.offsetWidth; // 连续点击时重新播放动画
   target.classList.add('access-denied-flash');
@@ -269,7 +279,7 @@ function loadAddress(){
 function modal(title,body,fields='',handler=''){let host=$('modal-host');host.innerHTML=`<div class="modal-screen" id="modal-screen"><div class="modal-box"><button class="icon-btn modal-close" id="close-modal" aria-label="关闭">${icon('close')}</button><div class="eyebrow">FACTORY OS / WORKSPACE</div><h2>${e(title)}</h2><p class="modal-description">${e(body)}</p>${fields?`<div class="modal-content">${fields}</div>`:''}<div class="modal-foot"><button class="btn btn-quiet" id="cancel-modal">取消</button>${handler?`<button class="btn btn-primary" data-action="${handler}">确认</button>`:action('知道了','close')}</div></div></div>`}
 function closeModal(){$('modal-host').innerHTML=''}
 function field(label,id,type='text',value='',other=''){return `<div class="form-group"><label for="${id}">${e(label)}</label><input class="field" id="${id}" type="${type}" value="${e(value)}" ${other}></div>`}
-function reset(){if(!confirm('重置本浏览器内的数据和消息？'))return;data=JSON.parse(JSON.stringify(initial));data.offices={};data.chatThreads={};access.reset();ops.init({data,save,access,toast,flashDenied,render,openFeature});window.FactoryGantt.init({data,save,access,render,flashDenied});window.FactoryModules.init({data,save,access,toast,render,openFeature,ops});try{ops.checkPrestartMaterials?.()}catch(error){console.error('开工前物料检查失败，不影响首页加载',error)}data.dept='it';data.expanded='it';data.home=true;save();render();updateHomeAddress();updateUnread();toast('本地数据已重置')}
+function reset(){confirmPrompt('重置后，当前浏览器中的业务数据和消息都会恢复为初始状态。',()=>{data=JSON.parse(JSON.stringify(initial));data.offices={};data.chatThreads={};access.reset();ops.init({data,save,access,toast,flashDenied,render,openFeature});window.FactoryGantt.init({data,save,access,render,flashDenied});window.FactoryModules.init({data,save,access,toast,render,openFeature,ops});try{ops.checkPrestartMaterials?.()}catch(error){console.error('开工前物料检查失败，不影响首页加载',error)}data.dept='it';data.expanded='it';data.home=true;save();render();updateHomeAddress();updateUnread();toast('本地数据已重置')},{title:'确认重置',confirmLabel:'确认重置'})}
 function updateUnread(){let n=data.messages.filter(m=>m.unread).length;$('unread-badge').textContent=n;$('unread-badge').classList.toggle('zero',n===0);$('drawer-unread').textContent=n}
 function drawMessages(){updateUnread();$('message-list').innerHTML=data.messages.map(m=>{let d=departments.find(d=>d.id===m.dept);return `<div class="message ${m.unread?'unread':''}" data-message="${m.id}"><span class="message-icon">${icon(d?.icon||'bell')}</span><div class="message-main"><strong>${e(m.title)}</strong><p>${e(m.text)}</p><small>${e(m.date)} · ${e(d?.name||'系统消息')}</small></div>${icon('arrow','ico tiny')}</div>`}).join('')||'<div class="empty-state">暂无消息</div>'}
 function toggleDrawer(open){drawer=open;$('notify-drawer').classList.toggle('open',drawer);$('drawer-shade').classList.toggle('visible',drawer);if(drawer)drawMessages()}
@@ -286,6 +296,9 @@ const homeTile=ev.target.closest('[data-nav-home]');if(homeTile){openHome();retu
  const homeCrumb=ev.target.closest('[data-breadcrumb-home]');if(homeCrumb){openHome();return;}
 const deptCrumb=ev.target.closest('[data-breadcrumb-dept]');if(deptCrumb){openDept(deptCrumb.dataset.breadcrumbDept);return;}
 const tabBtn=ev.target.closest('[data-dept-tab]');if(tabBtn){deptTabs[data.dept]=tabBtn.dataset.deptTab;render();return;}
+if(ev.target.matches?.('[data-prompt-backdrop]')){closePrompt();return;}
+if(ev.target.closest?.('[data-prompt-close]')){closePrompt();return;}
+if(ev.target.closest?.('[data-prompt-confirm]')){const fn=promptConfirmHandler;closePrompt();if(fn)fn();return;}
 const modBtn=ev.target.closest('[data-module-action]');if(modBtn){window.FactoryModules.handleClick(modBtn);return;}
 const opBtn=ev.target.closest('[data-op-action]');if(opBtn){ops.handleClick(opBtn);return;}
 let chatClose=ev.target.closest('[data-chat-close]');if(chatClose){closeChat();return;}
@@ -322,6 +335,7 @@ document.addEventListener('keydown',ev=>{
  const trigger=document.querySelector('[data-dept-info-toggle][aria-expanded="true"]');
  if(trigger){hideDeptInfo();trigger.blur();}
  if(window._chatPeer)closeChat();
+ closePrompt();
 });
 document.addEventListener('mouseover',ev=>{
  const trigger=ev.target.closest?.('[data-dept-info-toggle]');
