@@ -131,7 +131,7 @@ function store(idValue){const r=arrivals().find(x=>x.id===idValue);if(!r||r.stat
  renderNow();noticeFlow({ref:r.id,docType:'到货单',action:'仓库确认入库',from:'warehouse',to:'warehouse',status:'已入库',next:'可用库存已更新',nextOpen:{dept:'warehouse',feature:'warehouseIncoming'}});
 }
 function trackShortage(orderId){
- const all=JSON.parse(localStorage.getItem('factory-workspace-v3')||'{}');
+ const all=JSON.parse(localStorage.getItem('factory-workspace-v4')||'{}');
  const order=all.orders?.find(x=>x.id===orderId);
  const stock=O.state.stock,reservations=O.state.reservations||{};
  const committed=Object.values(reservations).reduce((t,x)=>t+Number(x['PK-001']||0),0);
