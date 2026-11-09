@@ -435,7 +435,7 @@ export default function App() {
                   currentFeature==="leave"||currentFeature==="leaveApproval"?
                     <LeavePage key={currentFeature} feature={currentFeature} workspace={workspace}
                       employee={employee} can={can} onRefresh={refresh}/>:
-                    access?<NativeBusiness key={currentFeature} dept={currentDept.id}
+                    access?<NativeBusiness key={`${currentFeature}-${employee?.id??"none"}`} dept={currentDept.id}
                       feature={currentFeature} access={access} onRoute={navigate} onRefresh={refresh}/>:
                     <p className="text-xs text-muted-foreground" role="status">正在加载员工权限…</p>:
                   <Card className="glass-panel gap-2 p-6">
