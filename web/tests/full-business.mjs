@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { spawn } from "node:child_process"
-import { readFile, mkdir } from "node:fs/promises"
+import { readFile, mkdir, writeFile } from "node:fs/promises"
 import { chromium } from "playwright"
 const base="http://127.0.0.1:4174/factory/"
 const src=await readFile("src/catalog.ts","utf8")
@@ -73,6 +73,42 @@ try {
   }else missing.push("Sales order creation button unavailable for default developer")
   assert.deepEqual(missing,[],"Complete business screen and order write regression")
   assert.deepEqual(errors,[],"No runtime errors after writing")
+
+  // Original employee/department permission selectors remain fully interactive.
+  activeFeature="it/permissions"
+  await page.evaluate(()=>{location.hash="#/departments/it/permissions"})
+  const selector=page.locator("#perm-employee")
+  await selector.waitFor({state:"visible"})
+  await selector.selectOption("E009")
+  assert.equal(await page.locator(".access-selected-user strong").textContent(),"孙浩",
+    "Employee selection updates access rights and the displayed employee")
+  await page.locator("#perm-dept").selectOption("quality")
+  assert.equal(await page.locator("#perm-dept").inputValue(),"quality",
+    "Changing department updates the permission matrix")
+
+  // Back up the same browser records before deploying or rolling back.
+  await page.getByRole("button",{name:"切换当前员工"}).click()
+  const [download]=await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button",{name:/导出数据和权限/}).click()
+  ])
+  assert.ok(download.suggestedFilename().startsWith("factory-browser-backup-"))
+  const backup=JSON.parse(await readFile(await download.path(),"utf8"))
+  assert.equal(backup.format,"factory-browser-backup-v1")
+  assert.ok(JSON.parse(backup.storage["factory-workspace-v2"]).orders.some(o=>o.product==="自动化测试产品"))
+  assert.ok(JSON.parse(backup.storage["factory-permissions-v2"]).current,"Staff permissions are included")
+
+  // Restore a modified backup through the real shadcn dialog and verify persistence.
+  const updated=JSON.parse(backup.storage["factory-workspace-v2"])
+  updated.offices={...updated.offices,quality:"自动化恢复测试办公室"}
+  backup.storage["factory-workspace-v2"]=JSON.stringify(updated)
+  await writeFile("test-results/restore-check.json",JSON.stringify(backup))
+  await page.getByRole("button",{name:/从备份恢复数据/}).click()
+  await page.locator('input[type="file"]').setInputFiles("test-results/restore-check.json")
+  await page.getByRole("checkbox",{name:/我已确认将使用备份覆盖/}).check()
+  await page.getByRole("button",{name:/覆盖并恢复/}).click()
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem("factory-workspace-v2")||"{}").offices?.quality==="自动化恢复测试办公室")
+  assert.deepEqual(errors,[],"No runtime errors from backup import/export")
   await page.screenshot({path:"test-results/all-business-native.png",fullPage:true})
   console.log(`PASS: ${features.length} department-feature routes, 0 iframes, shared MES order write, data and permissions.`)
 } catch(error){failed=true;console.error(error)}
