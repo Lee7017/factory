@@ -176,8 +176,8 @@ function ringOfCards(steps,kind,stage,history){
  const centerTitle=kind==='order'?'销售订单':kind==='purchase'?'采购单':kind==='receipt'?'采购到货':'单据流转';
  return `<div class="journey-ring-scroll" role="region" aria-label="顺时针环形流程图" tabindex="0"><div class="journey-ring" style="width:${width}px;height:${height}px"><svg viewBox="0 0 ${width} ${height}" class="journey-ring-paths" aria-hidden="true"><defs><marker id="journey-arrow-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#62758a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="journey-return-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#b76b44" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>${arcs}${returnLines}</svg><div class="journey-ring-hub"><span>正在追踪</span><strong>${clean(centerTitle)}</strong><small>箭头顺时针流转</small>${returns.length?`<em>${returns.length} 条真实退回记录（橙色）</em>`:''}</div>${cards}</div></div>`;
 }
-function stepForReturn(action,kind,n){if(/审批|评审/.test(action))return 1;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?9:12):kind==='purchase'?3:1;return Math.max(1,n-3)}
-function returnTarget(action,kind,n){if(/审批|评审/.test(action))return 0;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?7:10):kind==='purchase'?2:0;return Math.max(0,n-4)}
+function stepForReturn(action,kind,n){if(kind==='order'&&/物料不齐套|退回排程/.test(action))return 5;if(/审批|评审/.test(action))return 1;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?9:12):kind==='purchase'?3:1;return Math.max(1,n-3)}
+function returnTarget(action,kind,n){if(kind==='order'&&/物料不齐套|退回排程/.test(action))return 3;if(/审批|评审/.test(action))return 0;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?7:10):kind==='purchase'?2:0;return Math.max(0,n-4)}
 function orderDetails(entry,kind){
  if(kind!=='order')return '';
  const o=window.FactoryOperations?.getOrder?.(entry.ref);
