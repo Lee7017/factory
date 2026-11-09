@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent, type MouseEvent } from "react"
+import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent, type MouseEvent } from "react"
 import { AlertCircle, LoaderCircle, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { FactoryAccessAPI } from "@/factory-state"
@@ -47,6 +47,11 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
       void getBusinessRuntime().then(runtime=>runtime.click(target))
     }
   }
+  function handleChange(event:ChangeEvent<HTMLDivElement>){
+    const el=event.target
+    if(el instanceof HTMLSelectElement&&["perm-employee","perm-position","perm-dept"].includes(el.id))
+      void getBusinessRuntime().then(runtime=>runtime.change(el.id,el.value))
+  }
   function handleSubmit(event:FormEvent<HTMLDivElement>){
     event.preventDefault()
     // Preserve the original validators and submit handlers; preventing default
@@ -63,7 +68,7 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
       <Button variant="outline" size="sm" onClick={()=>setReload(n=>n+1)}><RotateCcw size={14}/>重试</Button>
     </div>}
     <div className="legacy-root" style={{display:status==="ready"?"block":"none"}}
-      onClick={handleClick} onSubmit={handleSubmit}>
+      onClick={handleClick} onSubmit={handleSubmit} onChange={handleChange}>
       <div id="view" className="legacy-workbench" dangerouslySetInnerHTML={{__html:markup}}/>
       <div id="modal-host"/>
       <div id="ops-modal-host"/>
