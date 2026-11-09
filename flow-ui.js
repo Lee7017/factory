@@ -137,6 +137,27 @@ function rowsOfCards(steps,kind,stage,history){let html='';for(let i=0;i<steps.l
  return html}
 function loopRows(kind,history){const loops=flowConfig[kind]?.loops||[];if(!loops.length)return '';
  return `<div class="journey-loops"><div class="journey-section-head"><strong>退回 / 复检的循环路线</strong><small>出现退回时沿返回箭头再次办理，不会直接跳过检验</small></div><div class="journey-loops-grid">${loops.map(([origin,text,dept])=>`<div class="journey-loop">${arrowReturn}<span><strong>${clean(origin)}</strong><small>${clean(text)}</small><em>返回 ${clean(label(dept))}</em></span></div>`).join('')}</div></div>`}
+function orderDetails(entry,kind){
+ if(kind!=='order')return '';
+ const o=window.FactoryOperations?.getOrder?.(entry.ref);
+ if(!o)return '<div class="journey-extra"><div class="journey-section-head"><strong>销售订单内容</strong><small>原始订单未找到</small></div><div class="journey-extra-line"><span>无法读取订单正文，请核对订单是否已删除。</span></div></div>';
+ const fields=[['订单编号',o.id],['产品名称',o.product],['产品规格',o.spec],['订单数量',o.qty===undefined?'未填写':o.qty+' '+(o.unit||'')],['订单状态',o.status||entry.status||'—']];
+ for(const [key,label] of [['customer','客户'],['customerName','客户'],['deliveryDate','交货日期'],['dueDate','交期'],['createdAt','创建时间'],['owner','负责部门 / 人员'],['remark','备注'],['notes','备注']]){
+  if(o[key]!==undefined&&o[key]!==null&&String(o[key]).trim()&&!fields.some(x=>x[0]===label))fields.push([label,o[key]]);
+ }
+ const outbound=window.FactoryModules?.state?.outbound?.filter(x=>x.order===entry.ref)||[];
+ const sent=outbound.filter(x=>x.status==='已出库').reduce((n,x)=>n+Number(x.qty||0),0);
+ const match=String(o.spec||'').match(/([\d.]+)\s*L\s*[×xX*]\s*(\d+)/);
+ const perCase=match?Number(match[1])*Number(match[2]):20;
+ const expected=Math.ceil(Number(o.qty||0)/Math.max(perCase,0.000001));
+ const due=Math.max(0,expected-sent);
+ const batches=window.FactoryModules?.state?.batches?.filter(b=>b.order===entry.ref&&b.group==='成品')||[];
+ const available=batches.filter(b=>b.quality==='合格').reduce((n,b)=>n+Math.max(0,Number(b.qty||0)),0);
+ const shortage=Math.max(0,due-available);
+ const shipment=outbound.length?'<div class="journey-section-head"><strong>订单发货进度</strong><small>数量单位：箱</small></div><div class="journey-extra-line"><b>应发 '+clean(expected)+' 箱</b><span>已出库 '+clean(sent)+' 箱 · 待发 '+clean(due)+' 箱 · 合格库存 '+clean(available)+' 箱 · 缺口 '+clean(shortage)+' 箱</span></div>':'';
+ return '<div class="journey-extra"><div class="journey-section-head"><strong>销售订单内容</strong><small>原始订单信息</small></div>'+
+ fields.map(([label,value])=>'<div class="journey-extra-line"><b>'+clean(label)+'</b><span>'+clean(value)+'</span></div>').join('')+shipment+'</div>';
+}
 function extras(entry,kind){if(entry.detailHtml)return `<div class="journey-extra">${entry.detailHtml}</div>`;if(kind==='order'){const m=window.FactoryModules?.state,ref=entry.ref;
  const outbound=m?.outbound?.filter(x=>x.order===ref)||[];
  if(outbound.length)return `<div class="journey-extra"><div class="journey-section-head"><strong>成品出库与客户交付</strong><small>${outbound.length} 张出库单</small></div>${outbound.map(r=>`<div class="journey-extra-line"><b>${clean(r.id)}</b><span>${clean(r.qty)} 箱 · ${clean(r.destination)} · ${clean(r.status)}</span></div>`).join('')}</div>`;
@@ -147,6 +168,7 @@ function renderGraph(entry){const kind=inferKind(entry),history=getHistory(entry
  return `<div class="flow-veil" data-flow-close aria-hidden="true"></div><section class="flow-window journey-dialog" role="dialog" aria-modal="true" aria-labelledby="journey-title">
  <header class="journey-top"><div><span class="journey-eyebrow">跨部门单据流转</span><h2 id="journey-title">${clean(type)} <span>${clean(entry.ref||'业务记录')}</span></h2><p>${clean(summary)}</p></div><button class="journey-close" data-flow-close type="button" aria-label="关闭流程弹窗">×</button></header>
  <div class="journey-toolbar"><span>当前状态 <b>${clean(status)}</b></span>${entry.action?`<span>刚刚办理 <b>${clean(entry.action)}</b> · ${clean(entry.operator||'经办人未记录')}</span>`:''}<span>单据按实际办理顺序流转</span></div>
+ ${orderDetails(entry,kind)}
  <div class="journey-section-head"><strong>部门 · 员工 · 处理事项</strong><small>实线箭头表示前进，弯箭头表示进入下一行</small></div>
  <div class="journey-steps">${rowsOfCards(steps,kind,stage,history)}</div>
  ${extras(entry,kind)}
