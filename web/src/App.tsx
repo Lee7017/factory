@@ -10,6 +10,7 @@ import {
 } from "@/factory-state"
 import { NativeBusiness } from "@/business/NativeBusiness"
 import { LeavePage } from "@/business/LeavePage"
+import { EmployeesPage } from "@/business/EmployeesPage"
 import { DataBackup } from "@/components/DataBackup"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -459,6 +460,8 @@ export default function App() {
                   currentFeature==="leave"||currentFeature==="leaveApproval"?
                     <LeavePage key={currentFeature} feature={currentFeature} workspace={workspace}
                       employee={employee} can={can} onRefresh={refresh}/>:
+                    currentFeature==="employees"&&access?
+                    <EmployeesPage key={currentFeature} access={access} workspace={workspace} onRefresh={refresh}/>:
                     access?<NativeBusiness key={`${currentFeature}-${employee?.id??"none"}`} dept={currentDept.id}
                       feature={currentFeature} access={access} onRoute={navigate} onRefresh={refresh}/>:
                     <p className="text-xs text-muted-foreground" role="status">正在加载员工权限…</p>:
