@@ -96,7 +96,7 @@ try {
   ])
   assert.ok(download.suggestedFilename().startsWith("factory-browser-backup-"))
   const backup=JSON.parse(await readFile(await download.path(),"utf8"))
-  assert.equal(backup.format,"factory-browser-backup-v1")
+  assert.equal(backup.format,"factory-browser-backup-v2")
   assert.ok(JSON.parse(backup.storage["factory-workspace-v4"]).orders.some(o=>o.product==="自动化测试产品"))
   assert.ok(JSON.parse(backup.storage["factory-permissions-v2"]).current,"Staff permissions are included")
 
