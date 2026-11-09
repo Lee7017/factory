@@ -1,5 +1,4 @@
 import { readWorkspace, type FactoryAccessAPI, type WorkspaceData } from "@/factory-state"
-import { FEATURE_NAMES } from "@/catalog"
 
 type LegacyEl=HTMLElement
 type BusinessEngine={
@@ -65,7 +64,7 @@ type Callbacks={
   navigate:(hash:string)=>void
   refresh:()=>void
 }
-let singleton:BusinessRuntime|undefined
+let singleton:(BusinessRuntime & {callbacks:Callbacks})|undefined
 
 export async function getBusinessRuntime():Promise<BusinessRuntime> {
   await ready()
@@ -96,7 +95,7 @@ export async function getBusinessRuntime():Promise<BusinessRuntime> {
     activeDept:"",
     data,
     get access(){return context.access},
-    callbacks:{render:()=>{},notify:()=>{},navigate:()=>{},refresh:()=>{}},
+    callbacks:{render:()=>{},notify:(_message:string)=>{},navigate:(_hash:string)=>{},refresh:()=>{}},
     mount(feature:string,department:string,access:FactoryAccessAPI,callbacks:Callbacks){
       runtime.activeFeature=feature;runtime.activeDept=department
       runtime.callbacks=callbacks
