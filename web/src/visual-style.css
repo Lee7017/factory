@@ -1,0 +1,306 @@
+/* Factory OS · 企业后台雾灰绿皮肤。
+   Only presentation changes. Department-first navigation and MES data flows remain unchanged.
+   Palette: low-saturation sage / warm gray / slate-green text, without neon ambient hues. */
+
+:root {
+  --radius: .85rem;
+  --background: #e9efea;
+  --foreground: #29392f;
+  --card: #f3f7f3;
+  --card-foreground: #29392f;
+  --popover: #f6f8f5;
+  --popover-foreground: #29392f;
+  --primary: #527b64;
+  --primary-foreground: #f8faf7;
+  --secondary: #e1eae2;
+  --secondary-foreground: #334d3e;
+  --muted: #e5ebe5;
+  --muted-foreground: #6a796e;
+  --accent: #dfeadf;
+  --accent-foreground: #315340;
+  --destructive: #b95f5d;
+  --border: #cbd7cd;
+  --input: #c7d4c9;
+  --ring: #718e7a;
+}
+html { background:#e9efea }
+body {
+  color:#29392f;
+  background:
+    radial-gradient(ellipse 54% 43% at 82% 13%,rgba(161,189,167,.28) 0%,transparent 92%),
+    radial-gradient(ellipse 43% 45% at 12% 88%,rgba(189,202,188,.27) 0%,transparent 88%),
+    radial-gradient(ellipse 32% 36% at 79% 85%,rgba(201,182,177,.075) 0%,transparent 88%),
+    linear-gradient(145deg,#edf1ec 0%,#e5ede7 53%,#eaf0ea 100%);
+  background-attachment:fixed;
+}
+::selection { background:rgba(103,145,115,.27);color:#1f3025 }
+:focus-visible { outline-color:#759681 }
+
+/* The sidebar is intentionally more solid than the work area. */
+.shell-sidebar {
+  background:
+    radial-gradient(ellipse 105% 48% at 4% 7%,rgba(184,211,188,.37),transparent 89%),
+    radial-gradient(ellipse 125% 55% at 98% 90%,rgba(160,192,171,.19),transparent 92%),
+    linear-gradient(172deg,rgba(233,241,234,.985),rgba(220,234,223,.974) 65%,rgba(227,237,228,.985));
+  border-right:1px solid rgba(74,105,83,.20);
+  box-shadow:3px 0 23px rgba(45,71,52,.075),inset -1px 0 rgba(255,255,255,.55);
+  backdrop-filter:blur(19px) saturate(105%);
+  -webkit-backdrop-filter:blur(19px) saturate(105%);
+}
+.sidebar-brand {
+  min-height:73px;
+  border-bottom:1px solid rgba(75,106,84,.15);
+  padding:0 17px;
+}
+.brand-icon {
+  width:36px;height:36px;border-radius:11px;
+  background:linear-gradient(155deg,#779c83,#557b66);
+  border:1px solid rgba(64,110,76,.36);
+  color:#f5faf6;
+  box-shadow:0 3px 11px rgba(71,107,77,.17),inset 0 1px 0 rgba(255,255,255,.23);
+}
+.brand-title{color:#263d2f;font-weight:780;letter-spacing:-.2px}
+.brand-caption{color:#74887a;letter-spacing:.35px;font-size:9.5px}
+.sidebar-scroll{padding:15px 11px 19px;scrollbar-color:rgba(74,112,84,.26) transparent}
+.department-grid{gap:9px}
+.department-tile{
+  background:rgba(247,250,246,.67);
+  border:1px solid rgba(100,133,108,.17);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.73),0 2px 7px rgba(47,77,52,.032);
+  border-radius:12px;
+  color:#344a3a;
+  backdrop-filter:blur(11px) saturate(104%);
+  -webkit-backdrop-filter:blur(11px) saturate(104%);
+  transition:background .17s,border-color .17s,box-shadow .17s;
+}
+.department-tile:hover{
+  transform:none;
+  background:rgba(241,248,242,.94);
+  border-color:rgba(95,139,107,.37);
+  box-shadow:0 4px 14px rgba(64,99,74,.085);
+}
+.department-tile[aria-current="page"]{
+  background:linear-gradient(144deg,#789d86 0%,#5e846d 100%);
+  border-color:#6b9075;
+  color:#f8fbf8;
+  box-shadow:0 5px 16px rgba(65,112,77,.21),inset 0 1px 0 rgba(255,255,255,.27);
+}
+.tile-icon{
+  background:rgba(227,239,230,.77);
+  border:1px solid rgba(101,141,110,.18);
+  color:#466c53;
+  box-shadow:none;
+}
+.tile-icon svg { stroke-width:1.85 }
+.department-tile[aria-current="page"] .tile-icon{
+  background:rgba(247,251,247,.18);
+  border-color:rgba(255,255,255,.26);
+  color:#fff;
+}
+.tile-label {font-weight:720;letter-spacing:.02px}
+.sidebar-foot{
+  color:#718477;
+  background:rgba(229,239,230,.65);
+  border-top:1px solid rgba(80,111,90,.15);
+}
+
+/* Frosted top bar and robust typography. */
+.shell-topbar {
+  height:64px;min-height:64px;
+  background:rgba(235,242,235,.91);
+  border-bottom:1px solid rgba(86,116,93,.18);
+  box-shadow:0 2px 13px rgba(60,82,65,.045);
+  backdrop-filter:blur(16px) saturate(103%);
+  -webkit-backdrop-filter:blur(16px) saturate(103%);
+}
+.crumb-button{color:#516658;font-weight:670}
+.crumb-button:hover{background:rgba(217,233,221,.8);color:#274c33}
+.crumb-dept{color:#345540}
+.crumb-current{color:#263e2f;font-weight:780}
+.crumb-separator{color:#99aa9c}
+.user-action{
+  border:1px solid rgba(94,130,101,.16);
+  background:rgba(246,250,246,.58);
+  border-radius:10px;
+}
+.user-action:hover{background:rgba(244,248,243,.94)}
+.user-avatar {
+  background:linear-gradient(150deg,#638873,#496e59);
+  border-radius:9px;
+  color:#fff;
+}
+.user-dept{color:#738477}
+.shell-content{max-width:1290px;padding:28px 27px 38px}
+.page-title{color:#273e2f;font-weight:780}
+.page-subtitle,.roster-description{color:#718174}
+
+/* Subtle recessed group panels; surfaces are mostly opaque, not luminous white. */
+.glass-panel {
+  background:rgba(244,248,243,.83)!important;
+  border:1px solid rgba(105,140,111,.21)!important;
+  box-shadow:0 9px 28px rgba(47,78,56,.075),inset 0 1px 0 rgba(255,255,255,.66);
+  backdrop-filter:blur(16px) saturate(103%);
+  -webkit-backdrop-filter:blur(16px) saturate(103%);
+}
+.feature-panel {
+  background:rgba(221,235,224,.56)!important;
+  border:1px solid rgba(111,147,117,.18)!important;
+  box-shadow:0 10px 27px rgba(52,78,60,.063),inset 0 1px 0 rgba(255,255,255,.52);
+}
+.feature-grid{gap:12px;padding:14px}
+.feature-tile{
+  background:rgba(248,250,247,.83);
+  border:1px solid rgba(106,137,110,.18);
+  border-radius:12px;
+  color:#293d30;
+  box-shadow:0 3px 13px rgba(44,79,53,.045),inset 0 1px 0 rgba(255,255,255,.84);
+  backdrop-filter:blur(9px) saturate(104%);
+  -webkit-backdrop-filter:blur(9px) saturate(104%);
+  transition:background .17s,border-color .17s,box-shadow .17s;
+}
+.feature-tile:hover:not(:disabled){
+  transform:none;
+  background:rgba(251,253,249,.97);
+  border-color:rgba(91,135,100,.39);
+  box-shadow:0 8px 21px rgba(49,82,58,.105);
+}
+.feature-icon{
+  background:linear-gradient(145deg,#e4eee5,#dae9dc);
+  color:#4d7a59;
+  border:1px solid rgba(108,146,115,.18);
+  border-radius:12px;
+}
+.feature-icon svg{stroke-width:1.9}
+.feature-label{color:#293e30;font-weight:750}
+.feature-description{color:#6a7b6d}
+.feature-arrow{color:#7f9a86}
+.feature-tile:disabled{opacity:.60}
+
+/* Tabs have a single quiet active surface, not glowing white sheets. */
+.dept-tabs [data-slot="tabs-list"]{
+  background:rgba(220,232,221,.72);
+  border:1px solid rgba(106,141,112,.19);
+  box-shadow:inset 0 1px 3px rgba(85,112,91,.043);
+}
+.dept-tabs [data-slot="tabs-trigger"]{color:#647b6a;font-weight:680}
+.dept-tabs [data-slot="tabs-trigger"][data-state="active"]{
+  background:rgba(245,249,244,.96)!important;
+  color:#305341!important;
+  box-shadow:0 2px 7px rgba(60,98,65,.105)!important;
+}
+.count-pill{background:#dce8dd;color:#4a6c54;font-weight:700}
+
+/* Work lists, staff and dashboard KPIs use one cohesive set of surfaces. */
+.roster-office{
+  background:rgba(228,238,230,.79);
+  border:1px solid rgba(111,144,116,.21);
+}
+.office-label,.person-meta span,.todo-card small{color:#728476}
+.office-address{color:#304836}
+.person-tile{
+  background:rgba(247,250,246,.76);
+  border:1px solid rgba(105,135,109,.19);
+  box-shadow:0 2px 9px rgba(54,83,61,.035);
+  transition:background .16s,border-color .16s;
+}
+.person-tile:hover{background:rgba(251,253,249,.96);border-color:rgba(86,131,99,.36)}
+.person-avatar{background:#d9e8da;color:#426b50}
+.todo-title,.roster-title{color:#2d4935}
+.todo-count{color:#688174}
+.todo-card{
+  background:rgba(250,252,248,.75);
+  border:1px solid rgba(104,137,109,.18);
+  box-shadow:0 3px 11px rgba(49,79,57,.04);
+}
+.todo-card:hover{border-color:rgba(93,135,101,.34);background:rgba(251,253,249,.95)}
+.empty-note{color:#819187}
+.kpi-card{background:rgba(243,248,242,.88)!important}
+.kpi-label{color:#607b68;font-weight:660}
+.kpi-label svg{color:#5f8a6a}
+.kpi-value{color:#293b30;font-size:29px;font-weight:780}
+.kpi-detail{color:#819286}
+.dashboard-body{gap:14px;margin-top:15px}
+.quick-dept {
+  background:rgba(241,247,241,.78);
+  border:1px solid rgba(109,142,114,.18);
+  color:#375443;
+}
+.quick-dept:hover{background:rgba(250,252,248,.95)}
+.shell-footer{border-top-color:rgba(115,145,119,.18);color:#829287}
+
+/* Native shadcn controls retain adequate contrast against the sage-gray glass. */
+[data-slot="card"]{border-color:rgba(106,138,112,.20)}
+[data-slot="button"][data-variant="outline"]{
+  background:rgba(243,248,242,.78);
+  border-color:rgba(108,144,114,.28);
+  color:#3a5d46;
+  box-shadow:0 1px 3px rgba(52,80,56,.05);
+}
+[data-slot="button"][data-variant="outline"]:hover{
+  background:#e4eee3;color:#2c503b;border-color:rgba(90,134,101,.39)
+}
+[data-slot="button"][data-variant="default"]{
+  background:#557d65;color:#fafcf9;
+  box-shadow:0 2px 6px rgba(54,89,59,.12);
+}
+[data-slot="button"][data-variant="default"]:hover{background:#456d55}
+[data-slot="input"],[data-slot="textarea"],[data-slot="select-trigger"]{
+  border-color:#c9d7cb;
+  background:rgba(249,251,247,.79);
+  color:#304533;
+  box-shadow:0 1px 3px rgba(54,85,61,.04);
+}
+[data-slot="input"]:focus-visible,[data-slot="textarea"]:focus-visible,
+[data-slot="select-trigger"]:focus-visible{border-color:#739b7a}
+[data-slot="badge"]{border-color:rgba(117,146,119,.25)}
+[data-slot="table-header"]{background:rgba(220,233,222,.48);color:#405c46}
+[data-slot="table-row"]{border-bottom-color:rgba(115,151,119,.17)}
+[data-slot="table-row"]:hover{background:rgba(225,237,227,.47)}
+.glass-tooltip {
+  color:#334c39!important;
+  background:rgba(246,249,245,.97)!important;
+  border:1px solid rgba(104,140,113,.20)!important;
+  box-shadow:0 15px 34px rgba(45,71,52,.14);
+}
+.glass-dialog{
+  color:#2c4232;
+  background:rgba(243,248,242,.98)!important;
+  border:1px solid rgba(91,133,103,.24)!important;
+  box-shadow:0 20px 60px rgba(36,67,44,.23);
+}
+
+/* Legacy MES engine: tone down containers without altering validation or commands. */
+.legacy-root .ops-workbench,
+.legacy-root .mw-page,
+.legacy-root .proc-page{color:#304337}
+.legacy-root .ops-workbench .op-panel,
+.legacy-root .mw-page .mw-panel,
+.legacy-root .proc-page .proc-section,
+.legacy-root .mw-page .mw-section {
+  background:rgba(246,249,245,.86)!important;
+  border-color:rgba(106,139,114,.20)!important;
+  box-shadow:0 6px 20px rgba(47,76,54,.06);
+}
+.legacy-root .op-modal,
+.legacy-root .proc-modal,
+.legacy-root .mw-overlay>div {
+  background:#f2f7f1;
+  border-color:rgba(92,133,103,.23);
+  box-shadow:0 24px 65px rgba(34,62,42,.20);
+}
+.legacy-root [data-slot="button"][data-variant="outline"]{color:#3a6048}
+.legacy-root .op-status,.legacy-root .mw-status,.legacy-root .proc-status{filter:saturate(.78)}
+
+@media(max-width:860px){
+  .shell-topbar{height:59px;min-height:59px}
+  .shell-sidebar{box-shadow:10px 0 34px rgba(29,58,37,.15)}
+  .shell-content{padding:20px 16px 30px}
+}
+@media(max-width:560px){
+  .shell-content{padding:16px 11px 27px}
+  .feature-grid{gap:9px;padding:10px}
+  .sidebar-brand{min-height:67px}
+}
+@media(prefers-reduced-transparency:reduce){
+  .glass-panel,.feature-tile,.department-tile{backdrop-filter:none;-webkit-backdrop-filter:none}
+}
