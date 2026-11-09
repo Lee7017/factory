@@ -48,13 +48,13 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     }
   }
   function handleSubmit(event:FormEvent<HTMLDivElement>){
-    // Form handlers are the original business engines; their permission and
-    // validation checks must not be duplicated in the presentation layer.
-    void getBusinessRuntime().then(runtime=>{
-      if(runtime.submit(event.nativeEvent))event.preventDefault()
-    })
+    event.preventDefault()
+    // Preserve the original validators and submit handlers; preventing default
+    // immediately avoids a navigation before any async runtime resolution.
+    void getBusinessRuntime().then(runtime=>runtime.submit(event.nativeEvent))
   }
   return <section className="native-business" aria-label="业务工作区">
+    <link rel="stylesheet" href={`${import.meta.env.BASE_URL}legacy-business.css`}/>
     {status==="loading"&&<div className="glass-panel flex items-center gap-3 rounded-xl p-5 text-sm text-muted-foreground" role="status">
       <LoaderCircle className="size-4 animate-spin"/>正在加载业务表单和原有权限规则…
     </div>}
