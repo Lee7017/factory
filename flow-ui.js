@@ -205,8 +205,8 @@ function extras(entry,kind){if(entry.detailHtml)return `<div class="journey-extr
  if(outbound.length)return `<div class="journey-extra"><div class="journey-section-head"><strong>成品出库与客户交付</strong><small>${outbound.length} 次出库记录</small></div>${outbound.map(r=>`<div class="journey-extra-line"><b>${clean(r.id)}</b><span>${clean(r.qty)} 箱 · ${clean(r.destination)} · ${clean(r.status)}</span></div>`).join('')}</div>`;
  }return ''}
 function renderGraph(entry){const kind=inferKind(entry),history=getHistory(entry,kind),cfg=flowConfig[kind],stage=getStage(entry,kind),type=entry.docType||cfg?.title||docMeta(entry).type;
- const steps=buildSteps(entry,kind);const summary=entry.summary||'',status=entry.status||stage||'待办理';
- const historyRows=history.slice(-5).reverse().map(h=>`<div class="journey-history-row"><span class="journey-history-action">${clean(h.action||'处理单据')}</span><span>${clean(label(h.from||h.dept||''))}</span><span>${clean(h.person||h.by||'经办人未记录')}</span><time>${clean(h.at||h.time||'')}</time></div>`).join('');
+ const steps=buildSteps(entry,kind);const summary=entry.summary||'',status=entry.status||stage||'待办理',contentLabel=kind==='order'?'订单内容':'单据内容';
+ const historyRows=history.slice().reverse().map(h=>`<div class="journey-history-row"><span class="journey-history-action">${clean(h.action||'处理单据')}</span><span>${clean(label(h.from||h.dept||''))}</span><span>${clean(h.person||h.by||'经办人未记录')}</span><time>${clean(h.at||h.time||'')}</time></div>`).join('');
  return `<div class="flow-veil" data-flow-close aria-hidden="true"></div><section class="flow-window journey-dialog" role="dialog" aria-modal="true" aria-labelledby="journey-title">
  <header class="journey-top"><div><span class="journey-eyebrow">跨部门单据流转</span><h2 id="journey-title">${clean(type)} <span>${clean(entry.ref||'业务记录')}</span></h2><p>${clean(summary)}</p></div><button class="journey-close" data-flow-close type="button" aria-label="关闭流程弹窗">×</button></header>
  <div class="journey-toolbar"><span>当前状态 <b>${clean(status)}</b></span>${entry.action?`<span>刚刚办理 <b>${clean(entry.action)}</b> · ${clean(entry.operator||'经办人未记录')}</span>`:''}<span>单据按实际办理顺序流转</span></div>
@@ -249,7 +249,10 @@ function openDocument(entry){openDialog(entry)}
 function dismiss(){const host=document.querySelector('#flow-transition-host');if(!host)return;host.classList.remove('flow-visible');host.classList.add('flow-dismiss');host.innerHTML='';activeContinue=null;activeTrackRef=''}
 function fromAudit(row,history,defaultDept){const rule=routes[row.type]||Object.entries(routes).find(([k])=>String(row.type).includes(k))?.[1],from=rule?.[0]||defaultDept||'当前部门',to=rule?.[1]||from;
  show({ref:row.ref,action:row.type,from,to,status:row.detail||'已记录',summary:row.detail||'',operator:row.by||'当前用户',at:row.time||'',history,next:rule?.[2]||'查看单据状态',nextOpen:nextTargets[row.type]||Object.entries(nextTargets).find(([k])=>String(row.type).includes(k))?.[1]});}
-document.addEventListener('click',event=>{if(event.target.closest('[data-flow-track]')){const target=activeContinue?{...activeContinue}:null,ref=activeTrackRef;dismiss();if(target)window.FactoryNavigation?.trackBottleneck?.(target,ref);return;}
+document.addEventListener('click',event=>{
+ const tab=event.target.closest('[data-journey-tab]');
+ if(tab){const dialog=tab.closest('.journey-dialog'),name=tab.dataset.journeyTab;if(dialog){dialog.querySelectorAll('[data-journey-tab]').forEach(btn=>{const on=btn===tab;btn.classList.toggle('is-active',on);btn.setAttribute('aria-selected',on?'true':'false')});dialog.querySelectorAll('[data-journey-panel]').forEach(panel=>{const on=panel.dataset.journeyPanel===name;panel.hidden=!on;panel.classList.toggle('is-active',on)});dialog.scrollTop=0}return;}
+ if(event.target.closest('[data-flow-track]')){const target=activeContinue?{...activeContinue}:null,ref=activeTrackRef;dismiss();if(target)window.FactoryNavigation?.trackBottleneck?.(target,ref);return;}
  if(event.target.closest('[data-flow-close]'))dismiss();});
 document.addEventListener('keydown',event=>{if(event.key==='Escape')dismiss()});
 window.FactoryFlowUI={show,openDocument,dismiss,fromAudit,names:deptNames,flowConfig};
