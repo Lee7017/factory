@@ -53,7 +53,7 @@ const nextTargets={
  '仓库到货登记':{dept:'quality',feature:'qaQc'},
  '仓库确认入库':{dept:'warehouse',feature:'warehouseIncoming'},
  '成品出库单创建':{dept:'warehouse',feature:'warehouseOutbound'},
- '成品销售出库':{dept:'sales',feature:'orderHistory'},
+ '成品销售出库':{dept:'sales',feature:'orders'},
  '填报工时':{dept:'hr',feature:'hours'},
  '工时申诉提交':{dept:'production',feature:'workshopDispute'},
  '工时申诉审批':{dept:'hr',feature:'hoursAppeal'},
@@ -194,7 +194,12 @@ function renderGraph(entry){const kind=inferKind(entry),history=getHistory(entry
  <footer class="journey-footer"><span>退回、审批、出库均记录实际经办员工</span><div><button type="button" class="journey-button" data-flow-close>关闭</button>${activeContinue?'<button type="button" class="journey-button primary" data-flow-track>跟踪卡点 →</button>':''}</div></footer>
  </section>`}
 function openDialog(entry){const host=document.querySelector('#flow-transition-host');if(!host||!entry)return;
- clearTimeout(dismissTimer);activeContinue=entry.nextOpen||nextTargets[entry.action]||null;activeTrackRef=entry.ref||'';
+ clearTimeout(dismissTimer);
+ const liveStage=(entry.kind==='order'||/^SO-/.test(String(entry.ref||'')))?window.FactoryOperations?.state?.flows?.[entry.ref]?.stage:null;
+ const orderTarget=liveStage==='delivered'?{dept:'sales',feature:'orderHistory',record:entry.ref}:
+  liveStage==='shipped'?{dept:'sales',feature:'orders',record:entry.ref}:
+  ['dispatch','shipping'].includes(liveStage)?{dept:'warehouse',feature:'warehouseOutbound',record:entry.ref}:null;
+ activeContinue=orderTarget||entry.nextOpen||nextTargets[entry.action]||null;activeTrackRef=entry.ref||'';
  host.innerHTML=renderGraph(entry);host.classList.remove('flow-dismiss');host.classList.add('flow-visible');
 }
 function show(entry){openDialog(entry)}
