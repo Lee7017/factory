@@ -698,3 +698,15 @@ body{
   .dept-info-trigger{width:30px;height:30px;flex-basis:30px}
   .dept-info-popover{width:290px;max-width:calc(100vw - 24px)}
 }
+
+/* Shared prompt base: success, failure, permission, status and confirmation. */
+.factory-prompt-screen{position:fixed;inset:0;z-index:260;display:grid;place-items:center;padding:18px;background:rgba(15,15,17,.14);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+.factory-prompt{width:min(460px,calc(100vw - 28px));border:1px solid rgba(255,255,255,.92);border-radius:16px;background:rgba(255,255,255,.86);box-shadow:0 30px 100px rgba(15,15,17,.2),inset 0 1px 0 rgba(255,255,255,.96);backdrop-filter:blur(30px) saturate(155%);-webkit-backdrop-filter:blur(30px) saturate(155%);overflow:hidden;color:#2b2d31}
+.factory-prompt header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:20px 22px 12px}
+.factory-prompt-kicker{display:block;font-size:10px;letter-spacing:.12em;color:#90949c;margin-bottom:5px}
+.factory-prompt h2{margin:0;font-size:17px;line-height:1.35;color:#22252a}
+.factory-prompt>p{margin:0;padding:2px 22px 20px;font-size:13px;line-height:1.75;color:#555960;white-space:pre-line}
+.factory-prompt footer{display:flex;justify-content:flex-end;gap:8px;padding:14px 22px 18px;border-top:1px solid rgba(30,32,36,.08)}
+.factory-prompt-close{appearance:none;border:0;background:transparent;color:#777d86;font-size:24px;line-height:1;cursor:pointer;padding:2px 5px;border-radius:8px}
+.factory-prompt-close:hover{background:rgba(20,22,25,.06);color:#30343a}
+@media(max-width:560px){.factory-prompt{width:calc(100vw - 18px)}.factory-prompt header{padding:17px 17px 10px}.factory-prompt>p{padding:2px 17px 17px}.factory-prompt footer{padding:12px 17px 16px}}
