@@ -43,23 +43,17 @@ declare global {
   interface Window { FactoryAccess?: FactoryAccessAPI }
 }
 const WORKSPACE_KEY = "factory-workspace-v4"
-const PREVIOUS_WORKSPACE_KEY = "factory-workspace-v2"
 const initial=originalWorkspace as WorkspaceData
 const initialOps=originalOperations as Record<string,unknown>
 const initialMods=originalModules as Record<string,unknown>
 const clone=<T,>(value:T):T=>JSON.parse(JSON.stringify(value)) as T
 const isRecord=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==="object"&&!Array.isArray(v)
-/** Same storage key and initial-state schema as the original factory app. Never reset user records. */
+/** Read only current factory-workspace-v4 data; old workspace formats are not imported. */
 export function readWorkspace(): WorkspaceData {
   let saved:Record<string,unknown>={}
   try {
     const data=JSON.parse(localStorage.getItem(WORKSPACE_KEY)||"null")
     if(isRecord(data))saved=data
-    else {
-      // Upgrade from pre-v4 only when there is no valid current-version data.
-      const previous=JSON.parse(localStorage.getItem(PREVIOUS_WORKSPACE_KEY)||"null")
-      if(isRecord(previous))saved=previous
-    }
   } catch {/* damaged or blocked browser storage: use immutable seed data */}
   const defaults=clone(initial)
   const data={...defaults,...saved} as WorkspaceData
