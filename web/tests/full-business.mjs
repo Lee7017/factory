@@ -108,7 +108,7 @@ try {
   await page.locator('input[type="file"]').setInputFiles("test-results/obsolete-backup.json")
   await page.getByRole("alert").filter({hasText:"备份格式不匹配"}).waitFor({state:"visible"})
   assert.ok(await page.getByRole("button",{name:/覆盖并恢复/}).isDisabled(),"Cannot restore old data")
-  await page.getByRole("dialog").getByRole("button",{name:"Close"}).click().catch(async()=>{await page.keyboard.press("Escape")})
+  await page.keyboard.press("Escape")
   // Restore a modified current-version backup through the real shadcn dialog.
   const updated=JSON.parse(backup.storage["factory-workspace-v4"])
   updated.offices={...updated.offices,quality:"自动化恢复测试办公室"}
