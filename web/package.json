@@ -12,6 +12,7 @@
     "test:smoke": "node tests/smoke.mjs",
     "test:full": "node tests/full-business.mjs",
     "test:purchase": "node tests/purchase-flow.mjs",
+    "test:compat": "node tests/workspace-compat.mjs",
     "test:unit": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
