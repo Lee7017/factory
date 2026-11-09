@@ -10,7 +10,7 @@
 - 保留红绿毛玻璃、桌面紧凑方卡、左侧底板比右侧更不透明。
 - **已取消业务 iframe**。复杂 MES/ERP 业务采用 React 内的 `NativeBusiness` 直接挂载原业务 HTML，保留原来的业务状态检查、审批权限、质量判定及库存算法。请注意：这种兼容方式不等于复杂业务表格及所有单据表单已逐一重写成 React/shadcn 组件。
 - 请假申请与审批已原生使用 shadcn/ui `Dialog`、`Input`、`DataTable`，并在新申请中禁止同一员工自审。
-- 使用 `factory-workspace-v4`、`factory-permissions-v2` 原本地数据键，优先使用线上 v4 数据，v4 不存在时读取 v2；备份同时包含 v4、v2，且不清空已有记录。
+- 只使用当前 `factory-workspace-v4` 工作区数据，不读取也不迁移旧版 `factory-workspace-v2` 记录；没有 v4 时显示系统初始数据。权限继续使用现行 `factory-permissions-v2` 键。导入/导出仅包含当前 v4 工作区与现行权限，不接受旧版工作区备份。
 - `business-selectors.ts` 按旧业务引擎状态处理 11 部门待办、订单环节和首页统计。
 
 ## 构建和测试
