@@ -39,6 +39,7 @@ function Footer() {
 function DepartmentNav({route,open,onSelect}:{
   route:Route;open:boolean;onSelect:(hash:string)=>void
 }) {
+  const OverviewIcon=getFeatureIcon("overview")
   return <aside className={`shell-sidebar ${open?"open":""}`} aria-label="部门导航">
     <div className="sidebar-brand">
       <span className="brand-icon"><Factory size={21} strokeWidth={1.7}/></span>
@@ -48,7 +49,7 @@ function DepartmentNav({route,open,onSelect}:{
       <div className="department-grid">
         <button className="department-tile" aria-current={route.kind==="overview"?"page":undefined}
           onClick={()=>onSelect("#/overview")}>
-          <span className="tile-icon"><getFeatureIconComponent/></span>
+          <span className="tile-icon"><OverviewIcon aria-hidden="true"/></span>
           <span className="tile-label">首页总览</span>
         </button>
         {DEPARTMENTS.map(d=>{
@@ -63,9 +64,6 @@ function DepartmentNav({route,open,onSelect}:{
     </nav>
     <div className="sidebar-foot">11 个部门 · 按岗位权限开放功能</div>
   </aside>
-}
-function getFeatureIconComponent() {
-  return <Factory size={24} strokeWidth={1.7} aria-hidden="true"/>
 }
 
 function Topbar({route,onSelect,onOpenSidebar,employee,staff,onSwitch,messages}:{
@@ -407,7 +405,7 @@ export default function App() {
     if(window.location.hash!==hash)window.location.hash=hash
     setRoute(parseRoute(hash))
     setSidebarOpen(false)
-    window.scrollTo({top:0,behavior:"instant"})
+    window.scrollTo({top:0,behavior:"auto"})
   },[])
   const currentDept=route.kind==="department"?getDepartment(route.dept):undefined
   const currentFeature=route.kind==="department"?route.feature:undefined
