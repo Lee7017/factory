@@ -1,0 +1,450 @@
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react"
+import {
+  ArrowRight, Bell, Check, ChevronDown, ChevronRight, CircleHelp,
+  Factory, Info, LockKeyhole, Menu, MessageCircle, Pencil, Search, X
+} from "lucide-react"
+import { DEPARTMENTS, FEATURE_HINTS, FEATURE_NAMES, getDepartment, type Department } from "@/catalog"
+import { getDepartmentIcon, getFeatureIcon } from "@/icons"
+import {
+  useFactoryState, updateWorkspace, getTodos, todoLane, type Employee, type Todo
+} from "@/factory-state"
+import { LegacyFrame } from "@/LegacyFrame"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter,
+  DialogHeader, DialogTitle, DialogTrigger
+} from "@/components/ui/dialog"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+
+type Route={kind:"overview"}|{kind:"department";dept:string;feature?:string}
+type TabKey="functions"|"members"|"todos"
+function parseRoute(hash:string):Route {
+  const match=hash.match(/^#\/departments\/([a-z]+)(?:\/([a-zA-Z]+))?$/)
+  if(match&&getDepartment(match[1]))return {kind:"department",dept:match[1],feature:match[2]}
+  return {kind:"overview"}
+}
+function routeHash(route:Route):string {
+  return route.kind==="overview"?"#/overview":`#/departments/${route.dept}${route.feature?"/"+route.feature:""}`
+}
+function Footer() {
+  return <footer className="shell-footer">工厂管理系统 · React / shadcn/ui · Lucide Icons
+    <span className="ml-3">数据保存在当前浏览器，尚未连接业务服务器</span>
+  </footer>
+}
+
+function DepartmentNav({route,open,onSelect}:{
+  route:Route;open:boolean;onSelect:(hash:string)=>void
+}) {
+  return <aside className={`shell-sidebar ${open?"open":""}`} aria-label="部门导航">
+    <div className="sidebar-brand">
+      <span className="brand-icon"><Factory size={21} strokeWidth={1.7}/></span>
+      <div><div className="brand-title">工厂管理系统</div><div className="brand-caption">FACTORY MANAGEMENT</div></div>
+    </div>
+    <nav className="sidebar-scroll">
+      <div className="department-grid">
+        <button className="department-tile" aria-current={route.kind==="overview"?"page":undefined}
+          onClick={()=>onSelect("#/overview")}>
+          <span className="tile-icon"><getFeatureIconComponent/></span>
+          <span className="tile-label">首页总览</span>
+        </button>
+        {DEPARTMENTS.map(d=>{
+          const Icon=getDepartmentIcon(d.id),selected=route.kind==="department"&&route.dept===d.id
+          return <button key={d.id} className="department-tile" aria-current={selected?"page":undefined}
+            onClick={()=>onSelect(`#/departments/${d.id}`)}>
+            <span className="tile-icon"><Icon aria-hidden="true"/></span>
+            <span className="tile-label">{d.name}</span>
+          </button>
+        })}
+      </div>
+    </nav>
+    <div className="sidebar-foot">11 个部门 · 按岗位权限开放功能</div>
+  </aside>
+}
+function getFeatureIconComponent() {
+  return <Factory size={24} strokeWidth={1.7} aria-hidden="true"/>
+}
+
+function Topbar({route,onSelect,onOpenSidebar,employee,staff,onSwitch,messages}:{
+  route:Route;onSelect:(hash:string)=>void;onOpenSidebar:()=>void;
+  employee?:Employee;staff:Employee[];onSwitch:(id:string)=>void;
+  messages:Array<{id:string|number;title:string;text:string;date?:string;unread?:boolean}>
+}) {
+  const dept=route.kind==="department"?getDepartment(route.dept):undefined
+  const count=messages.filter(m=>m.unread).length
+  return <header className="shell-topbar">
+    <div className="flex min-w-0 items-center gap-2">
+      <Button variant="ghost" size="icon-sm" className="mobile-menu" aria-label="打开部门菜单" onClick={onOpenSidebar}>
+        <Menu size={20}/>
+      </Button>
+      <nav className="crumbs" aria-label="当前位置">
+        <button type="button" className="crumb-button" onClick={()=>onSelect("#/overview")}>工厂管理系统</button>
+        <ChevronRight className="crumb-separator"/>
+        {dept?<div className="flex min-w-0 items-center gap-1">
+          <button type="button" className="crumb-button crumb-dept" onClick={()=>onSelect(`#/departments/${dept.id}`)}>{dept.name}</button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon-xs" aria-label={`查看${dept.name}介绍`}>
+                <Info size={14}/>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="start" sideOffset={9} className="glass-tooltip">
+              <strong className="block text-xs font-semibold">{dept.name}</strong>
+              <span className="mt-1 block text-xs">{dept.description}</span>
+            </TooltipContent>
+          </Tooltip>
+          {route.kind==="department"&&route.feature&&<>
+            <ChevronRight className="crumb-separator"/>
+            <strong className="crumb-current">{FEATURE_NAMES[route.feature]??route.feature}</strong>
+          </>}
+        </div>:<strong className="crumb-current">工厂运行总览</strong>}
+      </nav>
+    </div>
+    <div className="topbar-actions">
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="ghost" size="icon-sm" className="relative" aria-label={`消息中心，${count} 条未读`}>
+            <Bell size={17}/>
+            {count>0&&<span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-[#2a5f40] px-1 text-[9px] text-white">{count}</span>}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="glass-dialog">
+          <DialogHeader>
+            <DialogTitle>消息中心</DialogTitle>
+            <DialogDescription>以下消息仅保存在当前浏览器，不会发送到其他设备。</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-96 space-y-2 overflow-y-auto">
+            {messages.length===0?<p className="empty-note">暂无消息</p>:messages.map(m=>
+              <div key={m.id} className="rounded-lg border border-border/60 bg-white/60 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold">
+                  {m.unread&&<span className="size-1.5 rounded-full bg-green-600"/>}{m.title}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{m.text}</p>
+                <small className="mt-1 block text-[10px] text-muted-foreground">{m.date??""}</small>
+              </div>)}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog>
+        <DialogTrigger asChild>
+          <button type="button" className="user-action" aria-label="切换当前员工">
+            <span className="user-avatar">{employee?.name.slice(-1)??"工"}</span>
+            <span className="user-text">
+              <span className="user-name">{employee?.name??"员工"}</span>
+              <span className="user-dept">{employee?.dept??"正在读取权限"}</span>
+            </span>
+            <ChevronDown size={13} className="text-muted-foreground"/>
+          </button>
+        </DialogTrigger>
+        <DialogContent className="glass-dialog">
+          <DialogHeader>
+            <DialogTitle>切换当前员工</DialogTitle>
+            <DialogDescription>切换只影响本浏览器内的演示身份。</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-80 space-y-1 overflow-y-auto">
+            {staff.map(person=>
+              <button type="button" key={person.id} onClick={()=>onSwitch(person.id)}
+                className="flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2 text-left hover:border-border/60 hover:bg-white/60">
+                <span className="person-avatar">{person.name.slice(-1)}</span>
+                <span className="person-meta flex-1">
+                  <strong>{person.name}</strong><span>{person.title} · {person.dept}</span>
+                </span>
+                {person.id===employee?.id&&<Check size={16} className="text-green-700"/>}
+              </button>)}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  </header>
+}
+
+function FeatureGrid({dept,can,onSelect}:{
+  dept:Department;can:(dept:string,feature:string,action?:string)=>boolean;
+  onSelect:(hash:string)=>void
+}) {
+  return <Card className="feature-panel gap-0 py-0">
+    <CardContent className="p-0">
+      <div className="feature-grid">
+        {dept.features.map(f=>{
+          const Icon=getFeatureIcon(f),allowed=can(dept.id,f)
+          return <button key={f} type="button" className="feature-tile" disabled={!allowed}
+            aria-label={`${FEATURE_NAMES[f]??f}${allowed?"":"，无访问权限"}`}
+            onClick={()=>onSelect(`#/departments/${dept.id}/${f}`)}>
+            <span className="feature-icon"><Icon aria-hidden="true"/></span>
+            <span className="feature-label">{FEATURE_NAMES[f]??f}</span>
+            <span className="feature-description">{FEATURE_HINTS[f]??"业务操作与记录"}</span>
+            <span className="feature-arrow">{allowed?<ArrowRight size={16}/>:<LockKeyhole size={15}/>}</span>
+          </button>
+        })}
+      </div>
+    </CardContent>
+  </Card>
+}
+
+function Roster({dept,staff,employee,can,office,onUpdate}:{
+  dept:Department;staff:Employee[];employee?:Employee;
+  can:(dept:string,feat:string,action?:string)=>boolean;
+  office:string;onUpdate:()=>void
+}) {
+  const [search,setSearch]=useState("")
+  const [editing,setEditing]=useState(false)
+  const [address,setAddress]=useState(office)
+  const [peer,setPeer]=useState<Employee|null>(null)
+  const [draft,setDraft]=useState("")
+  const [chatVersion,setChatVersion]=useState(0)
+  const people=staff.filter(p=>p.dept===dept.name||(dept.id==="quality"&&p.dept==="质量部")||(dept.id==="it"&&p.dept==="开发人员"))
+  const visible=people.filter(p=>[p.name,p.id,p.title,p.dept].join(" ").toLowerCase().includes(search.toLowerCase()))
+  const canEdit=can("it","employees","edit")||can("it","permissions","config")
+  const conversation=peer&&employee?[peer.id,employee.id].sort().join("::"):null
+  const messages=conversation?readChat(conversation):[]
+  void chatVersion
+  function saveOffice(event:FormEvent) {
+    event.preventDefault()
+    updateWorkspace(data=>{(data.offices??={})[dept.id]=address.trim().slice(0,140)})
+    setEditing(false);onUpdate()
+  }
+  function sendChat(event:FormEvent) {
+    event.preventDefault()
+    if(!conversation||!employee||!draft.trim())return
+    updateWorkspace(data=>{(data.chatThreads??={})[conversation]??=[]
+      data.chatThreads[conversation].push({from:employee.id,text:draft.trim(),time:new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"})})
+    })
+    setDraft("");setChatVersion(v=>v+1);onUpdate()
+  }
+  return <Card className="glass-panel gap-4 p-4">
+    <div className="roster-header">
+      <div><h2 className="roster-title">部门花名簿</h2>
+        <p className="roster-description">可按姓名、岗位或工号查找，点击成员进入私聊</p></div>
+      <div className="relative w-full max-w-60">
+        <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/>
+        <Input value={search} onChange={event=>setSearch(event.target.value)} placeholder="搜索成员 / 岗位 / 工号" className="bg-white/60 pl-9 text-xs" aria-label="搜索部门花名簿"/>
+      </div>
+    </div>
+    <div className="roster-office">
+      <span className="office-label">办公位置</span>
+      <strong className="office-address">{office||"尚未登记，请填写实际办公位置"}</strong>
+      {canEdit&&<Button variant="outline" size="sm" className="shrink-0 bg-white/70" onClick={()=>{setAddress(office);setEditing(true)}}>
+        <Pencil size={13}/>{office?"修改位置":"填写位置"}
+      </Button>}
+    </div>
+    <Dialog open={editing} onOpenChange={setEditing}>
+      <DialogContent className="glass-dialog">
+        <DialogHeader>
+          <DialogTitle>编辑办公位置</DialogTitle>
+          <DialogDescription>请输入实际厂区、楼栋、楼层、房间号，不是网页链接。</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={saveOffice} className="space-y-4">
+          <Input value={address} maxLength={140} onChange={event=>setAddress(event.target.value)} aria-label="办公位置"/>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={()=>setEditing(false)}>取消</Button>
+            <Button type="submit">保存位置</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+    <div className="roster-grid">
+      {visible.map(person=><button key={person.id} className="person-tile hover:bg-white/75" type="button" onClick={()=>setPeer(person)}>
+        <span className="person-avatar">{person.name.slice(-1)}</span>
+        <span className="person-meta flex-1">
+          <strong>{person.name}</strong>
+          <span>{person.title} · {person.id}</span>
+        </span>
+        <MessageCircle size={15} className="text-muted-foreground"/>
+      </button>)}
+      {visible.length===0&&<p className="empty-note">没有找到匹配的部门成员</p>}
+    </div>
+    <Dialog open={Boolean(peer)} onOpenChange={open=>{if(!open)setPeer(null)}}>
+      <DialogContent className="glass-dialog">
+        <DialogHeader>
+          <DialogTitle>与{peer?.name??"成员"}私聊</DialogTitle>
+          <DialogDescription>本地演示消息，不会送达其他设备。</DialogDescription>
+        </DialogHeader>
+        <div className="max-h-64 min-h-24 space-y-2 overflow-y-auto rounded-lg border border-border/70 p-3">
+          {messages.length===0?<p className="empty-note">还没有消息</p>:messages.map((m,i)=>
+            <div key={i} className={`max-w-[90%] rounded-lg p-2 text-xs ${m.from===employee?.id?"ml-auto bg-green-100/80":"bg-white/80"}`}>
+              <small className="mb-1 block text-[10px] text-muted-foreground">{m.time}</small>{m.text}
+            </div>)}
+        </div>
+        <form className="flex gap-2" onSubmit={sendChat}>
+          <Input value={draft} onChange={event=>setDraft(event.target.value)} placeholder="输入本地消息…"/>
+          <Button type="submit" disabled={!draft.trim()}>发送</Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  </Card>
+}
+function readChat(key:string) {
+  try {const data=JSON.parse(localStorage.getItem("factory-workspace-v2")||"{}") as {chatThreads?:Record<string,{from:string;text:string;time:string}[]>};return data.chatThreads?.[key]??[]}
+  catch{return []}
+}
+
+function TodoBoard({todos,onSelect,dept}:{
+  todos:Todo[];onSelect:(hash:string)=>void;dept:string
+}) {
+  const columns:[string,string][]=[["waiting","待处理"],["doing","进行中"],["review","待审核 / 复核"]]
+  return <div className="todo-grid">
+    {columns.map(([key,label])=>{
+      const entries=todos.filter(t=>todoLane(t.status)===key)
+      return <Card key={key} className="glass-panel todo-lane gap-0 py-0">
+        <h3 className="todo-title">
+          <span className="size-1.5 rounded-full bg-green-700"/>
+          {label}<span className="todo-count">{entries.length}</span>
+        </h3>
+        {entries.length===0?<p className="empty-note">暂无此类待办</p>:entries.map(task=>
+          <button type="button" key={task.id} className="todo-card" onClick={()=>onSelect(`#/departments/${dept}/${task.feature}`)}>
+            <small className="font-mono">{task.id}</small>
+            <strong>{task.title}</strong>
+            <small>{task.status} · 查看业务单据 →</small>
+          </button>)}
+      </Card>
+    })}
+  </div>
+}
+
+function DepartmentPage({dept,staff,employee,workspace,can,onSelect,onRefresh}:{
+  dept:Department;staff:Employee[];employee?:Employee;
+  workspace:ReturnType<typeof useFactoryState>["workspace"];
+  can:(dept:string,feat:string,action?:string)=>boolean;
+  onSelect:(hash:string)=>void;onRefresh:()=>void
+}) {
+  const [tab,setTab]=useState<TabKey>("functions")
+  useEffect(()=>setTab("functions"),[dept.id])
+  const todos=getTodos(dept.id,workspace),members=staff.filter(p=>p.dept===dept.name||(dept.id==="it"&&p.dept==="开发人员")||(dept.id==="quality"&&p.dept==="质量部"))
+  return <div className="dept-main">
+    <Tabs value={tab} onValueChange={value=>setTab(value as TabKey)} className="dept-tabs">
+      <TabsList>
+        <TabsTrigger value="functions">业务功能 <span className="count-pill">{dept.features.length}</span></TabsTrigger>
+        <TabsTrigger value="members">部门花名簿 <span className="count-pill">{members.length}</span></TabsTrigger>
+        <TabsTrigger value="todos">待办 <span className="count-pill">{todos.length}</span></TabsTrigger>
+      </TabsList>
+      <TabsContent value="functions"><FeatureGrid dept={dept} can={can} onSelect={onSelect}/></TabsContent>
+      <TabsContent value="members">
+        <Roster dept={dept} staff={staff} employee={employee} can={can} office={workspace.offices?.[dept.id]??""} onUpdate={onRefresh}/>
+      </TabsContent>
+      <TabsContent value="todos"><TodoBoard dept={dept.id} todos={todos} onSelect={onSelect}/></TabsContent>
+    </Tabs>
+  </div>
+}
+
+function Overview({workspace,onSelect}:{
+  workspace:ReturnType<typeof useFactoryState>["workspace"];
+  onSelect:(hash:string)=>void
+}) {
+  const stats=[
+    {label:"部门数量",value:DEPARTMENTS.length,detail:"业务部门与管理部门",icon:Factory},
+    {label:"销售订单",value:workspace.orders?.length??0,detail:"当前浏览器记录",icon:ClipboardIcon},
+    {label:"生产任务",value:workspace.tasks?.filter(t=>t.category==="生产任务").length??0,detail:"配制 / 包装",icon:getDepartmentIcon("production")},
+    {label:"待处理事项",value:getTodos("hr",workspace).length+getTodos("engineering",workspace).length,detail:"人事 / 工程待办",icon:CircleHelp}
+  ]
+  return <div className="space-y-4">
+    <header className="mb-4">
+      <h1 className="page-title">工厂运行总览</h1>
+      <p className="page-subtitle">订单、生产、质量、物料及人员的工作入口</p>
+    </header>
+    <div className="dashboard-kpis">
+      {stats.map(x=><Card className="glass-panel kpi-card gap-0 py-0" key={x.label}>
+        <div className="kpi-label"><span>{x.label}</span><x.icon size={17}/></div>
+        <div className="kpi-value">{String(x.value).padStart(2,"0")}</div>
+        <p className="kpi-detail">{x.detail}</p>
+      </Card>)}
+    </div>
+    <div className="dashboard-body">
+      <Card className="glass-panel gap-3 p-5">
+        <CardHeader className="px-0 pb-1">
+          <CardTitle className="text-sm">工厂业务流程</CardTitle>
+          <CardDescription className="text-xs">从销售订单到成品入库的跨部门协作</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-2 px-0 sm:grid-cols-2">
+          {[
+            ["销售订单","sales","orders"],["生产排程","pmc","schedule"],
+            ["采购到货","warehouse","warehouseIncoming"],["仓库备料","warehouse","warehousePick"],
+            ["生产任务","production","tasks"],["质量检验","quality","qaQc"],
+            ["QA 放行","quality","release"],["成品入库","warehouse","inventory"]
+          ].map(([label,d,f],i)=>{
+            const Icon=getFeatureIcon(f)
+            return <button type="button" key={label}
+              className="quick-dept gap-3" onClick={()=>onSelect(`#/departments/${d}/${f}`)}>
+              <Badge variant="secondary" className="min-w-7 rounded-md">{String(i+1).padStart(2,"0")}</Badge>
+              <Icon size={17} className="text-green-800"/>
+              <span className="flex-1">{label}</span><ChevronRight size={13}/>
+            </button>
+          })}
+        </CardContent>
+      </Card>
+      <Card className="glass-panel gap-3 p-5">
+        <CardHeader className="px-0 pb-1">
+          <CardTitle className="text-sm">部门协同</CardTitle>
+          <CardDescription className="text-xs">11 个部门 · 点击进入工作区</CardDescription>
+        </CardHeader>
+        <CardContent className="quick-departments px-0">
+          {DEPARTMENTS.map(d=>{
+            const Icon=getDepartmentIcon(d.id)
+            return <button type="button" className="quick-dept" key={d.id} onClick={()=>onSelect(`#/departments/${d.id}`)}>
+              <Icon size={15}/><span className="min-w-0 truncate">{d.name}</span><ChevronRight size={13} className="ml-auto shrink-0"/>
+            </button>
+          })}
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+}
+function ClipboardIcon({size=17}:{size?:number}) {return <Check size={size}/>}
+
+export default function App() {
+  const [route,setRoute]=useState<Route>(()=>parseRoute(window.location.hash))
+  const [sidebarOpen,setSidebarOpen]=useState(false)
+  const {access,employee,workspace,refresh,can,switchEmployee}=useFactoryState()
+  useEffect(()=>{
+    if(!window.location.hash)history.replaceState(null,"","#/overview")
+    const handle=()=>setRoute(parseRoute(window.location.hash))
+    window.addEventListener("hashchange",handle)
+    return ()=>window.removeEventListener("hashchange",handle)
+  },[])
+  const navigate=useCallback((hash:string)=>{
+    if(window.location.hash!==hash)window.location.hash=hash
+    setRoute(parseRoute(hash))
+    setSidebarOpen(false)
+    window.scrollTo({top:0,behavior:"instant"})
+  },[])
+  const currentDept=route.kind==="department"?getDepartment(route.dept):undefined
+  const currentFeature=route.kind==="department"?route.feature:undefined
+  const staff=access?.staff??[]
+  const messages=workspace.messages??[]
+  const validFeature=Boolean(currentDept&&currentFeature&&currentDept.features.includes(currentFeature))
+  const employeeId=employee?.id??"anonymous"
+  const featureView=useMemo(()=>routeHash(route),[route])
+  return <TooltipProvider delayDuration={230}>
+    <div className="factory-shell">
+      <div className={`sidebar-shade ${sidebarOpen?"open":""}`} onClick={()=>setSidebarOpen(false)} aria-hidden="true"/>
+      <DepartmentNav route={route} open={sidebarOpen} onSelect={navigate}/>
+      <div className="shell-workspace">
+        <Topbar route={route} employee={employee} staff={staff} onSwitch={switchEmployee}
+          onOpenSidebar={()=>setSidebarOpen(true)} onSelect={navigate} messages={messages}/>
+        <main className="shell-content" id="main-content">
+          {route.kind==="overview"?<Overview workspace={workspace} onSelect={navigate}/>:
+            currentDept&&(!currentFeature||!validFeature)?
+              <DepartmentPage key={currentDept.id} dept={currentDept} staff={staff} employee={employee}
+                workspace={workspace} can={can} onSelect={navigate} onRefresh={refresh}/>
+              :currentDept&&currentFeature?<div>
+                <div className="mb-4">
+                  <h1 className="page-title">{FEATURE_NAMES[currentFeature]??currentFeature}</h1>
+                  <p className="page-subtitle">{FEATURE_HINTS[currentFeature]??currentDept.description}</p>
+                </div>
+                {can(currentDept.id,currentFeature)?
+                  <LegacyFrame key={featureView} dept={currentDept.id} feature={currentFeature}
+                    employeeId={employeeId} onRoute={navigate} onRefresh={refresh}/>:
+                  <Card className="glass-panel gap-2 p-6">
+                    <div className="flex items-center gap-2 text-sm font-semibold"><LockKeyhole size={18}/>该功能没有访问权限</div>
+                    <p className="text-xs text-muted-foreground">请在员工权限矩阵中配置相应岗位或个人权限。</p>
+                    <Button variant="outline" size="sm" className="w-fit" onClick={()=>navigate(`#/departments/${currentDept.id}`)}>返回部门</Button>
+                  </Card>}
+              </div>:null}
+          <Footer/>
+        </main>
+      </div>
+    </div>
+  </TooltipProvider>
+}
