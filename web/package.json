@@ -8,7 +8,7 @@
     "dev": "npm run prepare:legacy && vite",
     "build": "npm run prepare:legacy && tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "npm run prepare:legacy && tsc --noEmit",
     "test:smoke": "node tests/smoke.mjs",
     "test:full": "node tests/full-business.mjs",
     "test:purchase": "node tests/purchase-flow.mjs",
