@@ -56,6 +56,7 @@ export type BusinessRuntime={
   mount:(feature:string,department:string,access:FactoryAccessAPI,callbacks:Callbacks)=>void
   render:()=>string
   click:(element:HTMLElement)=>void
+  change:(id:string,value:string)=>void
   submit:(event:Event)=>boolean
 }
 type Callbacks={
@@ -125,6 +126,11 @@ export async function getBusinessRuntime():Promise<BusinessRuntime> {
         if(canUse)runtime.callbacks.render()
         else context.flashDenied(permission)
       }
+    },
+    change(id:string,selected:string){
+      const mapping:Record<string,"employee"|"position"|"dept">={"perm-employee":"employee","perm-position":"position","perm-dept":"dept"}
+      const field=mapping[id]
+      if(field){runtime.access.updateSelection(field,selected);runtime.callbacks.render()}
     },
     submit(event:Event){
       if(modules.submitForm?.(event))return true
