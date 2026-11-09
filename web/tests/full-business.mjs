@@ -68,6 +68,8 @@ try {
     await form.locator('button[type="submit"]').click()
     await page.waitForFunction(()=>JSON.parse(localStorage.getItem("factory-workspace-v2")||"{}").orders?.some(o=>o.product==="自动化测试产品"),null,{timeout:6000})
     assert.ok(await page.locator(".native-business .legacy-root").isVisible(),"Workbench stays live after saving an order")
+    await page.reload({waitUntil:"networkidle"})
+    assert.ok(await page.evaluate(()=>JSON.parse(localStorage.getItem("factory-workspace-v2")||"{}").orders?.some(o=>o.product==="自动化测试产品")),"Created order survives refresh and React hydration")
   }else missing.push("Sales order creation button unavailable for default developer")
   assert.deepEqual(missing,[],"Complete business screen and order write regression")
   assert.deepEqual(errors,[],"No runtime errors after writing")
