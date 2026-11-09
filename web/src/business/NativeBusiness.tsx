@@ -3,6 +3,7 @@ import { AlertCircle, LoaderCircle, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { FactoryAccessAPI } from "@/factory-state"
 import { getBusinessRuntime } from "@/business/runtime"
+import { BusinessMarkup } from "@/business/BusinessMarkup"
 
 type Props={
   dept:string;feature:string;access:FactoryAccessAPI
@@ -78,7 +79,7 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     </div>}
     <div ref={rootRef} className="legacy-root" style={{display:status==="ready"?"block":"none"}}
       onClick={handleClick} onSubmit={handleSubmit}>
-      <div id="view" className="legacy-workbench" dangerouslySetInnerHTML={{__html:markup}}/>
+      <div id="view" className="legacy-workbench"><BusinessMarkup markup={markup}/></div>
       <div id="modal-host"/>
       <div id="ops-modal-host"/>
       <div id="modules-modal-host"/>
