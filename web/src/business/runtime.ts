@@ -103,12 +103,12 @@ export async function getBusinessRuntime():Promise<BusinessRuntime> {
       context.data.dept=department
       context.data.feature=feature
       context.data.home=false
-      // Sync harmless React-owned fields; operations and modules keep their
-      // original object references so existing business validation is preserved.
+      // Sync all React-owned records before rendering, without replacing
+      // ops/modules: the original engines hold live references to those models.
       const current=readWorkspace()
-      context.data.offices=current.offices
-      context.data.chatThreads=current.chatThreads
-      context.data.messages=current.messages
+      for(const field of ["orders","tasks","leaves","payroll","approvals","plans","offices","chatThreads","messages"]){
+        if(current[field]!==undefined)context.data[field]=current[field]
+      }
     },
     render(){
       const feature=runtime.activeFeature
