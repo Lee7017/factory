@@ -90,6 +90,11 @@ function detailsPurchase(idValue){const p=orders().find(x=>x.id===idValue);if(!p
  const n=numbers(p);const related=shipments(p.id).map(x=>`<div class="journey-extra-line"><b>${esc(x.id)}</b><span>${money(x.actualQty??x.qty)} · ${esc(x.status)}</span></div>`).join('');
  window.FactoryFlowUI?.openDocument({kind:'purchase',ref:p.id,docType:'采购单',status:p.status,summary:`${p.material} · 采购 ${money(p.qty)} · ${p.supplier}`,history:p.history||[],nextOpen:{dept:p.status==='待审批'?'purchase':'warehouse',feature:p.status==='待审批'?'purchase':'warehouseIncoming',record:p.id},detailHtml:`<div class="journey-section-head"><strong>采购数量及到货记录</strong><small>创建人：${esc(p.createdName||'历史单据')}　审批人：${esc(p.approvedBy||'未审批')}</small></div><div class="journey-extra-line">采购 ${money(n.ordered)} · 已登记 ${money(n.registered)} · 已入库 ${money(n.stored)} · 剩余可登记 ${money(n.remaining)}</div>${related||'<div class="journey-extra-line">暂无到货记录</div>'}`});
 }
+// 兼容 Modules.startPurchaseReceipt 的采购到货入口，必须复用收货权限校验。
+function openReceipt(po){
+ if(!authorized(['warehouse','warehouseOps','create']))return error('到货登记需要仓库收货权限，应由有权限的仓库员工办理。');
+ return newReceipt(po);
+}
 function detailsReceipt(idValue){const r=arrivals().find(x=>x.id===idValue);if(!r)return;
  const qc=M.state.inspections.find(x=>x.incoming===r.id);
  window.FactoryFlowUI?.openDocument({kind:'receipt',ref:r.id,docType:'采购到货单',status:r.status,summary:`采购单 ${r.purchase} · ${r.material} · 本次实收 ${money(r.actualQty??r.qty)}`,history:r.history||[],nextOpen:{dept:r.status==='待QC'?'quality':'warehouse',feature:r.status==='待QC'?'qaQc':'warehouseIncoming',record:r.id},detailHtml:`<div class="journey-section-head"><strong>供应商批次与质检</strong><small>相关采购单 ${esc(r.purchase)}</small></div><div class="journey-extra-line"><b>供应商批次</b><span>${esc(r.supplierLot||'—')}</span><b>到货日期</b><span>${esc(r.received||'—')}</span></div><div class="journey-extra-line"><b>QC 检验</b><span>${qc?`${esc(qc.id)} · ${esc(qc.status)}`:'待检'}</span><b>入库批次</b><span>${esc(r.batch||'尚未入库')}</span></div>`});
@@ -131,7 +136,7 @@ function store(idValue){const r=arrivals().find(x=>x.id===idValue);if(!r||r.stat
  renderNow();noticeFlow({ref:r.id,docType:'到货单',action:'仓库确认入库',from:'warehouse',to:'warehouse',status:'已入库',next:'可用库存已更新',nextOpen:{dept:'warehouse',feature:'warehouseIncoming'}});
 }
 function trackShortage(orderId){
- const all=JSON.parse(localStorage.getItem('factory-workspace-v4')||'{}');
+ const all=ctx?.data||JSON.parse(localStorage.getItem('factory-workspace-v4')||'{}');
  const order=all.orders?.find(x=>x.id===orderId);
  const stock=O.state.stock,reservations=O.state.reservations||{};
  const committed=Object.values(reservations).reduce((t,x)=>t+Number(x['PK-001']||0),0);

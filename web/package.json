@@ -1,0 +1,40 @@
+{
+  "name": "factory-react",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "prepare:legacy": "node scripts/prepare-legacy.mjs",
+    "dev": "npm run prepare:legacy && vite",
+    "build": "npm run prepare:legacy && tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "npm run prepare:legacy && tsc --noEmit",
+    "test:smoke": "node tests/smoke.mjs",
+    "test:full": "node tests/full-business.mjs",
+    "test:purchase": "node tests/purchase-flow.mjs",
+    "test:current": "node tests/current-data.mjs",
+    "test:unit": "tsx --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "lucide-react": "^0.468.0",
+    "radix-ui": "^1.4.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.3.0"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5",
+    "@vitejs/plugin-react": "^4.7.0",
+    "@tailwindcss/vite": "^4.1.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.8.3",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@types/node": "^22.15.0",
+    "playwright": "^1.56.0",
+    "postcss": "^8.5.3",
+    "tsx": "^4.19.2"
+  }
+}

@@ -209,23 +209,13 @@ function renderGraph(entry){const kind=inferKind(entry),history=getHistory(entry
  const historyRows=history.slice().reverse().map(h=>`<div class="journey-history-row"><span class="journey-history-action">${clean(h.action||'处理单据')}</span><span>${clean(label(h.from||h.dept||''))}</span><span>${clean(h.person||h.by||'经办人未记录')}</span><time>${clean(h.at||h.time||'')}</time></div>`).join('');
  return `<div class="flow-veil" data-flow-close aria-hidden="true"></div><section class="flow-window journey-dialog" role="dialog" aria-modal="true" aria-labelledby="journey-title">
  <header class="journey-top"><div><span class="journey-eyebrow">跨部门单据流转</span><h2 id="journey-title">${clean(type)} <span>${clean(entry.ref||'业务记录')}</span></h2><p>${clean(summary)}</p></div><button class="journey-close" data-flow-close type="button" aria-label="关闭流程弹窗">×</button></header>
- <nav class="journey-tabs" role="tablist" aria-label="单据查看方式">
-  <button type="button" class="journey-tab" role="tab" aria-selected="false" data-journey-tab="content">${contentLabel}</button>
-  <button type="button" class="journey-tab is-active" role="tab" aria-selected="true" data-journey-tab="flow">流转图</button>
-  <button type="button" class="journey-tab" role="tab" aria-selected="false" data-journey-tab="history">操作记录 <span>${history.length}</span></button>
- </nav>
- <div class="journey-tab-body">
-  <section class="journey-tab-panel" role="tabpanel" data-journey-panel="content" hidden>${orderDetails(entry,kind)||`<div class="journey-extra journey-extra-empty"><div class="journey-extra-line"><span>当前单据没有额外内容字段。</span></div></div>`}${extras(entry,kind)}</section>
-  <section class="journey-tab-panel is-active" role="tabpanel" data-journey-panel="flow">
-   <div class="journey-toolbar"><span>当前状态 <b>${clean(status)}</b></span>${entry.action?`<span>刚刚办理 <b>${clean(entry.action)}</b> · ${clean(entry.operator||'经办人未记录')}</span>`:''}<span>单据按实际办理顺序流转</span></div>
-   <div class="journey-section-head"><strong>部门 · 员工 · 处理事项</strong><small>先看完整流程；随后动画展示“刚完成 → 当前环节”，真实退回用橙色回弧</small></div>
-   <div class="journey-range"><span><b>起点</b>${clean(label(steps[0]?.[0]))} · ${clean(steps[0]?.[1]||'开始')}</span><i>→</i><span><b>终点</b>${clean(label(steps[steps.length-1]?.[0]))} · ${clean(steps[steps.length-1]?.[1]||'结束')}</span></div>
-   <div class="journey-steps">${snakeOfCards(steps,kind,stage,history)}</div>
-  </section>
-  <section class="journey-tab-panel" role="tabpanel" data-journey-panel="history" hidden>
-   <div class="journey-section-head journey-history-title"><strong>操作记录</strong><small>${history.length} 条 · 最近操作在前</small></div><div class="journey-history">${historyRows||'<div class="journey-history-empty">当前没有已记录的操作</div>'}</div>
-  </section>
- </div>
+ <div class="journey-toolbar"><span>当前状态 <b>${clean(status)}</b></span>${entry.action?`<span>刚刚办理 <b>${clean(entry.action)}</b> · ${clean(entry.operator||'经办人未记录')}</span>`:''}<span>单据按实际办理顺序流转</span></div>
+ ${orderDetails(entry,kind)}
+ <div class="journey-section-head"><strong>部门 · 员工 · 处理事项</strong><small>先看完整流程；随后动画展示“刚完成 → 当前环节”，真实退回用橙色回弧</small></div>
+ <div class="journey-range"><span><b>起点</b>${clean(label(steps[0]?.[0]))} · ${clean(steps[0]?.[1]||'开始')}</span><i>→</i><span><b>终点</b>${clean(label(steps[steps.length-1]?.[0]))} · ${clean(steps[steps.length-1]?.[1]||'结束')}</span></div>
+ <div class="journey-steps">${snakeOfCards(steps,kind,stage,history)}</div>
+ ${extras(entry,kind)}
+ <div class="journey-section-head journey-history-title"><strong>操作记录</strong><small>${history.length} 条</small></div><div class="journey-history">${historyRows||'<div class="journey-history-empty">当前没有已记录的操作</div>'}</div>
  <footer class="journey-footer"><span>退回、审批、出库均记录实际经办员工</span><div><button type="button" class="journey-button" data-flow-close>关闭</button>${activeContinue?'<button type="button" class="journey-button primary" data-flow-track>跟踪卡点 →</button>':''}</div></footer>
  </section>`}
 function openDialog(entry){const host=document.querySelector('#flow-transition-host');if(!host||!entry)return;

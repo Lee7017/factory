@@ -1,0 +1,41 @@
+{
+  "version": 18,
+  "inspections": [],
+  "samples": [],
+  "cleanReports": [],
+  "ncr": [],
+  "batches": [],
+  "incoming": [],
+  "outbound": [],
+  "materialRequests": [],
+  "returns": [],
+  "disputes": [],
+  "roster": [],
+  "hours": [],
+  "standards": [],
+  "executions": [],
+  "dictionary": [
+    {
+      "id": "DICT-01",
+      "group": "班次",
+      "name": "日班",
+      "value": "08:00–16:00",
+      "active": true
+    },
+    {
+      "id": "DICT-02",
+      "group": "班次",
+      "name": "夜班",
+      "value": "16:00–00:00",
+      "active": true
+    }
+  ],
+  "ledger": [],
+  "rules": {
+    "cleanQC": true,
+    "requireDoubleSign": true,
+    "fifo": true,
+    "requireSkill": true,
+    "requireLeave": true
+  }
+}

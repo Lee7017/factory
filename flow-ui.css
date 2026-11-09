@@ -232,21 +232,3 @@
 .journey-dialog.is-arrived-current .journey-card.is-current .journey-marquee{display:block}
 @media(max-width:760px){.journey-range{align-items:flex-start;flex-wrap:wrap}.journey-range i{display:none}}
 @media(prefers-reduced-motion:reduce){.journey-dialog.is-flowing-current .journey-snake-arrow.is-arrival{animation:none;stroke-dashoffset:0}.journey-dialog.is-flowing-current .journey-snake-arrival-tip{animation:none;opacity:1}.journey-dialog.is-flowing-current .journey-card.is-current .journey-marquee{display:block}}
-
-
-/* 单据弹窗一级 Tab：订单内容 / 流转图 / 操作记录。默认流转图。 */
-.journey-tabs{display:flex;gap:4px;padding:0 30px;border-bottom:1px solid #e7ebf0;background:rgba(250,251,253,.92);position:sticky;top:0;z-index:7}
-.journey-tab{appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;padding:14px 16px 12px;color:#718093;font-size:12px;font-weight:720;cursor:pointer;display:flex;align-items:center;gap:7px}
-.journey-tab:hover{color:#33465d;background:rgba(237,241,246,.7)}
-.journey-tab.is-active{color:#263b53;border-bottom-color:#3f658e;background:#fff}
-.journey-tab span{min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#edf1f5;color:#718093;font-size:10px;display:inline-flex;align-items:center;justify-content:center}
-.journey-tab.is-active span{background:#e2ebf5;color:#31567c}
-.journey-tab-body{min-height:420px}
-.journey-tab-panel{padding:4px 0 2px}
-.journey-tab-panel[hidden]{display:none!important}
-.journey-tab-panel[data-journey-panel="content"]{padding-top:2px}
-.journey-tab-panel[data-journey-panel="content"] .journey-extra{max-height:none;margin-top:16px}
-.journey-tab-panel[data-journey-panel="history"]{padding:6px 0 20px}
-.journey-tab-panel[data-journey-panel="history"] .journey-history{max-height:none;min-height:250px}
-.journey-extra-empty{padding:12px 16px}
-@media(max-width:760px){.journey-tabs{padding:0 15px;overflow-x:auto}.journey-tab{padding:12px 11px 10px;white-space:nowrap}.journey-tab-body{min-height:360px}}
