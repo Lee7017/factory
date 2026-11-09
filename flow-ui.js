@@ -101,9 +101,25 @@ const arrowRight='<svg class="journey-arrow" viewBox="0 0 48 26" aria-hidden="tr
 const arrowReturn='<svg class="journey-return-arrow" viewBox="0 0 80 39" aria-hidden="true"><path d="M73 5 H27 Q9 5 9 20 V32 M2 24 L9 32 L16 24"/></svg>';
 const flowConfig={
  order:{title:'销售订单',steps:[
-  ['sales','接收销售订单',/订单记录导入|保存销售订单/],['sales','订单评审',/提交评审|评审通过|退回修改/],['pmc','排程与物料齐套',/排程|齐套|锁库/],['warehouse','仓库领料发料',/确认领料发料|发料/],
-  ['production','配制与包装',/配制|包装/],['quality','QC 检验 / QA 放行',/检验|QA 放行|质量放行|QC/],['warehouse','成品入库',/成品入库/],['sales','通知客户发货',/发货通知/],['warehouse','成品出库发货',/仓库成品出库|成品销售出库/],['sales','客户收货确认',/确认客户收货|交付确认/]
- ],loops:[['销售订单评审','退回修改后重新送审','sales'],['QC 判定','不合格 → 生产返工并重新报检','production'],['QA 复核','退回复检 → QC 重新判定','quality']],progress:{draft:-1,review:0,approved:1,trial:1,formal:2,reserved:2,issued:3,blending:3,semi_qc:4,semi_ok:4,packaging:4,final_qc:4,inspected:4,released:5,stored:6,dispatch:7,shipping:7,shipped:8,delivered:9}},
+  ['sales','接收销售订单',/订单记录导入|保存销售订单/],
+  ['sales','提交订单评审',/提交评审/],
+  ['sales','订单评审通过',/评审通过/],
+  ['pmc','排程试算',/排程试算/],
+  ['pmc','发布正式排程',/发布正式排程/],
+  ['pmc','确认物料齐套并锁库',/确认齐套并锁库/],
+  ['warehouse','确认领料发料',/确认领料发料/],
+  ['production','配制开工',/配制开工/],
+  ['production','配制报检',/配制报检/],
+  ['quality','半成品检验判定',/半成品检验合格|半成品不合格/],
+  ['production','包装开工',/包装开工/],
+  ['production','包装报检',/包装报检/],
+  ['quality','成品检验判定',/成品检验合格|成品不合格/],
+  ['quality','QA 质量放行',/质量放行/],
+  ['warehouse','成品入库',/成品入库/],
+  ['sales','发起发货通知',/发起发货通知/],
+  ['warehouse','按销售订单成品出库',/仓库按订单出库|仓库成品出库|成品销售出库/],
+  ['sales','确认客户收货',/确认客户收货|交付确认/]
+ ],loops:[['销售订单评审','退回修改后重新送审','sales'],['QC 判定','不合格 → 生产返工并重新报检','production'],['QA 复核','退回复检 → QC 重新判定','quality']],progress:{draft:-1,review:1,approved:2,trial:3,formal:4,reserved:5,issued:6,blending:7,semi_qc:8,semi_ok:9,packaging:10,final_qc:11,inspected:12,released:13,stored:14,dispatch:15,shipping:15,shipped:16,delivered:17}},
  purchase:{title:'采购单',steps:[['purchase','采购员创建并送审',/创建.*采购|提交.*采购/],['purchase','采购主管审批',/采购主管审批|审批通过|驳回/],['warehouse','按实际到货登记（可分批）',/仓库到货登记|采购到货登记/],['quality','QC 来料检验',/QC|来料检验/],['warehouse','合格批次确认入库',/仓库确认入库|来料入库/]],loops:[['采购主管','审批驳回 → 采购员修改后重新送审','purchase'],['QC 来料检验','不合格 → 隔离 / 供应商补货','warehouse']],progress:{草稿:-1,待审批:0,已驳回:0,待到货:1,部分到货:2,到货处理中:2,已入库:4}},
  receipt:{title:'到货单',steps:[['warehouse','仓库登记实收与供应商批次',/仓库到货登记|采购到货登记/],['quality','QC 检验并判定',/QC|检验/],['warehouse','确认合格批次入库',/仓库确认入库|入库确认/]],progress:{待QC:0,合格待入库:1,不合格:0,已入库:2}},
  outbound:{title:'成品出库单',steps:[['sales','销售发货通知',/发货通知/],['warehouse','仓库按成品批次拣货',/成品出库单创建/],['warehouse','核对并确认出库',/成品销售出库/],['sales','跟踪客户收货',/客户收货|交付确认/]],loops:[['仓库复核','批次或数量不符 → 返回重新拣货','warehouse']],progress:{待出库:1,已出库:2}}
@@ -132,12 +148,12 @@ function makeCard(step,i,state,history){const [dept,act]=step,operator=personFor
  ${['current','complete'].includes(state)?'<svg class="journey-marquee" aria-hidden="true"><rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)" rx="12"/></svg>':''}</div>`}
 // 所有单据共用同一条顺时针闭合路线。只有历史上确实发生退回时才绘制回环。
 function ringOfCards(steps,kind,stage,history){
- const width=1080,height=735,cx=540,cy=365,rx=396,ry=273,n=steps.length;
+ const n=steps.length,large=n>12,width=large?1840:1080,height=large?1500:735,cx=width/2,cy=height/2,rx=large?760:396,ry=large?620:273;
  const angle=i=>-Math.PI/2+2*Math.PI*i/n;
  const loc=(i,r=1)=>({x:cx+rx*r*Math.cos(angle(i)),y:cy+ry*r*Math.sin(angle(i))});
  const pos=steps.map((_,i)=>loc(i));
  const arcs=steps.map((_,i)=>{
-  const a=angle(i)+0.14,b=angle((i+1)%n)-0.14+((i===n-1)?2*Math.PI:0);
+  const pad=Math.min(.14,.23*Math.PI/n),a=angle(i)+pad,b=angle((i+1)%n)-pad+((i===n-1)?2*Math.PI:0);
   const x1=cx+rx*Math.cos(a),y1=cy+ry*Math.sin(a),x2=cx+rx*Math.cos(b),y2=cy+ry*Math.sin(b);
   return `<path class="journey-ring-arrow" d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${rx} ${ry} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" marker-end="url(#journey-arrow-tip)"/>`;
  }).join('');
@@ -153,8 +169,8 @@ function ringOfCards(steps,kind,stage,history){
  const centerTitle=kind==='order'?'销售订单':kind==='purchase'?'采购单':kind==='receipt'?'采购到货':'单据流转';
  return `<div class="journey-ring-scroll" role="region" aria-label="顺时针环形流程图" tabindex="0"><div class="journey-ring" style="width:${width}px;height:${height}px"><svg viewBox="0 0 ${width} ${height}" class="journey-ring-paths" aria-hidden="true"><defs><marker id="journey-arrow-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#62758a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="journey-return-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#b76b44" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>${arcs}${returnLines}</svg><div class="journey-ring-hub"><span>正在追踪</span><strong>${clean(centerTitle)}</strong><small>箭头顺时针流转</small>${returns.length?`<em>${returns.length} 条真实退回记录（橙色）</em>`:''}</div>${cards}</div></div>`;
 }
-function stepForReturn(action,kind,n){if(/审批|评审/.test(action))return 1;if(/QC|检验|复检/.test(action))return kind==='order'?5:kind==='purchase'?3:1;return Math.max(1,n-3)}
-function returnTarget(action,kind,n){if(/审批|评审/.test(action))return 0;if(/QC|检验|复检/.test(action))return kind==='order'?4:kind==='purchase'?2:0;return Math.max(0,n-4)}
+function stepForReturn(action,kind,n){if(/审批|评审/.test(action))return 1;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?9:12):kind==='purchase'?3:1;return Math.max(1,n-3)}
+function returnTarget(action,kind,n){if(/审批|评审/.test(action))return 0;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?7:10):kind==='purchase'?2:0;return Math.max(0,n-4)}
 function orderDetails(entry,kind){
  if(kind!=='order')return '';
  const o=window.FactoryOperations?.getOrder?.(entry.ref);
