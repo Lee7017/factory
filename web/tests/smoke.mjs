@@ -4,7 +4,7 @@ import { mkdir } from "node:fs/promises"
 import { chromium } from "playwright"
 
 const base = "http://127.0.0.1:4173/factory/"
-const server = spawn("npm", ["run", "preview", "--", "--host", "127.0.0.1", "--port", "4173", "--strictPort"], {
+const server = spawn(process.execPath, ["node_modules/vite/bin/vite.js", "preview", "--host", "127.0.0.1", "--port", "4173", "--strictPort"], {
   cwd: process.cwd(), stdio: ["ignore","pipe","pipe"]
 })
 let browser
