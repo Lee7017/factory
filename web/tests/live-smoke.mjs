@@ -24,6 +24,12 @@ try{
   assert.equal(await page.locator("svg.svg-bank[data-icon-library=lucide] symbol[data-lucide-icon]").count(),77)
   await page.locator(".department-tile").filter({hasText:"仓库 / 物流部"}).click()
   assert.equal(await page.locator(".feature-tile").count(),8,"Published warehouse department has 8 functions")
+  // Move off the clicked tile and allow its CSS background transition to finish.
+  await page.mouse.move(780,90)
+  await page.waitForFunction(()=>{
+    const selected=document.querySelector('.department-tile[aria-current="page"]')
+    return selected&&getComputedStyle(selected).backgroundColor==="rgb(180, 192, 182)"
+  },null,{timeout:5000})
   const selectedStyle=await page.locator('.department-tile[aria-current="page"]').evaluate(el=>{
     const style=getComputedStyle(el)
     return {background:style.backgroundColor,color:style.color,shadow:style.boxShadow}
