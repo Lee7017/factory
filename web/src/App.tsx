@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react"
 import {
-  ArrowRight, Bell, Check, ChevronDown, ChevronRight, CircleHelp,
+  ArrowRight, Bell, Check, CheckCheck, ChevronDown, ChevronRight, CircleHelp,
   Factory, Info, LockKeyhole, Menu, MessageCircle, Pencil, Search
 } from "lucide-react"
 import { DEPARTMENTS, FEATURE_HINTS, FEATURE_NAMES, getDepartment, type Department } from "@/catalog"
@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter,
+  Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -64,10 +64,11 @@ function DepartmentNav({route,open,onSelect}:{
   </aside>
 }
 
-function Topbar({route,onSelect,onOpenSidebar,employee,staff,onSwitch,messages}:{
+function Topbar({route,onSelect,onOpenSidebar,employee,staff,onSwitch,messages,onRead,onReadAll}:{
   route:Route;onSelect:(hash:string)=>void;onOpenSidebar:()=>void;
   employee?:Employee;staff:Employee[];onSwitch:(id:string)=>void;
-  messages:Array<{id:string|number;title:string;text:string;date?:string;unread?:boolean}>
+  onRead:(id:string|number)=>void;onReadAll:()=>void;
+  messages:Array<{id:string|number;title:string;text:string;date?:string;unread?:boolean;dept?:string;feature?:string}>
 }) {
   const dept=route.kind==="department"?getDepartment(route.dept):undefined
   const [infoOpen,setInfoOpen]=useState(false)
@@ -115,15 +116,21 @@ function Topbar({route,onSelect,onOpenSidebar,employee,staff,onSwitch,messages}:
             <DialogTitle>消息中心</DialogTitle>
             <DialogDescription>以下消息仅保存在当前浏览器，不会发送到其他设备。</DialogDescription>
           </DialogHeader>
+          <div className="flex justify-end"><Button size="sm" variant="outline" disabled={count===0} onClick={onReadAll}>
+            <CheckCheck size={14}/>全部标记已读
+          </Button></div>
           <div className="max-h-96 space-y-2 overflow-y-auto">
             {messages.length===0?<p className="empty-note">暂无消息</p>:messages.map(m=>
-              <div key={m.id} className="rounded-lg border border-border/60 bg-white/60 p-3">
-                <div className="flex items-center gap-2 text-xs font-semibold">
-                  {m.unread&&<span className="size-1.5 rounded-full bg-green-600"/>}{m.title}
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">{m.text}</p>
-                <small className="mt-1 block text-[10px] text-muted-foreground">{m.date??""}</small>
-              </div>)}
+              <DialogClose asChild key={m.id}>
+                <button type="button" className="block w-full rounded-lg border border-border/60 bg-white/60 p-3 text-left hover:bg-white/85"
+                  onClick={()=>onRead(m.id)}>
+                  <span className="flex items-center gap-2 text-xs font-semibold">
+                    {m.unread&&<span className="size-1.5 rounded-full bg-green-600"/>}{m.title}
+                  </span>
+                  <span className="mt-1 block text-xs text-muted-foreground">{m.text}</span>
+                  <small className="mt-1 block text-[10px] text-muted-foreground">{m.date??""}</small>
+                </button>
+              </DialogClose>)}
           </div>
         </DialogContent>
       </Dialog>
@@ -409,6 +416,20 @@ export default function App() {
     setSidebarOpen(false)
     window.scrollTo({top:0,behavior:"auto"})
   },[])
+  const readMessage=useCallback((id:string|number)=>{
+    let target:{dept?:string;feature?:string}|undefined
+    updateWorkspace(data=>{
+      const item=data.messages?.find(m=>String(m.id)===String(id))
+      if(item){item.unread=false;target={dept:item.dept,feature:item.feature}}
+    })
+    refresh()
+    if(target?.dept&&getDepartment(target.dept))
+      navigate(`#/departments/${target.dept}${target.feature?"/"+target.feature:""}`)
+  },[navigate,refresh])
+  const readAllMessages=useCallback(()=>{
+    updateWorkspace(data=>{for(const item of data.messages??[])item.unread=false})
+    refresh()
+  },[refresh])
   const currentDept=route.kind==="department"?getDepartment(route.dept):undefined
   const currentFeature=route.kind==="department"?route.feature:undefined
   const staff=access?.staff??[]
@@ -420,7 +441,8 @@ export default function App() {
       <DepartmentNav route={route} open={sidebarOpen} onSelect={navigate}/>
       <div className="shell-workspace">
         <Topbar route={route} employee={employee} staff={staff} onSwitch={switchEmployee}
-          onOpenSidebar={()=>setSidebarOpen(true)} onSelect={navigate} messages={messages}/>
+          onOpenSidebar={()=>setSidebarOpen(true)} onSelect={navigate} messages={messages}
+          onRead={readMessage} onReadAll={readAllMessages}/>
         <main className="shell-content" id="main-content">
           {route.kind==="overview"?<Overview workspace={workspace} onSelect={navigate}/>:
             currentDept&&(!currentFeature||!validFeature)?
