@@ -97,10 +97,19 @@ try {
   assert.ok(download.suggestedFilename().startsWith("factory-browser-backup-"))
   const backup=JSON.parse(await readFile(await download.path(),"utf8"))
   assert.equal(backup.format,"factory-browser-backup-v2")
+  assert.ok(!Object.hasOwn(backup.storage,"factory-workspace-v2"),"Obsolete v2 records must not enter current backups")
   assert.ok(JSON.parse(backup.storage["factory-workspace-v4"]).orders.some(o=>o.product==="自动化测试产品"))
   assert.ok(JSON.parse(backup.storage["factory-permissions-v2"]).current,"Staff permissions are included")
 
-  // Restore a modified backup through the real shadcn dialog and verify persistence.
+  // A v2-only backup must be rejected. No backward import is offered.
+  const oldBackup={format:"factory-browser-backup-v1",storage:{"factory-workspace-v2":"{}","factory-permissions-v2":"{}"}}
+  await writeFile("test-results/obsolete-backup.json",JSON.stringify(oldBackup))
+  await page.getByRole("button",{name:/从备份恢复数据/}).click()
+  await page.locator('input[type="file"]').setInputFiles("test-results/obsolete-backup.json")
+  await page.getByRole("alert").filter({hasText:"备份格式不匹配"}).waitFor({state:"visible"})
+  assert.ok(await page.getByRole("button",{name:/覆盖并恢复/}).isDisabled(),"Cannot restore old data")
+  await page.getByRole("dialog").getByRole("button",{name:"Close"}).click().catch(async()=>{await page.keyboard.press("Escape")})
+  // Restore a modified current-version backup through the real shadcn dialog.
   const updated=JSON.parse(backup.storage["factory-workspace-v4"])
   updated.offices={...updated.offices,quality:"自动化恢复测试办公室"}
   backup.storage["factory-workspace-v4"]=JSON.stringify(updated)
