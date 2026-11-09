@@ -800,7 +800,7 @@ body{
 .crumb-current{background:rgba(221,235,223,.69);color:#2c5238;border-color:rgba(71,112,80,.15)}
 .crumb-root-mark{background:#487a58;box-shadow:9px 0 0 #a3c3a8,0 9px 0 #a3c3a8,9px 9px 0 #cfdfd0}
 .user-avatar{background:linear-gradient(135deg,#456a54,#739a7b)}
-:where(.panel,.glass.panel,.dept-feature-panel,.dept-members,.dept-todo-lane,.op-table-wrap,.mw-content,.mw-head,.gantt-panel,.op-subsection,.mw-metric,.mw-snapshot,.office-location,.dept-card-head,.ops-heading){
+:is(.panel,.glass.panel,.dept-feature-panel,.dept-members,.dept-todo-lane,.op-table-wrap,.mw-content,.mw-head,.gantt-panel,.op-subsection,.mw-metric,.mw-snapshot,.office-location,.dept-card-head,.ops-heading){
   background:rgba(249,252,248,.68);
   border-color:rgba(64,91,70,.16);
   box-shadow:var(--card-shadow);
