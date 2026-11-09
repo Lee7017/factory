@@ -33,7 +33,7 @@ try {
     activeFeature=`${dept}/${feature}`
     await page.evaluate(hash=>{location.hash=hash},`#/departments/${dept}/${feature}`)
     try {
-      if(["leave","leaveApproval"].includes(feature)){
+      if(["leave","leaveApproval","employees"].includes(feature)){
         await page.locator(".glass-panel [data-slot='table']").waitFor({state:"visible",timeout:15000})
       }else{
         await page.locator(".native-business .legacy-root").waitFor({state:"visible",timeout:15000})
@@ -94,6 +94,21 @@ try {
   await page.waitForFunction(()=>document.querySelector("#perm-dept")?.value==="quality",null,{timeout:6000})
   assert.equal(await page.locator("#perm-dept").inputValue(),"quality",
     "Changing department updates the permission matrix")
+
+  // Native shadcn employee directory: authorized edits share the same ops.staffEdits data.
+  activeFeature="it/employees"
+  await page.evaluate(()=>{location.hash="#/departments/it/employees"})
+  await page.getByRole("button",{name:"编辑孙浩的档案"}).click()
+  const editDialog=page.getByRole("dialog",{name:/编辑员工档案/})
+  await editDialog.getByRole("textbox",{name:"联系电话"}).fill("010-5555-0109")
+  await editDialog.getByRole("button",{name:"保存档案"}).click()
+  await page.waitForFunction(()=>{
+    const x=JSON.parse(localStorage.getItem("factory-workspace-v4")||"{}")
+    return x.ops?.staffEdits?.E009?.phone==="010-5555-0109"
+  },null,{timeout:6000})
+  await page.reload({waitUntil:"networkidle"})
+  await page.getByText("010-5555-0109").waitFor({state:"visible",timeout:6000})
+  assert.equal(await page.locator("iframe").count(),0,"Employee directory is a native shadcn page")
 
   // Back up the same browser records before deploying or rolling back.
   await page.getByRole("button",{name:"切换当前员工"}).click()
