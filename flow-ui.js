@@ -132,11 +132,31 @@ function makeCard(step,i,state,history){const [dept,act]=step,operator=personFor
  <div class="journey-card-head"><span class="journey-seq">${String(i+1).padStart(2,'0')}</span><span class="journey-state">${state==='done'?'已办理':state==='current'?'当前环节':state==='complete'?'已办结':'待办理'}</span></div>
  <div class="journey-dept">${clean(label(dept))}</div><strong class="journey-task">${clean(act)}</strong><div class="journey-person"><span class="journey-person-label">${['done','complete'].includes(state)?'经办员工':'负责员工'}</span><span>${clean(operator)}</span></div>
  ${['current','complete'].includes(state)?'<svg class="journey-marquee" aria-hidden="true"><rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)" rx="12"/></svg>':''}</div>`}
-function rowsOfCards(steps,kind,stage,history){let html='';for(let i=0;i<steps.length;i+=4){const part=steps.slice(i,i+4);html+=`<div class="journey-row">${part.map((step,j)=>makeCard(step,i+j,stepState(i+j,kind,stage),history)+(j<part.length-1?`<span class="journey-connector">${arrowRight}</span>`:'')).join('')}</div>`;
- if(i+4<steps.length)html+=`<div class="journey-row-return" aria-hidden="true"><svg viewBox="0 0 900 36" preserveAspectRatio="none"><path d="M785 2 V15 Q785 25 774 25 H112 Q100 25 100 32"/><path d="M93 25 L100 32 L107 25"/></svg></div>`}
- return html}
-function loopRows(kind,history){const loops=flowConfig[kind]?.loops||[];if(!loops.length)return '';
- return `<div class="journey-loops"><div class="journey-section-head"><strong>退回 / 复检的循环路线</strong><small>出现退回时沿返回箭头再次办理，不会直接跳过检验</small></div><div class="journey-loops-grid">${loops.map(([origin,text,dept])=>`<div class="journey-loop">${arrowReturn}<span><strong>${clean(origin)}</strong><small>${clean(text)}</small><em>返回 ${clean(label(dept))}</em></span></div>`).join('')}</div></div>`}
+// 所有单据共用同一条顺时针闭合路线。只有历史上确实发生退回时才绘制回环。
+function ringOfCards(steps,kind,stage,history){
+ const width=1080,height=735,cx=540,cy=365,rx=396,ry=273,n=steps.length;
+ const angle=i=>-Math.PI/2+2*Math.PI*i/n;
+ const loc=(i,r=1)=>({x:cx+rx*r*Math.cos(angle(i)),y:cy+ry*r*Math.sin(angle(i))});
+ const pos=steps.map((_,i)=>loc(i));
+ const arcs=steps.map((_,i)=>{
+  const a=angle(i)+0.14,b=angle((i+1)%n)-0.14+((i===n-1)?2*Math.PI:0);
+  const x1=cx+rx*Math.cos(a),y1=cy+ry*Math.sin(a),x2=cx+rx*Math.cos(b),y2=cy+ry*Math.sin(b);
+  return `<path class="journey-ring-arrow" d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${rx} ${ry} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" marker-end="url(#journey-arrow-tip)"/>`;
+ }).join('');
+ const returns=(history||[]).filter(h=>/驳回|退回|不合格|返洗|返工|复检/.test(h.action||''));
+ const returnLines=returns.slice(-3).map((h,i)=>{
+  const action=String(h.action||'退回');
+  const fromIndex=Math.min(n-1,Math.max(1,stepForReturn(action,kind,n))),toIndex=Math.max(0,Math.min(n-1,returnTarget(action,kind,n)));
+  const from=pos[fromIndex],to=pos[toIndex],a1=angle(fromIndex),a2=angle(toIndex),inner=.67-(i*.035);
+  const c1x=cx+rx*inner*Math.cos(a1),c1y=cy+ry*inner*Math.sin(a1),c2x=cx+rx*inner*Math.cos(a2),c2y=cy+ry*inner*Math.sin(a2);
+  return `<path class="journey-ring-return" d="M${from.x.toFixed(1)} ${from.y.toFixed(1)} C${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${to.x.toFixed(1)} ${to.y.toFixed(1)}" marker-end="url(#journey-return-tip)"/>`;
+ }).join('');
+ const cards=steps.map((step,i)=>`<div class="journey-ring-position" style="left:${(pos[i].x-87).toFixed(1)}px;top:${(pos[i].y-61).toFixed(1)}px">${makeCard(step,i,stepState(i,kind,stage),history)}</div>`).join('');
+ const centerTitle=kind==='order'?'销售订单':kind==='purchase'?'采购单':kind==='receipt'?'采购到货':'单据流转';
+ return `<div class="journey-ring-scroll" role="region" aria-label="顺时针环形流程图" tabindex="0"><div class="journey-ring" style="width:${width}px;height:${height}px"><svg viewBox="0 0 ${width} ${height}" class="journey-ring-paths" aria-hidden="true"><defs><marker id="journey-arrow-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#62758a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="journey-return-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#b76b44" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>${arcs}${returnLines}</svg><div class="journey-ring-hub"><span>正在追踪</span><strong>${clean(centerTitle)}</strong><small>箭头顺时针流转</small>${returns.length?`<em>${returns.length} 条真实退回记录（橙色）</em>`:''}</div>${cards}</div></div>`;
+}
+function stepForReturn(action,kind,n){if(/审批|评审/.test(action))return 1;if(/QC|检验|复检/.test(action))return kind==='order'?5:kind==='purchase'?3:1;return Math.max(1,n-3)}
+function returnTarget(action,kind,n){if(/审批|评审/.test(action))return 0;if(/QC|检验|复检/.test(action))return kind==='order'?4:kind==='purchase'?2:0;return Math.max(0,n-4)}
 function orderDetails(entry,kind){
  if(kind!=='order')return '';
  const o=window.FactoryOperations?.getOrder?.(entry.ref);
@@ -160,7 +180,7 @@ function orderDetails(entry,kind){
 }
 function extras(entry,kind){if(entry.detailHtml)return `<div class="journey-extra">${entry.detailHtml}</div>`;if(kind==='order'){const m=window.FactoryModules?.state,ref=entry.ref;
  const outbound=m?.outbound?.filter(x=>x.order===ref)||[];
- if(outbound.length)return `<div class="journey-extra"><div class="journey-section-head"><strong>成品出库与客户交付</strong><small>${outbound.length} 张出库单</small></div>${outbound.map(r=>`<div class="journey-extra-line"><b>${clean(r.id)}</b><span>${clean(r.qty)} 箱 · ${clean(r.destination)} · ${clean(r.status)}</span></div>`).join('')}</div>`;
+ if(outbound.length)return `<div class="journey-extra"><div class="journey-section-head"><strong>成品出库与客户交付</strong><small>${outbound.length} 次出库记录</small></div>${outbound.map(r=>`<div class="journey-extra-line"><b>${clean(r.id)}</b><span>${clean(r.qty)} 箱 · ${clean(r.destination)} · ${clean(r.status)}</span></div>`).join('')}</div>`;
  }return ''}
 function renderGraph(entry){const kind=inferKind(entry),history=getHistory(entry,kind),cfg=flowConfig[kind],stage=getStage(entry,kind),type=entry.docType||cfg?.title||docMeta(entry).type;
  const steps=buildSteps(entry,kind);const summary=entry.summary||'',status=entry.status||stage||'待办理';
@@ -169,8 +189,8 @@ function renderGraph(entry){const kind=inferKind(entry),history=getHistory(entry
  <header class="journey-top"><div><span class="journey-eyebrow">跨部门单据流转</span><h2 id="journey-title">${clean(type)} <span>${clean(entry.ref||'业务记录')}</span></h2><p>${clean(summary)}</p></div><button class="journey-close" data-flow-close type="button" aria-label="关闭流程弹窗">×</button></header>
  <div class="journey-toolbar"><span>当前状态 <b>${clean(status)}</b></span>${entry.action?`<span>刚刚办理 <b>${clean(entry.action)}</b> · ${clean(entry.operator||'经办人未记录')}</span>`:''}<span>单据按实际办理顺序流转</span></div>
  ${orderDetails(entry,kind)}
- <div class="journey-section-head"><strong>部门 · 员工 · 处理事项</strong><small>实线箭头表示前进，弯箭头表示进入下一行</small></div>
- <div class="journey-steps">${rowsOfCards(steps,kind,stage,history)}</div>
+ <div class="journey-section-head"><strong>部门 · 员工 · 处理事项</strong><small>实线箭头表示前进，环形箭头顺时针前进，橙色圆弧仅表示真实发生的退回</small></div>
+ <div class="journey-steps">${ringOfCards(steps,kind,stage,history)}</div>
  ${extras(entry,kind)}
  <div class="journey-section-head journey-history-title"><strong>操作记录</strong><small>${history.length} 条</small></div><div class="journey-history">${historyRows||'<div class="journey-history-empty">当前没有已记录的操作</div>'}</div>
  <footer class="journey-footer"><span>退回、审批、出库均记录实际经办员工</span><div><button type="button" class="journey-button" data-flow-close>关闭</button>${activeContinue?'<button type="button" class="journey-button primary" data-flow-track>跟踪卡点 →</button>':''}</div></footer>
