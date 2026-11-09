@@ -42,9 +42,9 @@ jobs:
       - name: Purchase approval and warehouse-QC integrity
         working-directory: web
         run: npm run test:purchase
-      - name: Live v4 and previous v2 browser data compatibility
+      - name: Current workspace only — do not import obsolete data
         working-directory: web
-        run: npm run test:compat
+        run: npm run test:current
       - name: Upload smoke screenshots
         if: always()
         uses: actions/upload-artifact@v4
