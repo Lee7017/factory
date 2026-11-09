@@ -176,8 +176,8 @@ function snakeOfCards(steps,kind,stage,history){
  return `<div class="journey-snake-scroll" role="region" aria-label="连续折返流程图" tabindex="0" data-arrival-index="${currentIndex}"><div class="journey-snake" style="width:${width}px;height:${height}px"><svg viewBox="0 0 ${width} ${height}" class="journey-snake-paths" aria-hidden="true"><defs><marker id="journey-arrow-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#62758a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="journey-return-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#b76b44" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>${arrows}${returnLines}</svg>${cards}</div></div>`;
 }
 
-function stepForReturn(action,kind,n){if(/审批|评审/.test(action))return 1;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?9:12):kind==='purchase'?3:1;return Math.max(1,n-3)}
-function returnTarget(action,kind,n){if(/审批|评审/.test(action))return 0;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?7:10):kind==='purchase'?2:0;return Math.max(0,n-4)}
+function stepForReturn(action,kind,n){if(kind==='order'&&/物料不齐套|退回排程/.test(action))return 15;if(/审批|评审/.test(action))return 1;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?9:12):kind==='purchase'?3:1;return Math.max(1,n-3)}
+function returnTarget(action,kind,n){if(kind==='order'&&/物料不齐套|退回排程/.test(action))return 3;if(/审批|评审/.test(action))return 0;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?7:10):kind==='purchase'?2:0;return Math.max(0,n-4)}
 function orderDetails(entry,kind){
  if(kind!=='order')return '';
  const o=window.FactoryOperations?.getOrder?.(entry.ref);
