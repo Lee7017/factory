@@ -31,14 +31,8 @@ function syncStatus(p){
  p.status=n.stored>=n.ordered&&n.ordered>0?'已入库':n.stored>0?'部分到货':n.registered>0?'到货处理中':'待到货';
 }
 function migrate(){
- for(const p of orders()){
-  // 仅识别系统自带的 PO-001 样例，避免无创建人信息导致初始化示例无法审批。
-  if(p.id==='PO-001'&&!p.createdBy&&p.supplier==='包材供应商'){p.createdBy='system-seed';p.createdName='系统预置样例'}
-  p.qty=Number(p.qty)||0;
-  if(p.status==='已入库'&&!shipments(p.id).length)continue;
-  if(['待到货','部分到货','到货处理中','已入库'].includes(p.status))syncStatus(p);
- }
- // 历史到货单不删除；其中已入库的批次仍沿用原记录，防止重复加库存。
+ // 新版本不读取或迁移旧到货流程数据；当前工作区只按新状态机计算。
+ for(const p of orders()){p.qty=Number(p.qty)||0;if(['待到货','部分到货','到货处理中','已入库'].includes(p.status))syncStatus(p)}
  ctx.save();
 }
 function renderPurchases(){
@@ -170,10 +164,10 @@ function onAction(el){const action=el.dataset.procAction,ref=el.dataset.procId;
 const nativeInit=M.init,nativeRender=O.render;
 M.init=function(context){const result=nativeInit(context);ctx=context;migrate();return result};
 O.render=function(feature){return feature==='purchase'?renderPurchases():nativeRender(feature)};
-M.startPurchaseReceipt=function(po){ctx.openFeature('warehouseIncoming','warehouse');setTimeout(()=>{const r=shipments(po)[0];const row=[...document.querySelectorAll('#view tr')].find(x=>x.textContent.includes(r?.id||po));row?.scrollIntoView({block:'center',behavior:'smooth'})},40)};
+M.startPurchaseReceipt=function(po){ctx.openFeature('warehouseIncoming','warehouse');setTimeout(()=>openReceipt(po),40)};
 document.addEventListener('click',e=>{const el=e.target.closest('[data-proc-action]');if(el){e.preventDefault();onAction(el)}});
 document.addEventListener('submit',e=>{if(e.target.id==='proc-form'){e.preventDefault();saveForm(e.target)} });
 document.addEventListener('change',e=>{if(e.target.matches('#proc-form [name="purchase"]')){const p=orders().find(x=>x.id===e.target.value);if(p){const n=numbers(p);e.target.form.querySelector('[name="qty"]').value=n.remaining;e.target.form.querySelector('#proc-remaining').textContent=`采购物料 ${p.material}，最多可登记 ${money(n.remaining)}`}}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
-window.FactoryProcurement={renderPurchases,renderIncoming,trackShortage,numbers,shipments,available,store,get context(){return ctx}};
+window.FactoryProcurement={renderPurchases,renderIncoming,trackShortage,numbers,shipments,available,store,openReceipt,get context(){return ctx}};
 })();
