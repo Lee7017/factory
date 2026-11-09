@@ -68,6 +68,7 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
       <div id="modal-host"/>
       <div id="ops-modal-host"/>
       <div id="modules-modal-host"/>
+      <div id="proc-modal-host"/>
       <div id="flow-transition-host" aria-live="polite"/>
       <div id="toast-host" aria-live="polite"/>
     </div>
