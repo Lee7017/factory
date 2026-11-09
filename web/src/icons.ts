@@ -1,18 +1,17 @@
 import type { LucideIcon } from "lucide-react"
 import {
   Activity, Archive, ArrowDownToLine, ArrowLeftRight, BadgeCheck,
-  Banknote, Bell, BookOpen, BookOpenCheck, Boxes, Building2, Calendar,
-  CalendarCheck, CalendarClock, CalendarDays, CalendarRange,
+  Banknote, Bell, BookOpen, BookOpenCheck, Boxes, Building2, CalendarCheck, CalendarClock, CalendarDays, CalendarRange,
   ChartColumn, ChartLine, ChartPie, CheckCheck, CircleCheck,
   Clipboard, ClipboardCheck, ClipboardList, ClipboardPenLine, ClipboardSignature,
-  Clock, ContactRound, Database, FileCheck, FileClock, FilePenLine,
+  Clock, ContactRound, Database, FileCheck, FilePenLine,
   FileSpreadsheet, FileText, FolderKanban, Factory, Gauge, GitBranch,
   HandCoins, HardHat, History, House, IdCard, LayoutDashboard,
   ListChecks, ListTodo, ListTree, LockKeyhole, Microscope,
-  Package, PackageCheck, PackageMinus, PackageOpen, PackagePlus,
-  PackageSearch, ReceiptText, RotateCcw, ScanSearch, ScrollText,
+  PackageCheck, PackageMinus, PackageOpen, PackagePlus,
+  PackageSearch, ReceiptText, RotateCcw, ScanSearch,
   Settings, Settings2, ShieldAlert, ShieldCheck, ShoppingCart,
-  SlidersHorizontal, Tags, Timer, Truck, UserRound, UserRoundCheck,
+  SlidersHorizontal, Tags, Timer, Truck, UserRound,
   UsersRound, Wallet, Warehouse, Wrench
 } from "lucide-react"
 
