@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react"
 import {
   ArrowRight, Bell, Check, ChevronDown, ChevronRight, CircleHelp,
-  Factory, Info, LockKeyhole, Menu, MessageCircle, Pencil, Search, X
+  Factory, Info, LockKeyhole, Menu, MessageCircle, Pencil, Search
 } from "lucide-react"
 import { DEPARTMENTS, FEATURE_HINTS, FEATURE_NAMES, getDepartment, type Department } from "@/catalog"
 import { getDepartmentIcon, getFeatureIcon } from "@/icons"
