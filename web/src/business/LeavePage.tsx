@@ -36,7 +36,7 @@ export function LeavePage({feature,workspace,employee,can,onRefresh}:{
     const id=nextId()
     updateWorkspace(data=>{
       (data.leaves??=[]).unshift({id,person:employee.name,createdBy:employee.id,
-        range:`${start} ~ ${end}`,reason:reason.trim()||"个人事务",status:"待人事审批"})
+        range:`${start} ~ ${end}`,reason:reason.trim()||"个人事务",status:"待人事审批"});
       (data.messages??=[]).unshift({id:`message-${id}`,title:"请假待审批",
         text:`${employee.name} 的 ${id} 已提交，等待人事审批`,dept:"hr",feature:"leaveApproval",date:new Date().toLocaleString("zh-CN"),unread:true})
     })
@@ -59,7 +59,7 @@ export function LeavePage({feature,workspace,employee,can,onRefresh}:{
       if(!target||target.status!=="待人事审批")return
       target.status="审核通过"
       target.approvedBy=employee.id
-      target.approvedAt=new Date().toISOString()
+      target.approvedAt=new Date().toISOString();
       (data.messages??=[]).unshift({id:`approved-${candidate}-${Date.now()}`,
         title:"请假审批完成",text:`${candidate} 已审核通过`,dept:"hr",feature:"leave",
         date:new Date().toLocaleString("zh-CN"),unread:true})
