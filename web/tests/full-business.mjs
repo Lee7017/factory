@@ -33,7 +33,7 @@ try {
     activeFeature=`${dept}/${feature}`
     await page.evaluate(hash=>{location.hash=hash},`#/departments/${dept}/${feature}`)
     try {
-      if(["leave","leaveApproval","employees"].includes(feature)){
+      if(["leave","leaveApproval","employees","skills"].includes(feature)){
         await page.locator(".glass-panel [data-slot='table']").waitFor({state:"visible",timeout:15000})
       }else{
         await page.locator(".native-business .legacy-root").waitFor({state:"visible",timeout:15000})
@@ -109,6 +109,22 @@ try {
   await page.reload({waitUntil:"networkidle"})
   await page.getByText("010-5555-0109").waitFor({state:"visible",timeout:6000})
   assert.equal(await page.locator("iframe").count(),0,"Employee directory is a native shadcn page")
+
+  // React skill matrix shares the live MES skills and the original L2 minimum for scheduling.
+  activeFeature="hr/skills"
+  await page.evaluate(()=>{location.hash="#/departments/hr/skills"})
+  const worker=await page.evaluate(()=>window.FactoryAccess.staff.find(p=>p.dept==="生产车间"))
+  await page.getByRole("button",{name:`评定${worker.name}技能`}).click()
+  await page.getByRole("dialog").getByRole("combobox",{name:/评定等级/}).click()
+  await page.getByRole("option",{name:"L3"}).click()
+  await page.getByRole("dialog").getByRole("button",{name:"保存技能等级"}).click()
+  await page.waitForFunction(id=>{
+    const x=JSON.parse(localStorage.getItem("factory-workspace-v4")||"{}")
+    return x.ops?.skills?.[id]?.["配料"]==="L3"
+  },worker.id,{timeout:6000})
+  await page.reload({waitUntil:"networkidle"})
+  assert.ok(await page.getByRole("table").count(),"Native shadcn skills table survives reload")
+  assert.equal(await page.locator("iframe").count(),0,"Skill matrix must not be embedded in an iframe")
 
   // Back up the same browser records before deploying or rolling back.
   await page.getByRole("button",{name:"切换当前员工"}).click()
