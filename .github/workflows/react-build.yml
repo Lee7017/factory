@@ -1,0 +1,37 @@
+name: React shadcn migration build
+on:
+  push:
+    branches:
+      - feat/react-shadcn-migration
+  pull_request:
+    paths:
+      - "web/**"
+      - ".github/workflows/react-build.yml"
+      - "app.js"
+      - "access.js"
+      - "modules.js"
+      - "operations.js"
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Typecheck and build
+        working-directory: web
+        run: npm run build
+      - name: Upload preview files
+        uses: actions/upload-artifact@v4
+        with:
+          name: factory-react-preview
+          path: web/dist
+          if-no-files-found: error
