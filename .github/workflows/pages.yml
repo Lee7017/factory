@@ -19,14 +19,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install React dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Build React site
+        working-directory: web
+        run: npm run build
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
-      - name: Upload static site
+      - name: Upload built site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: web/dist
       - name: Deploy
         id: deploy
         uses: actions/deploy-pages@v4
