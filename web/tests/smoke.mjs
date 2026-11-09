@@ -33,7 +33,7 @@ try {
   assert.equal(await page.locator(".feature-tile").count(),8,"Warehouse has 8 business cards")
   assert.equal(await page.locator(".page-title").count(),0,"Department home should not waste height on title")
   await page.getByRole("button",{name:"查看仓库 / 物流部介绍"}).hover()
-  const tooltip=page.locator('[data-slot="tooltip-content"]')
+  const tooltip=page.locator('[data-slot="popover-content"]')
   await tooltip.waitFor({state:"visible"})
   assert.ok((await tooltip.textContent())?.includes("库存批次"),"Department description in tooltip")
   const box=await tooltip.boundingBox()
@@ -52,6 +52,19 @@ try {
   assert.ok((await iframe.evaluate(el=>el.clientHeight))>240,"Legacy module has useful iframe height")
   assert.deepEqual(errors,[],"Uncaught page errors")
   await page.screenshot({path:"test-results/warehouse-module.png",fullPage:true})
+
+  const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true})
+  await mobile.goto(base,{waitUntil:"networkidle"})
+  await mobile.getByRole("button",{name:"打开部门菜单"}).click()
+  await mobile.locator(".shell-sidebar .department-tile").filter({hasText:"仓库 / 物流部"}).click()
+  await mobile.getByRole("button",{name:"查看仓库 / 物流部介绍"}).click()
+  const mobilePopup=mobile.locator('[data-slot="popover-content"]')
+  await mobilePopup.waitFor({state:"visible"})
+  const mobileBox=await mobilePopup.boundingBox()
+  assert.ok(mobileBox&&mobileBox.width<=390&&mobileBox.x>=0&&mobileBox.x+mobileBox.width<=390,
+    "Touch popup must stay on screen")
+  await mobile.screenshot({path:"test-results/mobile.png",fullPage:true})
+  await mobile.close()
   console.log("PASS: overview, 12 nav tiles, 8 warehouse cards, Radix tooltip, roster, legacy module bridge.")
 } catch(err) {
   failed=true
