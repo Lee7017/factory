@@ -86,6 +86,9 @@ export function DataBackup(){
       <Download size={14}/>导出数据和权限（JSON）
     </Button>
     <Dialog onOpenChange={open=>{if(!open){setConfirm(false);setError("");setCandidate(null);setFileName("")}}}>
+      <DialogTrigger asChild><Button variant="outline" size="sm" className="w-full bg-white/65">
+        <RotateCcw size={14}/>从备份恢复数据
+      </Button></DialogTrigger>
       <DialogContent className="glass-dialog">
         <DialogHeader><DialogTitle>从备份恢复浏览器数据</DialogTitle>
           <DialogDescription>导入会覆盖此浏览器当前的订单、库存和权限。恢复前建议先导出一份当前数据。</DialogDescription>
