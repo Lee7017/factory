@@ -137,7 +137,6 @@
 .journey-section-head strong{font-weight:770;color:#283546}
 .journey-section-head small{color:#8c98a5;font-size:11px}
 .journey-steps{margin:0 30px;display:flex;flex-direction:column}
-.journey-row{display:flex;align-items:stretch;gap:0;width:100%;min-width:0}
 .journey-card{position:relative;flex:1;min-width:0;min-height:122px;background:#f9fafc;border:1px solid #e3e7ee;border-radius:11px;padding:14px 14px 13px;display:flex;flex-direction:column;gap:5px;justify-content:flex-start;overflow:hidden}
 .journey-card.is-done{background:#f0f3f7;border-color:#dde4ec}
 .journey-card.is-current{background:linear-gradient(135deg,#e9eef7,#f9fbff);border-color:#a5b6cf;box-shadow:0 3px 13px rgba(37,67,102,.09)}
@@ -150,21 +149,10 @@
 .journey-task{font-size:13px;color:#1e2d3c;line-height:1.36;min-height:18px}
 .journey-person{font-size:10px;color:#6b7886;display:flex;justify-content:space-between;gap:4px;line-height:1.45;margin-top:auto;border-top:1px solid #e5e9ef;padding-top:7px}
 .journey-person-label{color:#9aa4af}
-.journey-connector{width:45px;min-width:45px;align-self:center;display:grid;place-items:center;color:#52657b}
 .journey-arrow{display:block;width:42px;height:27px;overflow:visible;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;fill:none;opacity:1}
-.journey-row-return{height:37px;position:relative;flex:none;min-width:0;display:flex;justify-content:center;color:#8090a2}
-.journey-row-return svg{width:100%;height:100%;overflow:visible;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .journey-marquee{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
 .journey-marquee rect{fill:none;stroke:#355a83;stroke-width:2;stroke-dasharray:10 7;stroke-linejoin:round;animation:journey-border-march 1.05s linear infinite}
-.journey-loops{background:#f8f9fb;border:1px solid #e8edf2;border-radius:10px;margin:18px 30px 0;padding:0 0 13px}
-.journey-loops .journey-section-head{margin:14px 16px 9px}
-.journey-loops-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 12px}
-.journey-loop{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid #e2e8ef;border-radius:8px;padding:10px;min-width:0}
 .journey-return-arrow{width:46px;height:33px;flex:0 0 46px;stroke:#c17b4d;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.journey-loop span{display:flex;flex-direction:column;gap:2px;min-width:0}
-.journey-loop strong{font-size:11px;color:#434c58}
-.journey-loop small{font-size:10px;color:#636e7e;line-height:1.4}
-.journey-loop em{font-style:normal;font-size:10px;color:#a27055}
 .journey-extra{margin:16px 30px 0;border:1px solid #e3e8ef;border-radius:10px;padding:3px 16px 10px;max-height:145px;overflow:auto}
 .journey-extra .journey-section-head{margin:10px 0}
 .journey-extra-line{display:flex;gap:12px;align-items:center;padding:9px 0;border-top:1px solid #eef0f3;font-size:11px;color:#788594;flex-wrap:wrap}
@@ -188,16 +176,7 @@
  .journey-top h2{font-size:17px;overflow-wrap:anywhere}.journey-top h2 span{font-size:14px;display:block;margin:3px 0 0}
  .journey-toolbar{margin:12px 15px}.journey-section-head{margin:14px 15px 8px;align-items:flex-start;flex-wrap:wrap}
  .journey-steps{margin:0 15px}
- .journey-row{display:flex;flex-direction:column;align-items:stretch}
  .journey-card{min-height:106px;padding:10px 13px 9px}
- .journey-connector{align-self:center;height:31px;min-height:31px;transform:rotate(90deg)}
- .journey-row-return{height:31px;align-items:center}
- .journey-row-return svg{width:34px;transform:scaleX(.2);opacity:0}
- .journey-row-return:after{content:'↓';font-size:24px;color:#65788c;position:absolute;top:-2px}
- .journey-loops{margin:14px 15px 0}
- .journey-loops .journey-section-head{margin:12px}
- .journey-loops-grid{grid-template-columns:1fr;margin:0 10px;gap:7px}
- .journey-loop{padding:9px}
  .journey-extra,.journey-history{margin-left:15px;margin-right:15px}
  .journey-history-row{grid-template-columns:1.4fr 1fr;gap:4px 7px}
  .journey-history-row time{text-align:left}
@@ -211,7 +190,6 @@
 #flow-transition-host .journey-dialog{animation:none!important;opacity:1!important;transform:none!important}
 
 @media(min-width:761px){
- .journey-connector{width:32px;min-width:32px}
  .journey-arrow{width:30px;height:24px}
  .journey-card{min-height:120px;padding:12px 12px 11px}
  .journey-task{font-size:12px}
