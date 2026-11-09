@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react"
+import { useCallback, useEffect, useState, type FormEvent } from "react"
 import {
   ArrowRight, Bell, Check, ChevronDown, ChevronRight, CircleHelp,
   Factory, Info, LockKeyhole, Menu, MessageCircle, Pencil, Search
@@ -8,7 +8,8 @@ import { getDepartmentIcon, getFeatureIcon } from "@/icons"
 import {
   useFactoryState, updateWorkspace, getTodos, todoLane, dashboardMetrics, type Employee, type Todo
 } from "@/factory-state"
-import { LegacyFrame } from "@/LegacyFrame"
+import { NativeBusiness } from "@/business/NativeBusiness"
+import { LeavePage } from "@/business/LeavePage"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,9 +27,6 @@ function parseRoute(hash:string):Route {
   const match=hash.match(/^#\/departments\/([a-z]+)(?:\/([a-zA-Z]+))?$/)
   if(match&&getDepartment(match[1]))return {kind:"department",dept:match[1],feature:match[2]}
   return {kind:"overview"}
-}
-function routeHash(route:Route):string {
-  return route.kind==="overview"?"#/overview":`#/departments/${route.dept}${route.feature?"/"+route.feature:""}`
 }
 function Footer() {
   return <footer className="shell-footer">工厂管理系统 · React / shadcn/ui · Lucide Icons
@@ -416,8 +414,6 @@ export default function App() {
   const staff=access?.staff??[]
   const messages=workspace.messages??[]
   const validFeature=Boolean(currentDept&&currentFeature&&currentDept.features.includes(currentFeature))
-  const employeeId=employee?.id??"anonymous"
-  const featureView=useMemo(()=>routeHash(route),[route])
   return <>
     <div className="factory-shell">
       <div className={`sidebar-shade ${sidebarOpen?"open":""}`} onClick={()=>setSidebarOpen(false)} aria-hidden="true"/>
@@ -436,8 +432,12 @@ export default function App() {
                   <p className="page-subtitle">{FEATURE_HINTS[currentFeature]??currentDept.description}</p>
                 </div>
                 {can(currentDept.id,currentFeature)?
-                  <LegacyFrame key={featureView} dept={currentDept.id} feature={currentFeature}
-                    employeeId={employeeId} onRoute={navigate} onRefresh={refresh}/>:
+                  currentFeature==="leave"||currentFeature==="leaveApproval"?
+                    <LeavePage key={currentFeature} feature={currentFeature} workspace={workspace}
+                      employee={employee} can={can} onRefresh={refresh}/>:
+                    access?<NativeBusiness key={currentFeature} dept={currentDept.id}
+                      feature={currentFeature} access={access} onRoute={navigate} onRefresh={refresh}/>:
+                    <p className="text-xs text-muted-foreground" role="status">正在加载员工权限…</p>:
                   <Card className="glass-panel gap-2 p-6">
                     <div className="flex items-center gap-2 text-sm font-semibold"><LockKeyhole size={18}/>该功能没有访问权限</div>
                     <p className="text-xs text-muted-foreground">请在员工权限矩阵中配置相应岗位或个人权限。</p>
