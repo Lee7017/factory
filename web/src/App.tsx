@@ -18,7 +18,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 type Route={kind:"overview"}|{kind:"department";dept:string;feature?:string}
 type TabKey="functions"|"members"|"todos"
@@ -72,6 +72,8 @@ function Topbar({route,onSelect,onOpenSidebar,employee,staff,onSwitch,messages}:
   messages:Array<{id:string|number;title:string;text:string;date?:string;unread?:boolean}>
 }) {
   const dept=route.kind==="department"?getDepartment(route.dept):undefined
+  const [infoOpen,setInfoOpen]=useState(false)
+  useEffect(()=>setInfoOpen(false),[dept?.id])
   const count=messages.filter(m=>m.unread).length
   return <header className="shell-topbar">
     <div className="flex min-w-0 items-center gap-2">
@@ -83,17 +85,18 @@ function Topbar({route,onSelect,onOpenSidebar,employee,staff,onSwitch,messages}:
         <ChevronRight className="crumb-separator"/>
         {dept?<div className="flex min-w-0 items-center gap-1">
           <button type="button" className="crumb-button crumb-dept" onClick={()=>onSelect(`#/departments/${dept.id}`)}>{dept.name}</button>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon-xs" aria-label={`查看${dept.name}介绍`}>
+          <Popover open={infoOpen} onOpenChange={setInfoOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon-xs" aria-label={`查看${dept.name}介绍`}
+                onPointerEnter={event=>{if(event.pointerType==="mouse")setInfoOpen(true)}}>
                 <Info size={14}/>
               </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" align="start" sideOffset={9} className="glass-tooltip">
+            </PopoverTrigger>
+            <PopoverContent side="bottom" align="start" sideOffset={9} className="glass-tooltip">
               <strong className="block text-xs font-semibold">{dept.name}</strong>
               <span className="mt-1 block text-xs">{dept.description}</span>
-            </TooltipContent>
-          </Tooltip>
+            </PopoverContent>
+          </Popover>
           {route.kind==="department"&&route.feature&&<>
             <ChevronRight className="crumb-separator"/>
             <strong className="crumb-current">{FEATURE_NAMES[route.feature]??route.feature}</strong>
@@ -414,7 +417,7 @@ export default function App() {
   const validFeature=Boolean(currentDept&&currentFeature&&currentDept.features.includes(currentFeature))
   const employeeId=employee?.id??"anonymous"
   const featureView=useMemo(()=>routeHash(route),[route])
-  return <TooltipProvider delayDuration={230}>
+  return <>
     <div className="factory-shell">
       <div className={`sidebar-shade ${sidebarOpen?"open":""}`} onClick={()=>setSidebarOpen(false)} aria-hidden="true"/>
       <DepartmentNav route={route} open={sidebarOpen} onSelect={navigate}/>
@@ -444,5 +447,5 @@ export default function App() {
         </main>
       </div>
     </div>
-  </TooltipProvider>
+  </>
 }
