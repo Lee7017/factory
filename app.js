@@ -25,13 +25,13 @@ const people=access.staff.map(p=>[p.id,p.name,p.dept,p.title]);
 const ability=['配料','搅拌','灌装','包装','在线检验','设备换型','清洗','叉车'];
 const initial={role:'employee',dept:'it',feature:null,expanded:'it',home:true,orders:[{id:'SO-2026-1023-018',product:'720g/L 百菌清悬浮剂',spec:'5L × 4桶',qty:3000,unit:'L',status:'待排产',owner:'生产计划与物料控制部（PMC）'},{id:'SO-2026-1106-003',product:'500g/L 悬浮剂 B',spec:'1L × 12瓶',qty:1800,unit:'L',status:'待评审',owner:'销售部'}],tasks:[{id:'TK-001',type:'清洗',line:'L01 配制一线',status:'待复核',category:'非生产任务'},{id:'TK-002',type:'配制',line:'L01 配制一线',status:'待开始',category:'生产任务'},{id:'TK-003',type:'调机调线',line:'S03-4# 瓶装线',status:'待开始',category:'非生产任务'},{id:'TK-004',type:'包装',line:'S03-4# 瓶装线',status:'待开始',category:'生产任务'}],leaves:[{id:'LV-001',person:'员工',range:'2026-11-10 ~ 2026-11-11',reason:'个人事务',status:'待人事审批'}],messages:[{id:1,title:'待处理 · 生产任务',text:'TK-002 配制任务等待生产车间承接',dept:'production',date:'11月06日 09:18',unread:true,feature:'tasks'},{id:2,title:'待处理 · 请假申请',text:'LV-001 请假单等待人事审核',dept:'hr',date:'11月06日 09:05',unread:true,feature:'leaveApproval'},{id:3,title:'排程已更新',text:'SO-2026-1023-018 已生成正式排程草稿',dept:'pmc',date:'11月06日 08:50',unread:true,feature:'schedule'}],payroll:[{id:'OT-001',name:'李明',type:'加班',basis:'4 小时',status:'待人事复核',amount:'—'},{id:'IN-001',name:'王强',type:'生产激励',basis:'合格 900 单位',status:'待财务核准',amount:'—'}],approvals:[],offices:{},chatThreads:{},plans:[]};
 access.init(departments,features);
-let data;try{data=Object.assign({},structuredClone(initial),JSON.parse(localStorage.getItem('factory-workspace-v2')||'{}'))}catch{data=JSON.parse(JSON.stringify(initial))}data.offices=data.offices&&typeof data.offices==='object'?data.offices:{};data.chatThreads=data.chatThreads&&typeof data.chatThreads==='object'?data.chatThreads:{};data.plans=Array.isArray(data.plans)?data.plans:[];let drawer=false;
+let data;try{data=Object.assign({},structuredClone(initial),JSON.parse(localStorage.getItem('factory-workspace-v3')||'{}'))}catch{data=JSON.parse(JSON.stringify(initial))}data.offices=data.offices&&typeof data.offices==='object'?data.offices:{};data.chatThreads=data.chatThreads&&typeof data.chatThreads==='object'?data.chatThreads:{};data.plans=Array.isArray(data.plans)?data.plans:[];let drawer=false;
 if(data.dept==='tech')data.dept='it';
 if(data.dept==='ehs'){data.dept='hr';data.feature=null;}
 if(data.expanded==='tech')data.expanded='it';
 if(data.expanded==='ehs')data.expanded='hr';
 const deptTabs={};
-const save=()=>{try{localStorage.setItem('factory-workspace-v2',JSON.stringify(data))}catch{}};
+const save=()=>{try{localStorage.setItem('factory-workspace-v3',JSON.stringify(data))}catch{}};
 // 已保存的订单仍可能使用旧部门名称，加载时只更正名称，不改变单据状态。
 for(const order of data.orders||[])if(order.owner==='PMC 办公室')order.owner='生产计划与物料控制部（PMC）';
 const allowed=(dept,feat,action='view')=>access.has(dept,feat,action);
