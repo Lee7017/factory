@@ -24,6 +24,14 @@ try{
   assert.equal(await page.locator("svg.svg-bank[data-icon-library=lucide] symbol[data-lucide-icon]").count(),77)
   await page.locator(".department-tile").filter({hasText:"仓库 / 物流部"}).click()
   assert.equal(await page.locator(".feature-tile").count(),8,"Published warehouse department has 8 functions")
+  const selectedStyle=await page.locator('.department-tile[aria-current="page"]').evaluate(el=>{
+    const style=getComputedStyle(el)
+    return {background:style.backgroundColor,color:style.color,shadow:style.boxShadow}
+  })
+  assert.equal(selectedStyle.background,"rgb(180, 192, 182)","Selected department uses matte gray-sage, not bright saturated green")
+  assert.equal(selectedStyle.color,"rgb(47, 72, 54)","Selected department uses dark ink, not glowing white")
+  assert.ok(!selectedStyle.shadow.includes("inset 3px"),"Selected department must never have a left-side stripe")
+  await page.screenshot({path:"test-results/live-sidebar-active.png",fullPage:true})
   await page.getByRole("button",{name:"查看仓库 / 物流部介绍"}).click()
   await page.locator('[data-slot="popover-content"]').waitFor({state:"visible"})
   await page.getByRole("button",{name:"查看仓库 / 物流部介绍"}).click()
