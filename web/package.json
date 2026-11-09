@@ -13,6 +13,7 @@
     "test:full": "node tests/full-business.mjs",
     "test:purchase": "node tests/purchase-flow.mjs",
     "test:current": "node tests/current-data.mjs",
+    "test:live": "node tests/live-smoke.mjs",
     "test:unit": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
