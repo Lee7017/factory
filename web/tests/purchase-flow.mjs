@@ -32,9 +32,10 @@ try {
     await page.locator(".native-business .legacy-root").waitFor({state:"visible",timeout:12000})
     await page.waitForFunction(()=>document.querySelector(".native-business #view")?.textContent?.trim().length>20)
   }
-  const previous=(await getData()).ops?.purchases?.length??0
   await asEmployee("E014")
   await navigate("purchase","purchase")
+  // Original engine initializes the seeded purchase PO-001 only after this mount.
+  const previous=(await getData()).ops?.purchases?.length??0
   const create=page.locator('[data-proc-action="newPurchase"]')
   await create.waitFor({state:"visible"})
   await create.click()
