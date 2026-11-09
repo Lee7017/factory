@@ -2,3 +2,4 @@ node_modules/
 dist/
 public/legacy/
 *.tsbuildinfo
+src/generated-lucide-sprite.ts
