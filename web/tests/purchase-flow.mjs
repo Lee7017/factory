@@ -13,7 +13,7 @@ try {
   page.on("pageerror",err=>errors.push(err.stack??err.message))
   await page.goto(base,{waitUntil:"networkidle"})
   await page.locator(".department-tile").first().waitFor()
-  const getData=()=>page.evaluate(()=>JSON.parse(localStorage.getItem("factory-workspace-v2")||"{}"))
+  const getData=()=>page.evaluate(()=>JSON.parse(localStorage.getItem("factory-workspace-v4")||"{}"))
   async function asEmployee(id){
     const employee=await page.evaluate(id=>{
       const a=window.FactoryAccess
@@ -46,7 +46,7 @@ try {
   await form.locator('[name="supplier"]').fill("测试供应商")
   await form.locator('button[type="submit"]').click()
   await page.waitForFunction(prev=>{
-    const x=JSON.parse(localStorage.getItem("factory-workspace-v2")||"{}")
+    const x=JSON.parse(localStorage.getItem("factory-workspace-v4")||"{}")
     return x.ops?.purchases?.length===prev+1
   },previous)
   let data=await getData()
@@ -63,7 +63,7 @@ try {
   await approve.waitFor({state:"visible"})
   await approve.click()
   await page.waitForFunction(po=>{
-    const x=JSON.parse(localStorage.getItem("factory-workspace-v2")||"{}")
+    const x=JSON.parse(localStorage.getItem("factory-workspace-v4")||"{}")
     return x.ops.purchases.find(p=>p.id===po)?.status==="待到货"
   },poId)
   await asEmployee("E009")
@@ -77,7 +77,7 @@ try {
   await receiptForm.locator('[name="supplierLot"]').fill("QA-TEST-LOT")
   await receiptForm.locator('button[type="submit"]').click()
   await page.waitForFunction(po=>{
-    const x=JSON.parse(localStorage.getItem("factory-workspace-v2")||"{}")
+    const x=JSON.parse(localStorage.getItem("factory-workspace-v4")||"{}")
     return x.modules?.incoming?.some(r=>r.purchase===po&&r.status==="待QC")
   },poId)
   data=await getData()
@@ -93,7 +93,7 @@ try {
   await pass.waitFor({state:"visible"})
   await pass.click()
   await page.waitForFunction(id=>{
-    const x=JSON.parse(localStorage.getItem("factory-workspace-v2")||"{}")
+    const x=JSON.parse(localStorage.getItem("factory-workspace-v4")||"{}")
     return x.modules?.inspections?.find(r=>r.id===id)?.status==="合格"
   },inspection.id)
   data=await getData()
@@ -105,7 +105,7 @@ try {
   await store.waitFor({state:"visible"})
   await store.click()
   await page.waitForFunction(id=>{
-    const x=JSON.parse(localStorage.getItem("factory-workspace-v2")||"{}")
+    const x=JSON.parse(localStorage.getItem("factory-workspace-v4")||"{}")
     return x.modules?.incoming?.find(r=>r.id===id)?.status==="已入库"
   },rec.id)
   data=await getData()
