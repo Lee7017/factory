@@ -80,10 +80,15 @@ body {
   box-shadow:0 4px 14px rgba(64,99,74,.085);
 }
 .department-tile[aria-current="page"]{
-  background:linear-gradient(144deg,#789d86 0%,#5e846d 100%);
-  border-color:#6b9075;
-  color:#f8fbf8;
-  box-shadow:0 5px 16px rgba(65,112,77,.21),inset 0 1px 0 rgba(255,255,255,.27);
+  background:linear-gradient(145deg,rgba(217,231,219,.97),rgba(203,221,207,.97));
+  border-color:rgba(105,143,113,.48);
+  color:#31533d;
+  box-shadow:inset 3px 0 0 #8ba991,inset 0 1px 0 rgba(255,255,255,.79),0 2px 9px rgba(57,92,64,.07);
+}
+.department-tile[aria-current="page"]:hover{
+  background:linear-gradient(145deg,rgba(220,233,221,.98),rgba(207,224,211,.98));
+  border-color:rgba(103,142,112,.53);
+  box-shadow:inset 3px 0 0 #86a58e,inset 0 1px 0 rgba(255,255,255,.79),0 3px 10px rgba(57,92,64,.08);
 }
 .tile-icon{
   background:rgba(227,239,230,.77);
@@ -93,9 +98,9 @@ body {
 }
 .tile-icon svg { stroke-width:1.85 }
 .department-tile[aria-current="page"] .tile-icon{
-  background:rgba(247,251,247,.18);
-  border-color:rgba(255,255,255,.26);
-  color:#fff;
+  background:rgba(240,246,239,.77);
+  border-color:rgba(110,147,117,.23);
+  color:#466f52;
 }
 .tile-label {font-weight:720;letter-spacing:.02px}
 .sidebar-foot{
