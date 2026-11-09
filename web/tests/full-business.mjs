@@ -33,11 +33,15 @@ try {
     activeFeature=`${dept}/${feature}`
     await page.evaluate(hash=>{location.hash=hash},`#/departments/${dept}/${feature}`)
     try {
-      await page.locator(".native-business .legacy-root").waitFor({state:"visible",timeout:15000})
-      await page.waitForFunction(()=>{
-        const view=document.querySelector(".native-business #view")
-        return Boolean(view?.textContent?.trim().length>15)
-      },null,{timeout:12000})
+      if(["leave","leaveApproval"].includes(feature)){
+        await page.locator(".glass-panel [data-slot='table']").waitFor({state:"visible",timeout:15000})
+      }else{
+        await page.locator(".native-business .legacy-root").waitFor({state:"visible",timeout:15000})
+        await page.waitForFunction(()=>{
+          const view=document.querySelector(".native-business #view")
+          return Boolean(view?.textContent?.trim().length>15)
+        },null,{timeout:12000})
+      }
       const heading=await page.locator(".page-title").textContent()
       if(!heading?.trim())missing.push(`${name}: ${feature} title missing`)
       if(await page.locator("iframe").count())missing.push(`${name}: ${feature} still uses iframe`)
