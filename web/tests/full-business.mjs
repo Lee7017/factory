@@ -80,9 +80,11 @@ try {
   const selector=page.locator("#perm-employee")
   await selector.waitFor({state:"visible"})
   await selector.selectOption("E009")
+  await page.waitForFunction(()=>document.querySelector(".access-selected-user strong")?.textContent==="孙浩",null,{timeout:6000})
   assert.equal(await page.locator(".access-selected-user strong").textContent(),"孙浩",
     "Employee selection updates access rights and the displayed employee")
   await page.locator("#perm-dept").selectOption("quality")
+  await page.waitForFunction(()=>document.querySelector("#perm-dept")?.value==="quality",null,{timeout:6000})
   assert.equal(await page.locator("#perm-dept").inputValue(),"quality",
     "Changing department updates the permission matrix")
 
