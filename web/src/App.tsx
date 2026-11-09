@@ -162,6 +162,7 @@ function Topbar({route,onSelect,onOpenSidebar,employee,staff,onSwitch,messages,o
                 {person.id===employee?.id&&<Check size={16} className="text-green-700"/>}
               </button>)}
           </div>
+          <DataBackup/>
         </DialogContent>
       </Dialog>
     </div>
