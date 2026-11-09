@@ -11,6 +11,7 @@ import {
 import { NativeBusiness } from "@/business/NativeBusiness"
 import { LeavePage } from "@/business/LeavePage"
 import { EmployeesPage } from "@/business/EmployeesPage"
+import { SkillsPage } from "@/business/SkillsPage"
 import { SVG_SPRITE } from "@/generated-lucide-sprite"
 import { DataBackup } from "@/components/DataBackup"
 import { Button } from "@/components/ui/button"
@@ -462,6 +463,8 @@ export default function App() {
                   currentFeature==="leave"||currentFeature==="leaveApproval"?
                     <LeavePage key={currentFeature} feature={currentFeature} workspace={workspace}
                       employee={employee} can={can} onRefresh={refresh}/>:
+                    currentFeature==="skills"&&access?
+                    <SkillsPage key={currentFeature} access={access} workspace={workspace} onRefresh={refresh}/>:
                     currentFeature==="employees"&&access?
                     <EmployeesPage key={currentFeature} access={access} workspace={workspace} onRefresh={refresh}/>:
                     access?<NativeBusiness key={`${currentFeature}-${employee?.id??"none"}`} dept={currentDept.id}
