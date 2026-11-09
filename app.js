@@ -67,12 +67,12 @@ function revealDeptInfo(trigger,pin=false){
 }
 function crumbs(d,f){
  const root=$('breadcrumbs');
- root.innerHTML=`<button type="button" class="crumb-link crumb-home" data-breadcrumb-home>工厂管理系统</button><span class="crumb-sep">/</span><span class="dept-crumb-group"><button type="button" class="crumb-link crumb-dept" data-breadcrumb-dept="${e(d.id)}">${e(d.name)}</button><button type="button" class="dept-info-trigger" data-dept-info-toggle="${e(d.id)}" aria-label="查看${e(d.name)}介绍" aria-expanded="false" aria-controls="dept-description-popover">${icon('info')}</button></span>${f?`<span class="crumb-sep">/</span><strong class="crumb-current">${e(features[f])}</strong>`:''}`;
+ root.innerHTML=`<button type="button" class="crumb-link crumb-home" data-breadcrumb-home><span class="crumb-root-mark" aria-hidden="true"></span><span>工作台</span></button><span class="crumb-sep" aria-hidden="true"></span><span class="dept-crumb-group"><button type="button" class="crumb-link crumb-dept" data-breadcrumb-dept="${e(d.id)}"><span class="crumb-level-label">部门</span><span class="crumb-level-value">${e(d.name)}</span></button><button type="button" class="dept-info-trigger" data-dept-info-toggle="${e(d.id)}" aria-label="查看${e(d.name)}介绍" aria-expanded="false" aria-controls="dept-description-popover">${icon('info')}</button></span>${f?`<span class="crumb-sep" aria-hidden="true"></span><strong class="crumb-current" aria-current="page"><span class="crumb-level-label">功能</span><span class="crumb-level-value">${e(features[f])}</span></strong>`:''}`;
  $('view-title').textContent=f?features[f]:d.name;$('view-description').textContent=f?featureHint(f):d.description
 }
 function crumbsHome(){
  const root=$('breadcrumbs');
- root.innerHTML='<button type="button" class="crumb-link crumb-home" data-breadcrumb-home>工厂管理系统</button><span class="crumb-sep">/</span><strong class="crumb-current">工厂运行总览</strong>';
+ root.innerHTML='<button type="button" class="crumb-link crumb-home" data-breadcrumb-home><span class="crumb-root-mark" aria-hidden="true"></span><span>工作台</span></button><span class="crumb-sep" aria-hidden="true"></span><strong class="crumb-current" aria-current="page"><span class="crumb-level-label">总览</span><span class="crumb-level-value">工厂运行</span></strong>';
  $('view-title').textContent='工厂运行总览';
  $('view-description').textContent=featureHint('overview');
 }
