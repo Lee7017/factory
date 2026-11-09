@@ -6,7 +6,7 @@ import {
 import { DEPARTMENTS, FEATURE_HINTS, FEATURE_NAMES, getDepartment, type Department } from "@/catalog"
 import { getDepartmentIcon, getFeatureIcon } from "@/icons"
 import {
-  useFactoryState, updateWorkspace, getTodos, todoLane, type Employee, type Todo
+  useFactoryState, updateWorkspace, getTodos, todoLane, dashboardMetrics, type Employee, type Todo
 } from "@/factory-state"
 import { LegacyFrame } from "@/LegacyFrame"
 import { Button } from "@/components/ui/button"
@@ -295,7 +295,7 @@ function TodoBoard({todos,onSelect,dept}:{
           {label}<span className="todo-count">{entries.length}</span>
         </h3>
         {entries.length===0?<p className="empty-note">暂无此类待办</p>:entries.map(task=>
-          <button type="button" key={task.id} className="todo-card" onClick={()=>onSelect(`#/departments/${dept}/${task.feature}`)}>
+          <button type="button" key={`${task.kind}:${task.feature}:${task.id}`} className="todo-card" onClick={()=>onSelect(`#/departments/${dept}/${task.feature}`)}>
             <small className="font-mono">{task.id}</small>
             <strong>{task.title}</strong>
             <small>{task.status} · 查看业务单据 →</small>
@@ -334,11 +334,12 @@ function Overview({workspace,onSelect}:{
   workspace:ReturnType<typeof useFactoryState>["workspace"];
   onSelect:(hash:string)=>void
 }) {
+  const totals=dashboardMetrics(workspace)
   const stats=[
     {label:"部门数量",value:DEPARTMENTS.length,detail:"业务部门与管理部门",icon:Factory},
-    {label:"销售订单",value:workspace.orders?.length??0,detail:"当前浏览器记录",icon:ClipboardIcon},
-    {label:"生产任务",value:workspace.tasks?.filter(t=>t.category==="生产任务").length??0,detail:"配制 / 包装",icon:getDepartmentIcon("production")},
-    {label:"待处理事项",value:getTodos("hr",workspace).length+getTodos("engineering",workspace).length,detail:"人事 / 工程待办",icon:CircleHelp}
+    {label:"销售订单",value:totals.orders,detail:`其中 ${totals.activeOrders} 单尚未交付`,icon:ClipboardIcon},
+    {label:"生产任务",value:totals.productionTasks,detail:"配制 / 包装",icon:getDepartmentIcon("production")},
+    {label:"待处理事项",value:totals.pending,detail:"全部 11 个部门的待办单据",icon:CircleHelp}
   ]
   return <div className="space-y-4">
     <header className="mb-4">
