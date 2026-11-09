@@ -22,7 +22,7 @@ try {
   browser=await chromium.launch({headless:true,args:["--no-sandbox"]})
   const page=await browser.newPage({viewport:{width:1440,height:900}, deviceScaleFactor:1})
   const errors=[]
-  page.on("pageerror",err=>errors.push(err.message))
+  page.on("pageerror",err=>errors.push(`${err.message}\n${err.stack??""}`))
   await page.goto(base, {waitUntil:"networkidle"})
   await page.locator(".department-tile").first().waitFor()
   assert.equal(await page.locator(".department-tile").count(),12,"Homepage + 11 department squares")
