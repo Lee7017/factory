@@ -20,6 +20,7 @@ export interface FactoryAccessAPI {
   switchCurrent: (id: string) => boolean
   render: () => string
   handleClick: (element:HTMLElement) => boolean
+  updateSelection: (key:"employee"|"position"|"dept",value:string) => void
 }
 export interface WorkItem {
   id: string
