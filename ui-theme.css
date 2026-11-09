@@ -280,7 +280,7 @@ button,input,select,textarea{font-family:inherit;color:inherit}
   font-size:12.5px;color:#3e4045;border-color:rgba(20,20,22,.10);background:rgba(255,255,255,.46)
 }
 .op-badge.complete,.mw-status.mw-ok{background:rgba(255,255,255,.68);color:#242b26;border-color:rgba(31,55,36,.16)}
-.op-rule,.mw-feedback,.ops-status-bar,.info-bar,.mw-tab-note{
+.op-rule,.info-bar,.mw-tab-note{
   font-size:13px;color:#4d4f55;background:rgba(255,255,255,.38);border-color:rgba(20,20,22,.08);
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)
 }
