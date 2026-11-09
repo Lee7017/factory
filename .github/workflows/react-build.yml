@@ -27,6 +27,19 @@ jobs:
       - name: Typecheck and build
         working-directory: web
         run: npm run build
+      - name: Install Chromium for UI checks
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+      - name: Browser smoke checks
+        working-directory: web
+        run: npm run test:smoke
+      - name: Upload smoke screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: factory-react-smoke
+          path: web/test-results
+          if-no-files-found: ignore
       - name: Upload preview files
         uses: actions/upload-artifact@v4
         with:
