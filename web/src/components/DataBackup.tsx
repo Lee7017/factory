@@ -3,7 +3,7 @@ import { Download, FileJson, RotateCcw, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog"
 
 const DATA_KEYS=["factory-workspace-v2","factory-permissions-v2"] as const
