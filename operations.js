@@ -258,5 +258,5 @@ function pendingForDept(dept){const out=[];const push=(o,feature,title,desc)=>ou
  return out;
 }
 function openTodo(item){ctx.openFeature(item.feature,item.dept);setTimeout(()=>{const row=document.querySelector(`[data-op-id="${CSS.escape(item.id)}"]`);if(row){row.closest('tr')?.scrollIntoView({block:'center',behavior:'smooth'});row.closest('tr')?.classList.add('op-focus');setTimeout(()=>row.closest('tr')?.classList.remove('op-focus'),2000)}},0)}
-window.FactoryOperations={init,render,handleClick,submitForm,pendingForDept,openTodo,get state(){return S},getStages:()=>({...stages})};
+window.FactoryOperations={init,render,handleClick,submitForm,pendingForDept,openTodo,getOrder:id=>ctx?.data?.orders?.find(o=>o.id===id)||null,get state(){return S},getStages:()=>({...stages})};
 })();
