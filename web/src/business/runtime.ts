@@ -78,7 +78,7 @@ export async function getBusinessRuntime():Promise<BusinessRuntime> {
     access:null as unknown as FactoryAccessAPI,
     ops,
     save:()=>{
-      localStorage.setItem("factory-workspace-v2",JSON.stringify(data))
+      localStorage.setItem("factory-workspace-v4",JSON.stringify(data))
       singleton?.callbacks.refresh()
     },
     toast:(message)=>singleton?.callbacks.notify(message),
