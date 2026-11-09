@@ -53,7 +53,7 @@ const current=()=>ctx.access.current().name;
 function log(action,ref,detail=''){S.logs.unshift({at:now(),ts:Date.now(),person:current(),dept:ctx.data.dept,action,ref,detail});S.logs=S.logs.slice(0,120);ctx.save()}
 function can(dept,feature,action='view'){return ctx.access.has(dept,feature,action)}
 function flash(el){ctx.flashDenied(el)}
-function warn(msg){notice=msg;const modalError=document.querySelector('#ops-form');if(modalError){let box=modalError.querySelector('.op-form-error');if(!box){box=document.createElement('div');box.className='op-form-error';box.setAttribute('role','alert');modalError.prepend(box)}box.textContent=msg;}ctx.render();}
+function warn(msg){const modalError=document.querySelector('#ops-form');if(modalError){let box=modalError.querySelector('.op-form-error');if(!box){box=document.createElement('div');box.className='op-form-error';box.setAttribute('role','alert');modalError.prepend(box)}box.textContent=msg;return}notice='';ctx.toast(msg);}
 function showShortageDialog(o,shortages){
  const modules=window.FactoryModules;
  const rows=shortages.map(([material,required])=>{
@@ -122,9 +122,8 @@ function recordTable(cols,rows){return `<div class="op-table-wrap"><table class=
 const td=x=>`<td>${x}</td>`;
 function cmd(label,op,id='',style=''){return `<button type="button" class="op-button ${style}" data-op-action="${esc(op)}" data-op-id="${esc(id)}">${esc(label)}</button>`}
 function badge(status){let done=/已通过|已完成|已入库|已核准|已关闭|已发布|合格|已放行/.test(status);return `<span class="op-badge ${done?'complete':''}">${esc(status)}</span>`}
-function banner(){return `<div class="ops-status-bar ${notice?'warning':''}" role="status" aria-live="polite"><span title="${esc(notice||'操作状态正常')}">${esc(notice||'操作状态正常')}</span>${notice?'<button data-op-action="dismiss" aria-label="关闭提示">×</button>':''}</div>`}
 function tip(text){return `<div class="op-rule"><strong>操作规则</strong>${esc(text)}</div>`}
-function shell(title,toolbar,content,tipText=''){return `<div class="ops-workbench">${banner()}${toolbar?`<div class="ops-heading"><div><strong>业务记录与操作</strong><small>修改后更新本浏览器内的关联记录</small></div><div class="op-tools">${toolbar}</div></div>`:''}${tipText?tip(tipText):''}${content}</div>`}
+function shell(title,toolbar,content,tipText=''){return `<div class="ops-workbench">${toolbar?`<div class="ops-heading"><div><strong>业务记录与操作</strong><small>修改后更新本浏览器内的关联记录</small></div><div class="op-tools">${toolbar}</div></div>`:''}${tipText?tip(tipText):''}${content}</div>`}
 function historyView(){const rows=S.logs.slice(0,5);return `<details class="op-history"><summary>最近操作记录 <span>${S.logs.length} 条</span></summary>${rows.length?rows.map(x=>`<div><time>${esc(x.at)}</time><strong>${esc(x.action)}</strong><span>${esc(x.ref)} · ${esc(x.person)}</span></div>`).join(''):'<p>尚无操作</p>'}</details>`}
 function rowActions(o,which=''){const stage=stageOf(o);let list=Object.entries(orderActions).filter(([k,v])=>v[4]===stage&&(!which||(featureActions[which]||[]).includes(k)));return list.map(([key,meta])=>cmd(meta[0],`flow:${key}`,o.id,key==='reject'?'muted':'')).join('')||'<span class="op-muted">等待下一环节</span>'}
 function flowActionsFor(feature){const names={orders:'销售订单',orderReview:'销售订单评审',schedule:'APS 排程',kitting:'物料齐套核查',issue:'仓库发料与签收',tasks:'生产 / 非生产任务',batch:'生产批次卡',inspection:'报检进度',release:'QA 放行',inventory:'库存和入库'};
@@ -271,7 +270,7 @@ function commitForm(values){const state=openForm;if(!state)return;let {type,id}=
 }
 function gen(prefix){newIdSeq+=1;return `${prefix}-${String(Date.now()).slice(-5)}-${String(newIdSeq).padStart(2,'0')}`}
 function handleClick(button){const action=button.dataset.opAction||'',id=button.dataset.opId||'';
- if(action==='close'){close();return true}if(action==='dismiss'){notice='';ctx.render();return true}
+ if(action==='close'){close();return true}
  if(action==='detailFlow'){inspectFlow(id);return true}
  if(action==='qaRecord'){close();window.FactoryModules?.openQualityRecord?.(id);return true}
  if(action.startsWith('go:')){const [,d,f]=action.split(':');close();ctx.openFeature(f,d,button);return true}
