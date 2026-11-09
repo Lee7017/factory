@@ -1,0 +1,23 @@
+name: Sync latest main for shadcn release
+on:
+  push:
+    branches: [feat/react-shadcn-migration]
+    paths: [.github/workflows/sync-main.yml]
+permissions:
+  contents: write
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/react-shadcn-migration
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Merge main into migration branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge --no-edit -X ours origin/main
+          git push origin HEAD:feat/react-shadcn-migration
