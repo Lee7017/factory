@@ -62,14 +62,57 @@ function showShortageDialog(o,shortages){
  });
  const purchases=S.purchases.filter(p=>rows.some(x=>x.material===p.material));
  const purchaseInfo=purchases.length?`<div class="op-shortage-purchases"><h3>相关采购单</h3>${purchases.map(p=>{
-  const receipt=modules?.receiptForPurchase?.(p.id);
+  const receipts=window.FactoryProcurement?.shipments?.(p.id)||[];const receipt=receipts.find(r=>!['已驳回','不合格'].includes(r.status));
   return `<p><strong>${esc(p.id)}</strong><span>${esc(p.material)} · ${esc(p.status)}${receipt?` · 到货单 ${esc(receipt.id)}（${esc(receipt.status)}）`:''}</span></p>`;
  }).join('')}</div>`:'<p class="op-shortage-none">目前没有对应缺料物料的采购单。需要先在采购部门新建并审批采购单。</p>';
- document.querySelector('#ops-modal-host').innerHTML=`<div class="op-modal-shade" data-op-action="close"></div><section class="op-modal op-shortage-modal" role="alertdialog" aria-modal="true" aria-labelledby="shortage-title" aria-describedby="shortage-description"><div class="op-modal-head"><h2 id="shortage-title">物料库存不足，暂不能锁库</h2>${cmd('关闭','close')}</div><p id="shortage-description" class="op-shortage-intro">订单 ${esc(o.id)} 的物料尚未齐套，请先核对采购与到货进度。</p><div class="op-shortage-table"><div class="op-shortage-labels"><span>物料编码</span><span>需求</span><span>可用</span><span>缺口</span></div>${rows.map(x=>`<div class="op-shortage-row"><strong>${esc(x.material)}</strong><span>${esc(x.required)}</span><span>${esc(x.available)}</span><strong class="op-shortage-missing">-${esc(x.missing)}</strong></div>`).join('')}</div>${purchaseInfo}<p class="op-shortage-hint">采购审批通过不等于库存增加。已有到货单时，请继续办理来料比对 → QC 判定 → 仓库确认入库，不要重新登记到货单。</p><div class="op-shortage-actions">${cmd('关闭','close')}${cmd('跟踪卡点','trackShortage',o.id,'primary')}</div></section>`;
+ document.querySelector('#ops-modal-host').innerHTML=`<div class="op-modal-shade" data-op-action="close"></div><section class="op-modal op-shortage-modal" role="alertdialog" aria-modal="true" aria-labelledby="shortage-title" aria-describedby="shortage-description"><div class="op-modal-head"><h2 id="shortage-title">物料库存不足，暂不能锁库</h2>${cmd('关闭','close')}</div><p id="shortage-description" class="op-shortage-intro">订单 ${esc(o.id)} 的物料尚未齐套，请先核对采购与到货进度。</p><div class="op-shortage-table"><div class="op-shortage-labels"><span>物料编码</span><span>需求</span><span>可用</span><span>缺口</span></div>${rows.map(x=>`<div class="op-shortage-row"><strong>${esc(x.material)}</strong><span>${esc(x.required)}</span><span>${esc(x.available)}</span><strong class="op-shortage-missing">-${esc(x.missing)}</strong></div>`).join('')}</div>${purchaseInfo}<p class="op-shortage-hint">采购审批通过不等于库存增加。到货登记后直接进入 QC；QC 合格后由仓库确认入库。同一采购单允许按实际到货分批登记。</p><div class="op-shortage-actions">${cmd('关闭','close')}${cmd('跟踪卡点','trackShortage',o.id,'primary')}</div></section>`;
 }
 function success(msg){notice='';ctx.save();ctx.render();ctx.toast(msg)}
 function stageOf(o){return S.flows[o.id]?.stage||'draft'}
 function stepIndex(stage){return Object.keys(stages).indexOf(stage)}
+// 开工前物料复查只使用正式发布时确认的开工日期，不读取甘特图自动生成的占位任务。
+function plannedStartFromGantt(id){
+ const dates=(S.gantt||[]).filter(x=>x.orderId===id&&x.type==='配制'&&/^\d{4}-\d{2}-\d{2}T/.test(String(x.start||''))).map(x=>String(x.start).slice(0,10)).sort();
+ return dates[0]||null;
+}
+function dayBeforeStart(id){
+ const start=S.flows?.[id]?.plannedStart;
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(String(start||'')))return null;
+ const day=new Date(start+'T12:00:00');
+ if(!Number.isFinite(day.getTime()))return null;
+ day.setDate(day.getDate()-1);
+ return [day.getFullYear(),String(day.getMonth()+1).padStart(2,'0'),String(day.getDate()).padStart(2,'0')].join('-');
+}
+function materialShortages(order){
+ return Object.entries(requirements(order)).map(([material,required])=>{
+  const reserved=Number(S.reservations?.[order.id]?.[material]||0);
+  const free=Math.max(0,availableStock(material)-(window.FactoryModules?.blockedFromFlow?.(material)||0));
+  const available=free+reserved;
+  return {material,required,available,missing:Math.max(0,required-available)};
+ }).filter(x=>x.missing>0.00001);
+}
+function checkPrestartMaterials(){
+ if(!ctx||!S||!Array.isArray(ctx.data.orders))return 0;
+ const nowDate=new Date();
+ const today=[nowDate.getFullYear(),String(nowDate.getMonth()+1).padStart(2,'0'),String(nowDate.getDate()).padStart(2,'0')].join('-');
+ let count=0;
+ for(const order of ctx.data.orders){
+  const flow=S.flows?.[order.id];
+  if(!flow||!['formal','reserved'].includes(flow.stage)||!flow.plannedStart)continue;
+  const deadline=dayBeforeStart(order.id);
+  if(!deadline||today<deadline)continue;
+  const shortages=materialShortages(order);
+  if(!shortages.length)continue;
+  const detail=shortages.map(x=>x.material+' 缺 '+x.missing+'（需要 '+x.required+'，可用 '+x.available+'）').join('；');
+  delete S.reservations?.[order.id];
+  flow.stage='trial';order.status='待重新排程';
+  (flow.audit??=[]).push({at:now(),person:'系统',action:'开工前一天物料不齐套，退回排程',from:'warehouse',to:'pmc',state:detail});
+  (S.logs??=[]).unshift({at:now(),ts:Date.now(),person:'系统',dept:'pmc',action:'开工前一天物料不齐套，退回排程',ref:order.id,detail});
+  count++;
+ }
+ if(count){S.logs=S.logs.slice(0,120);ctx.save();}
+ return count;
+}
 function orderBy(id){return ctx.data.orders.find(x=>x.id===id)}
 function requirements(o){const raw=S.bom.find(x=>x.child==='RM-001')?.qty??.1,pack=S.bom.find(x=>x.child==='PK-001')?.qty??.25;return {'RM-001':Math.ceil(o.qty*raw),'PK-001':Math.ceil(o.qty*pack)}}
 function stageForOrder(o){return stages[stageOf(o)]||'未知状态'}
@@ -89,7 +132,7 @@ function flowActionsFor(feature){const names={orders:'销售订单',orderReview:
  const fl=activeOrders.map(o=>{const stage=stageOf(o),r=requirements(o),available=Object.entries(r).map(([id,qty])=>`${id} 需 ${qty} / 可用 ${availableStock(id)}`).join('；');
   const actions=feature==='orders'?cmd('查看订单','detailFlow',o.id)+cmd('修改订单','editOrder',o.id)+rowActions(o,feature):feature==='kitting'?`${rowActions(o,feature)}<small class="op-inline-note">${esc(available)}</small>`:cmd('查看订单','detailFlow',o.id)+rowActions(o,feature);
   return `<tr>${td(`<strong>${esc(o.id)}</strong>`)}${td(esc(o.product))}${td(`${esc(o.qty)} ${esc(o.unit||'L')}`)}${td(badge(stageForOrder(o)))}${td(`<div class="op-row-actions">${actions}</div>`)}</tr>`});
- const intro={orders:'订单必须有产品、规格和大于 0 的数量。草稿提交后进入销售评审；通过后才能排程。',orderReview:'只有待评审订单可以通过或退回，评审结果决定 PMC 是否可以排程。',schedule:'只能对评审通过的订单试算；试算完成后发布正式排程，才能进行齐套和领料。',kitting:'根据 BOM 用量核对现存物料。库存不足时不能锁库，请先到采购页面完成采购到货。',issue:'仅正式排程并锁定库存后可以发料，确认发料时实际扣减原料和包材库存。',tasks:'配制前须先完成清洗任务的执行与复核；包装前须完成调机调线任务的执行与复核。',batch:'批次任务跟随订单的配制和包装阶段，填写、提交和报检会推动同一订单流程。',inspection:'检验判定统一在质量部 → 报检判定办理，不再提供第二套判定入口。',release:'成品检验合格后，QA 才能确认放行；放行后仓库方能入库。',inventory:'可调整库存数量；成品必须通过质量放行才能入库。'}[feature]||'';
+ const intro={orders:'订单必须有产品、规格和大于 0 的数量。创建保存后自动提交评审；评审通过后才能排程。',orderReview:'只有待评审订单可以通过或退回，评审结果决定 PMC 是否可以排程。',schedule:'只能对评审通过的订单试算；试算完成后发布正式排程，才能进行齐套和领料。',kitting:'根据 BOM 用量核对现存物料。库存不足时不能锁库，请先到采购页面完成采购到货。',issue:'仅正式排程并锁定库存后可以发料，确认发料时实际扣减原料和包材库存。',tasks:'配制前须先完成清洗任务的执行与复核；包装前须完成调机调线任务的执行与复核。',batch:'批次任务跟随订单的配制和包装阶段，填写、提交和报检会推动同一订单流程。',inspection:'检验判定统一在质量部 → 报检判定办理，不再提供第二套判定入口。',release:'成品检验合格后，QA 才能确认放行；放行后仓库方能入库。',inventory:'可调整库存数量；成品必须通过质量放行才能入库。'}[feature]||'';
  let pre='';if(feature==='orders')pre=cmd('新建订单','newOrder','','primary');
  if(feature==='tasks'||feature==='batch')pre=cmd('新增非生产任务','newTask','','primary');
  if(feature==='inventory')pre=cmd('库存调整','adjustStock','','primary');
@@ -100,7 +143,7 @@ function taskRows(){const list=ctx.data.tasks.filter(t=>['清洗','调机调线'
 function taskButtons(t){const st=t.status;const op=st==='待开始'?'start':st==='执行中'?'finish':st==='待复核'?'verify':'';return op?cmd({start:'开始执行',finish:'提交复核',verify:'确认复核'}[op],`task:${op}`,t.id):'<span class="op-muted">已闭环</span>'}
 function historyOrderPage(){const rows=ctx.data.orders.filter(o=>stageOf(o)==='delivered').map(o=>{const audit=S.flows[o.id]?.audit||[],last=audit[audit.length-1];return `<tr>${td(`<strong>${esc(o.id)}</strong>`)}${td(esc(o.product))}${td(`${esc(o.qty)} ${esc(o.unit||'L')}`)}${td(esc(o.completedAt||last?.at||'—'))}${td(badge('已完成'))}${td(cmd('查看订单','detailFlow',o.id))}</tr>`});return shell('历史订单','',recordTable(['订单号','产品','数量','完成时间','状态','操作'],rows),'客户交付确认后的订单才会归档。成品入库不是订单完成，仍需销售发货通知、仓库出库和客户收货确认。')}
 function purchasePage(){return genericPage('purchase',S.purchases)}
-function genericPage(type,list){const cfg=catalogs[type], cols=['单号',...cfg.columns,'状态','操作'];return shell(cfg.title,cmd('新建'+cfg.title,`new:${type}`,'','primary'),recordTable(cols,list.map(r=>{const linked=type==='purchase'?window.FactoryModules?.receiptForPurchase?.(r.id):null;const receive=type==='purchase'&&linked?cmd('查看到货进度','receivePurchase',r.id):type==='purchase'&&r.status==='待到货'?(can('warehouse','warehouseOps','create')?cmd('登记到货','receivePurchase',r.id,'primary'):'<span class="op-muted">等待仓库收货</span>'):'';return `<tr>${td(`<strong>${esc(r.id)}</strong>`)}${cfg.fields.map(([k])=>td(esc(r[k]))).join('')}${td(badge(r.status))}${td(`<div class="op-row-actions">${type==='purchase'&&r.status!=='草稿'?'':cmd('编辑',`edit:${type}`,r.id)}${cfg.actions.filter(a=>a[1]===r.status).map(a=>cmd(a[0],`next:${type}:${a[2]}`,r.id)).join('')}${receive}</div>`)}</tr>`})),type==='purchase'?'采购单流程：新建 → 提交审批 → 审批通过 → 仓库登记到货 → 来料比对 → QC 判定 → 入库确认。采购页不直接办理入库。':'单据状态及操作记录会被保留。')}
+function genericPage(type,list){const cfg=catalogs[type], cols=['单号',...cfg.columns,'状态','操作'];return shell(cfg.title,cmd('新建'+cfg.title,`new:${type}`,'','primary'),recordTable(cols,list.map(r=>`<tr>${td(`<strong>${esc(r.id)}</strong>`)}${cfg.fields.map(([k])=>td(esc(r[k]))).join('')}${td(badge(r.status))}${td(`<div class="op-row-actions">${type==='purchase'&&r.status!=='草稿'?'':cmd('编辑',`edit:${type}`,r.id)}${cfg.actions.filter(a=>a[1]===r.status).map(a=>cmd(a[0],`next:${type}:${a[2]}`,r.id)).join('')}</div>`)}</tr>`)),type==='purchase'?'采购单由采购模块统一办理；仓库到货只在“采购到货”页面登记。':'单据状态及操作记录会被保留。')}
 function maintenancePage(){return shell('设备与调机调线',cmd('新增设备任务','newTask','','primary'),taskRows()+`<div class="op-rule"><strong>操作规则</strong>清洗和调机调线都是非生产任务，各自建单、开工、完工、复核，不计入产量；配制开工须完成清洗复核，包装开工须完成调机调线复核。</div>`)}
 function catalogPage(){return shell('产品与物料主数据',cmd('新增物料','new:product','','primary'),recordTable(['编码','名称','类别','规格','单位','操作'],S.products.map(p=>`<tr>${td(`<strong>${esc(p.id)}</strong>`)}${td(esc(p.name))}${td(esc(p.category))}${td(esc(p.spec))}${td(esc(p.unit))}${td(cmd('编辑', 'edit:product',p.id))}</tr>`)),'产品与物料先建档，BOM 才能关联。修改已有编码时只编辑名称、规格、类别和单位，不覆盖历史订单。')}
 function bomPage(){return shell('BOM 物料关联',cmd('新增关联','new:bom','','primary'),recordTable(['关联编号','父项','子项','单位用量','单位','操作'],S.bom.map(x=>`<tr>${td(esc(x.id))}${td(esc(x.parent))}${td(esc(x.child))}${td(esc(x.qty))}${td(esc(x.unit))}${td(cmd('编辑','edit:bom',x.id))}</tr>`)),'用量必须大于 0，父项不能等于子项。RM-001 / PK-001 用量直接参与 PMC 齐套计算。')}
@@ -131,7 +174,12 @@ function applyFlow(key,id,button){const o=orderBy(id),step=orderActions[key];if(
  if(key==='receipt'){const m=String(o.spec||'').match(/([\d.]+)\s*L\s*[×xX*]\s*(\d+)/),perCase=m?Number(m[1])*Number(m[2]):20,qty=Math.ceil(Number(o.qty||0)/Math.max(perCase,0.000001));if(window.FactoryModules?.receiveFinishedGoods)window.FactoryModules.receiveFinishedGoods(o,qty);else {const stockId=String(o.product||'').includes('500g/L')?'FG-002':'FG-001';S.stock[stockId]=(S.stock[stockId]||0)+qty}}
  if(key==='notifyDelivery'&&!window.FactoryModules?.state?.batches?.some(b=>b.order===id&&b.source==='生产入库'))return warn('尚未找到该订单的成品入库批次，不能发起发货通知。');
  if(key==='confirmDelivery'){const shipments=window.FactoryModules?.state?.outbound?.filter(x=>x.order===id&&x.status==='已出库')||[];if(!shipments.length)return warn('仓库尚未确认出库，不能确认客户收货。')}
- if(key==='formal'){S.flows[id].planLine=S.flows[id].planLine||'L01 配制一线';}
+ if(key==='formal'){
+  S.flows[id].planLine=S.flows[id].planLine||'L01 配制一线';
+  // 发布正式排程即确认计划开工日；不以物料齐套作为发布条件。
+  S.flows[id].plannedStart=plannedStartFromGantt(id);
+  S.flows[id].planPublishedAt=now();
+}
  S.flows[id].stage=next;
  let generatedInspection=null;
  if(next==='semi_qc'||next==='final_qc')generatedInspection=window.FactoryModules?.ensureFlowInspection?.(id,next==='semi_qc'?'半成品':'成品')||null;
@@ -167,8 +215,26 @@ function commitForm(values){const state=openForm;if(!state)return;let {type,id}=
  if(type==='order'){
   const product=String(values.product||'').trim(),spec=String(values.spec||'').trim(),qty=Number(values.qty);
   if(!product||!spec||!(qty>0))return warn('订单产品、规格、数量必须填写，且数量要大于 0。');
-  let record=id?orderBy(id):null;if(record&&['draft','review'].includes(stageOf(record))){Object.assign(record,{product,spec,qty});}else if(!id){const idNew=gen('SO');record={id:idNew,product,spec,qty,unit:'L',status:'草稿',owner:'销售部'};ctx.data.orders.unshift(record);S.flows[idNew]={stage:'draft',audit:[]};}else return warn('已进入生产流程的订单不能直接修改，可新建版本。');
-  log('保存销售订单',record.id);close();return success('订单保存成功');
+  let record=id?orderBy(id):null;
+  if(record&&['draft','review'].includes(stageOf(record))){
+   Object.assign(record,{product,spec,qty});
+   // 兼容旧版尚处草稿的订单：保存后也直接送审。
+   if(stageOf(record)==='draft'){
+    S.flows[record.id].stage='review';record.status='待评审';
+    S.flows[record.id].audit??=[];
+    S.flows[record.id].audit.push({at:now(),person:current(),action:'提交评审',from:'sales',to:'sales',state:'待评审'});
+   }
+  }else if(!id){
+   const idNew=gen('SO');
+   record={id:idNew,product,spec,qty,unit:'L',status:'待评审',owner:'销售部'};
+   ctx.data.orders.unshift(record);
+   S.flows[idNew]={stage:'review',audit:[
+    {at:now(),person:current(),action:'保存销售订单',from:'sales',to:'sales',state:'订单已创建'},
+    {at:now(),person:current(),action:'提交评审',from:'sales',to:'sales',state:'待评审'}
+   ]};
+  }else return warn('已进入生产流程的订单不能直接修改，可新建版本。');
+  log(id?'修改销售订单':'创建销售订单并自动提交评审',record.id);
+  close();return success(id?'订单已保存，状态为待评审。':'订单创建成功，已自动提交评审，等待销售部评审。');
  }
  if(type==='task'){
   const typ=values.type,line=String(values.line||'').trim();if(!line)return;let idNew=gen('TK');ctx.data.tasks.push({id:idNew,type:typ,line,status:'待开始',category:'非生产任务',audit:[]});log('新建非生产任务',idNew);close();return success(`任务 ${idNew} 已建立`);
@@ -229,7 +295,7 @@ function handleClick(button){const action=button.dataset.opAction||'',id=button.
  if(action==='newOrder'||action==='editOrder'){
   if(!can('sales','orders',action==='newOrder'?'create':'edit'))return flash(button),true;
   const o=orderBy(id);if(o&&!['draft','review'].includes(stageOf(o)))return warn('订单已进入生产流程，不能直接修改，可另建订单。'),true;
-  modal(o?'编辑销售订单':'新建销售订单',field('product','产品名称','text',o?.product||'720g/L 百菌清悬浮剂')+field('spec','规格','text',o?.spec||'5L × 4桶')+field('qty','计划数量（L）','number',o?.qty||1000),{type:'order',id},'保存订单');return true;
+  modal(o?'编辑销售订单':'新建销售订单',field('product','产品名称','text',o?.product||'720g/L 百菌清悬浮剂')+field('spec','规格','text',o?.spec||'5L × 4桶')+field('qty','计划数量（L）','number',o?.qty||1000),{type:'order',id},o?'保存修改':'创建并提交评审');return true;
  }
  if(action==='newTask'){
   if(!can('production','tasks','execute')&&!can('engineering','engineering','execute'))return flash(button),true;
@@ -258,5 +324,5 @@ function pendingForDept(dept){const out=[];const push=(o,feature,title,desc)=>ou
  return out;
 }
 function openTodo(item){ctx.openFeature(item.feature,item.dept);setTimeout(()=>{const row=document.querySelector(`[data-op-id="${CSS.escape(item.id)}"]`);if(row){row.closest('tr')?.scrollIntoView({block:'center',behavior:'smooth'});row.closest('tr')?.classList.add('op-focus');setTimeout(()=>row.closest('tr')?.classList.remove('op-focus'),2000)}},0)}
-window.FactoryOperations={init,render,handleClick,submitForm,pendingForDept,openTodo,get state(){return S},getStages:()=>({...stages})};
+window.FactoryOperations={init,render,handleClick,submitForm,pendingForDept,openTodo,checkPrestartMaterials,plannedStartFromGantt,materialShortages,getOrder:id=>ctx?.data?.orders?.find(o=>o.id===id)||null,get state(){return S},getStages:()=>({...stages})};
 })();
