@@ -149,35 +149,35 @@ function personFor(step,history,done){const h=[...history].reverse().find(x=>ste
 function buildSteps(entry,kind){const config=flowConfig[kind];if(config)return config.steps;
  const source=entry.from||'sales',target=entry.to||source;return [[source,entry.action||'业务办理',new RegExp('.*')],[target,entry.next||'下一个业务动作',new RegExp('(?!)')]];}
 function stepState(i,kind,stage){if(kind==='handoff')return i===0?'done':'current';const score=flowConfig[kind]?.progress?.[stage]??-1,last=(flowConfig[kind]?.steps?.length||0)-1;if(score>=last&&i===last)return 'complete';return i<=score?'done':i===score+1?'current':'waiting'}
-function makeCard(step,i,state,history,total){const [dept,act]=step,operator=personFor(step,history,['done','complete'].includes(state)),edge=i===0?'起点':i===total-1?'终点':'';return `<div class="journey-card is-${state}" data-journey-step="${i}">
- <div class="journey-card-head"><span class="journey-seq">${String(i+1).padStart(2,'0')}</span><span class="journey-card-tags">${edge?`<em class="journey-edge journey-edge-${i===0?'start':'end'}">${edge}</em>`:''}<span class="journey-state">${state==='done'?'已办理':state==='current'?'当前环节':state==='complete'?'已办结':'待办理'}</span></span></div>
+function makeCard(step,i,state,history){const [dept,act]=step,operator=personFor(step,history,['done','complete'].includes(state));return `<div class="journey-card is-${state}" data-journey-step="${i}">
+ <div class="journey-card-head"><span class="journey-seq">${String(i+1).padStart(2,'0')}</span><span class="journey-state">${state==='done'?'已办理':state==='current'?'当前环节':state==='complete'?'已办结':'待办理'}</span></div>
  <div class="journey-dept">${clean(label(dept))}</div><strong class="journey-task">${clean(act)}</strong><div class="journey-person"><span class="journey-person-label">${['done','complete'].includes(state)?'经办员工':'负责员工'}</span><span>${clean(operator)}</span></div>
- ${state==='current'?'<svg class="journey-marquee" aria-hidden="true"><rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)" rx="12"/></svg>':''}</div>`}
-// 所有单据共用同一条“贪吃蛇”主路线：逐行前进、行尾圆滑掉头；只有真实退回才画橙色回退线。
-function snakeOfCards(steps,kind,stage,history){
- const cols=4,cardW=220,cardH=122,gapX=36,gapY=72,padX=34,padY=34;
- const rows=Math.ceil(steps.length/cols),width=padX*2+cols*cardW+(cols-1)*gapX,height=padY*2+rows*cardH+Math.max(0,rows-1)*gapY;
- const pos=steps.map((_,i)=>{const row=Math.floor(i/cols),slot=i%cols,col=row%2===0?slot:cols-1-slot;return {row,col,x:padX+col*(cardW+gapX),y:padY+row*(cardH+gapY)}});
- const states=steps.map((_,i)=>stepState(i,kind,stage)),currentIndex=states.indexOf('current'),arrivalConnector=currentIndex>0?currentIndex-1:-1;
- const connector=(a,b)=>{
-  const same=a.row===b.row;
-  if(same){const dir=b.x>a.x?1:-1,x1=dir>0?a.x+cardW:a.x,x2=dir>0?b.x:b.x+cardW,y=a.y+cardH/2;return `M${x1} ${y} L${x2} ${y}`}
-  const right=a.col===cols-1,outer=right?width-12:12,x1=right?a.x+cardW:a.x,x2=right?b.x+cardW:b.x,y1=a.y+cardH/2,y2=b.y+cardH/2,r=24,dir=right?1:-1;
-  return `M${x1} ${y1} H${outer-dir*r} Q${outer} ${y1} ${outer} ${y1+r} V${y2-r} Q${outer} ${y2} ${outer-dir*r} ${y2} H${x2}`;
- };
- const arrows=steps.slice(0,-1).map((_,i)=>{const cls=i===arrivalConnector?'is-arrival':i<arrivalConnector?'is-past':'is-future',d=connector(pos[i],pos[i+1]);return `<path class="journey-snake-arrow ${cls}" ${i===arrivalConnector?'pathLength="1"':''} d="${d}" ${i===arrivalConnector?'':'marker-end="url(#journey-arrow-tip)"'}/>${i===arrivalConnector?`<path class="journey-snake-arrival-tip" d="${d}" marker-end="url(#journey-arrow-tip)"/>`:''}`}).join('');
+ ${['current','complete'].includes(state)?'<svg class="journey-marquee" aria-hidden="true"><rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)" rx="12"/></svg>':''}</div>`}
+// 所有单据共用同一条顺时针闭合路线。只有历史上确实发生退回时才绘制回环。
+function ringOfCards(steps,kind,stage,history){
+ const n=steps.length,large=n>12,width=large?1840:1080,height=large?1500:735,cx=width/2,cy=height/2,rx=large?760:396,ry=large?620:273;
+ const angle=i=>-Math.PI/2+2*Math.PI*i/n;
+ const loc=(i,r=1)=>({x:cx+rx*r*Math.cos(angle(i)),y:cy+ry*r*Math.sin(angle(i))});
+ const pos=steps.map((_,i)=>loc(i));
+ const arcs=steps.map((_,i)=>{
+  const pad=Math.min(.14,.23*Math.PI/n),a=angle(i)+pad,b=angle((i+1)%n)-pad+((i===n-1)?2*Math.PI:0);
+  const x1=cx+rx*Math.cos(a),y1=cy+ry*Math.sin(a),x2=cx+rx*Math.cos(b),y2=cy+ry*Math.sin(b);
+  return `<path class="journey-ring-arrow" d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${rx} ${ry} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" marker-end="url(#journey-arrow-tip)"/>`;
+ }).join('');
  const returns=(history||[]).filter(h=>/驳回|退回|不合格|返洗|返工|复检/.test(h.action||''));
  const returnLines=returns.slice(-3).map((h,i)=>{
-  const action=String(h.action||'退回'),fromIndex=Math.min(steps.length-1,Math.max(1,stepForReturn(action,kind,steps.length))),toIndex=Math.max(0,Math.min(steps.length-1,returnTarget(action,kind,steps.length))),a=pos[fromIndex],b=pos[toIndex];
-  const x1=a.x+cardW/2,y1=a.y+cardH/2,x2=b.x+cardW/2,y2=b.y+cardH/2,lift=42+i*18,cy=Math.min(y1,y2)-lift;
-  return `<path class="journey-snake-return" d="M${x1} ${y1} C${x1} ${cy} ${x2} ${cy} ${x2} ${y2}" marker-end="url(#journey-return-tip)"/>`;
+  const action=String(h.action||'退回');
+  const fromIndex=Math.min(n-1,Math.max(1,stepForReturn(action,kind,n))),toIndex=Math.max(0,Math.min(n-1,returnTarget(action,kind,n)));
+  const from=pos[fromIndex],to=pos[toIndex],a1=angle(fromIndex),a2=angle(toIndex),inner=.67-(i*.035);
+  const c1x=cx+rx*inner*Math.cos(a1),c1y=cy+ry*inner*Math.sin(a1),c2x=cx+rx*inner*Math.cos(a2),c2y=cy+ry*inner*Math.sin(a2);
+  return `<path class="journey-ring-return" d="M${from.x.toFixed(1)} ${from.y.toFixed(1)} C${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${to.x.toFixed(1)} ${to.y.toFixed(1)}" marker-end="url(#journey-return-tip)"/>`;
  }).join('');
- const cards=steps.map((step,i)=>`<div class="journey-snake-position" style="left:${pos[i].x}px;top:${pos[i].y}px;width:${cardW}px;height:${cardH}px">${makeCard(step,i,states[i],history,steps.length)}</div>`).join('');
- return `<div class="journey-snake-scroll" role="region" aria-label="连续折返流程图" tabindex="0" data-arrival-index="${currentIndex}"><div class="journey-snake" style="width:${width}px;height:${height}px"><svg viewBox="0 0 ${width} ${height}" class="journey-snake-paths" aria-hidden="true"><defs><marker id="journey-arrow-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#62758a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="journey-return-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#b76b44" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>${arrows}${returnLines}</svg>${cards}</div></div>`;
+ const cards=steps.map((step,i)=>`<div class="journey-ring-position" style="left:${(pos[i].x-87).toFixed(1)}px;top:${(pos[i].y-61).toFixed(1)}px">${makeCard(step,i,stepState(i,kind,stage),history)}</div>`).join('');
+ const centerTitle=kind==='order'?'销售订单':kind==='purchase'?'采购单':kind==='receipt'?'采购到货':'单据流转';
+ return `<div class="journey-ring-scroll" role="region" aria-label="顺时针环形流程图" tabindex="0"><div class="journey-ring" style="width:${width}px;height:${height}px"><svg viewBox="0 0 ${width} ${height}" class="journey-ring-paths" aria-hidden="true"><defs><marker id="journey-arrow-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#62758a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="journey-return-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#b76b44" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>${arcs}${returnLines}</svg><div class="journey-ring-hub"><span>正在追踪</span><strong>${clean(centerTitle)}</strong><small>箭头顺时针流转</small>${returns.length?`<em>${returns.length} 条真实退回记录（橙色）</em>`:''}</div>${cards}</div></div>`;
 }
-
-function stepForReturn(action,kind,n){if(kind==='order'&&/物料不齐套|退回排程/.test(action))return 15;if(/审批|评审/.test(action))return 1;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?9:12):kind==='purchase'?3:1;return Math.max(1,n-3)}
-function returnTarget(action,kind,n){if(kind==='order'&&/物料不齐套|退回排程/.test(action))return 3;if(/审批|评审/.test(action))return 0;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?7:10):kind==='purchase'?2:0;return Math.max(0,n-4)}
+function stepForReturn(action,kind,n){if(/审批|评审/.test(action))return 1;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?9:12):kind==='purchase'?3:1;return Math.max(1,n-3)}
+function returnTarget(action,kind,n){if(/审批|评审/.test(action))return 0;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?7:10):kind==='purchase'?2:0;return Math.max(0,n-4)}
 function orderDetails(entry,kind){
  if(kind!=='order')return '';
  const o=window.FactoryOperations?.getOrder?.(entry.ref);
@@ -209,18 +209,21 @@ function renderGraph(entry){const kind=inferKind(entry),history=getHistory(entry
  return `<div class="flow-veil" data-flow-close aria-hidden="true"></div><section class="flow-window journey-dialog" role="dialog" aria-modal="true" aria-labelledby="journey-title">
  <header class="journey-top"><div><span class="journey-eyebrow">跨部门单据流转</span><h2 id="journey-title">${clean(type)} <span>${clean(entry.ref||'业务记录')}</span></h2><p>${clean(summary)}</p></div><button class="journey-close" data-flow-close type="button" aria-label="关闭流程弹窗">×</button></header>
  <div class="journey-toolbar"><span>当前状态 <b>${clean(status)}</b></span>${entry.action?`<span>刚刚办理 <b>${clean(entry.action)}</b> · ${clean(entry.operator||'经办人未记录')}</span>`:''}<span>单据按实际办理顺序流转</span></div>
- <div class="journey-section-head"><strong>部门 · 员工 · 处理事项</strong><small>打开先看全程；随后用流转动画显示“刚完成 → 当前环节”</small></div>
- <div class="journey-range"><span><b>起点</b>${clean(label(steps[0]?.[0]))} · ${clean(steps[0]?.[1]||'开始')}</span><i>→</i><span><b>终点</b>${clean(label(steps[steps.length-1]?.[0]))} · ${clean(steps[steps.length-1]?.[1]||'结束')}</span></div>
- <div class="journey-steps">${snakeOfCards(steps,kind,stage,history)}</div>
+ ${orderDetails(entry,kind)}
+ <div class="journey-section-head"><strong>部门 · 员工 · 处理事项</strong><small>实线箭头表示前进，环形箭头顺时针前进，橙色圆弧仅表示真实发生的退回</small></div>
+ <div class="journey-steps">${ringOfCards(steps,kind,stage,history)}</div>
  ${extras(entry,kind)}
  <div class="journey-section-head journey-history-title"><strong>操作记录</strong><small>${history.length} 条</small></div><div class="journey-history">${historyRows||'<div class="journey-history-empty">当前没有已记录的操作</div>'}</div>
  <footer class="journey-footer"><span>退回、审批、出库均记录实际经办员工</span><div><button type="button" class="journey-button" data-flow-close>关闭</button>${activeContinue?'<button type="button" class="journey-button primary" data-flow-track>跟踪卡点 →</button>':''}</div></footer>
  </section>`}
 function openDialog(entry){const host=document.querySelector('#flow-transition-host');if(!host||!entry)return;
- clearTimeout(dismissTimer);activeContinue=entry.nextOpen||nextTargets[entry.action]||null;activeTrackRef=entry.ref||'';
+ clearTimeout(dismissTimer);
+ const liveStage=(entry.kind==='order'||/^SO-/.test(String(entry.ref||'')))?window.FactoryOperations?.state?.flows?.[entry.ref]?.stage:null;
+ const orderTarget=liveStage==='delivered'?{dept:'sales',feature:'orderHistory',record:entry.ref}:
+  liveStage==='shipped'?{dept:'sales',feature:'orders',record:entry.ref}:
+  ['dispatch','shipping'].includes(liveStage)?{dept:'warehouse',feature:'warehouseOutbound',record:entry.ref}:null;
+ activeContinue=orderTarget||entry.nextOpen||nextTargets[entry.action]||null;activeTrackRef=entry.ref||'';
  host.innerHTML=renderGraph(entry);host.classList.remove('flow-dismiss');host.classList.add('flow-visible');
- const dialog=host.querySelector('.journey-dialog'),arrival=Number(dialog?.querySelector('.journey-snake-scroll')?.dataset.arrivalIndex??-1);
- if(dialog&&arrival>=0){requestAnimationFrame(()=>requestAnimationFrame(()=>{dialog.classList.add('is-flowing-current');dismissTimer=setTimeout(()=>dialog.classList.add('is-arrived-current'),1750)}))}
 }
 function show(entry){openDialog(entry)}
 function openDocument(entry){openDialog(entry)}
