@@ -52,6 +52,15 @@ try {
   await page.waitForTimeout(1200)
   assert.ok((await iframe.getAttribute("src"))?.includes("legacy/index.html#/departments/warehouse/"),"Legacy route preserved")
   assert.ok((await iframe.evaluate(el=>el.clientHeight))>240,"Legacy module has useful iframe height")
+  const legacy = await iframe.contentFrame()
+  assert.ok(legacy,"Legacy business iframe is accessible on the same origin")
+  const sprite = legacy.locator('svg.svg-bank[data-icon-library="lucide"]')
+  assert.equal(await sprite.count(),1,"Legacy icon bank must be generated from Lucide")
+  assert.equal(await sprite.locator('symbol[data-lucide-icon]').count(),77,"All 77 old UI icon definitions use Lucide components")
+  assert.equal(await sprite.locator('symbol:not([data-lucide-icon])').count(),0,"No hand-drawn UI icon symbol should remain")
+  assert.equal(await sprite.locator('#ic-feature-warehouseOps').getAttribute('data-lucide-icon'),'Boxes')
+  assert.equal(await sprite.locator('#ic-bell').getAttribute('data-lucide-icon'),'Bell')
+  assert.equal(await page.locator('svg.lucide').count()>0,true,"React outer UI must render Lucide")
   assert.deepEqual(errors,[],"Uncaught page errors")
   await page.screenshot({path:"test-results/warehouse-module.png",fullPage:true})
 
@@ -67,7 +76,7 @@ try {
     "Touch popup must stay on screen")
   await mobile.screenshot({path:"test-results/mobile.png",fullPage:true})
   await mobile.close()
-  console.log("PASS: overview, 12 nav tiles, 8 warehouse cards, Radix tooltip, roster, legacy module bridge.")
+  console.log("PASS: overview, 12 nav tiles, 8 warehouse cards, shadcn popover, roster, 77 Lucide legacy icons and business bridge.")
 } catch(err) {
   failed=true
   console.error(err)
