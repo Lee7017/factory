@@ -11,6 +11,7 @@ import {
 import { NativeBusiness } from "@/business/NativeBusiness"
 import { LeavePage } from "@/business/LeavePage"
 import { EmployeesPage } from "@/business/EmployeesPage"
+import { SVG_SPRITE } from "@/generated-lucide-sprite"
 import { DataBackup } from "@/components/DataBackup"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -439,6 +440,7 @@ export default function App() {
   const messages=workspace.messages??[]
   const validFeature=Boolean(currentDept&&currentFeature&&currentDept.features.includes(currentFeature))
   return <>
+    <div aria-hidden="true" style={{position:"absolute",width:0,height:0,overflow:"hidden"}} dangerouslySetInnerHTML={{__html:SVG_SPRITE}}/>
     <div className="factory-shell">
       <div className={`sidebar-shade ${sidebarOpen?"open":""}`} onClick={()=>setSidebarOpen(false)} aria-hidden="true"/>
       <DepartmentNav route={route} open={sidebarOpen} onSelect={navigate}/>
