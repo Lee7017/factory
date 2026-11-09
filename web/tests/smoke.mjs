@@ -39,6 +39,8 @@ try {
   const box=await tooltip.boundingBox()
   assert.ok(box&&box.width<360&&box.x>=0&&box.x+box.width<=1440,"Tooltip must not clip or overflow")
   await page.getByRole("tab",{name:/部门花名簿/}).click()
+  assert.equal(await page.getByRole("tab",{name:/部门花名簿/}).getAttribute("data-state"),"active","Roster tab must be active")
+  assert.equal(await page.getByRole("tab",{name:/业务功能/}).getAttribute("data-state"),"inactive","Function tab must be inactive")
   await page.getByText("办公位置",{exact:true}).waitFor()
   await page.screenshot({path:"test-results/warehouse-roster.png",fullPage:true})
   await page.getByRole("tab",{name:/业务功能/}).click()
