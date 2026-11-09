@@ -130,10 +130,12 @@ button:disabled{cursor:not-allowed}
   border-radius:11px;box-shadow:inset 0 1px 0 rgba(255,255,255,.75)
 }
 .dept-tabs [data-slot="tabs-trigger"]{
-  height:34px;border-radius:8px;font-size:12px;font-weight:650;color:#606c63
+  height:34px;border-radius:8px;font-size:12px;font-weight:650;color:#606c63;
+  background:transparent!important;box-shadow:none!important
 }
 .dept-tabs [data-slot="tabs-trigger"][data-state="active"]{
-  background:rgba(255,255,255,.86);color:#172d1d;box-shadow:0 4px 10px rgba(23,58,34,.055)
+  background:rgba(255,255,255,.90)!important;color:#172d1d!important;
+  box-shadow:0 4px 10px rgba(23,58,34,.075)!important
 }
 .dept-tabs [data-slot="tabs-content"]{margin-top:12px}
 .count-pill{display:inline-flex;align-items:center;justify-content:center;min-width:19px;padding:1px 5px;border-radius:6px;background:rgba(32,50,36,.08);font-size:10px;font-variant-numeric:tabular-nums}
