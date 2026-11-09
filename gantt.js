@@ -85,8 +85,12 @@ function render(){
  }).join('');
  const legend=types.map(([name,type])=>`<span class="gantt-legend-item"><i class="category-${type}"></i>${name}</span>`).join('');
  const n=entries.length;
+ const replans=(ctx.data.orders||[]).filter(o=>state().flows?.[o.id]?.stage==='trial'&&
+  (state().flows[o.id].audit||[]).some(a=>a.action==='开工前一天物料不齐套，退回排程'));
+ const replanNote=replans.length?'<div class="op-rule"><strong>开工前物料不足，已退回 PMC 重新排程</strong>'+
+  replans.map(o=>'<p>'+safe(o.id)+'：'+safe((state().flows[o.id].audit||[]).filter(a=>a.action==='开工前一天物料不齐套，退回排程').slice(-1)[0]?.state||'请复查物料')+'</p>').join('')+'</div>':'';
  requestAnimationFrame(()=>{const sc=$('.gantt-scroll');if(sc)sc.scrollLeft=restoreLeft});
- return `<section class="gantt-panel" aria-label="排产甘特图">
+ return replanNote+`<section class="gantt-panel" aria-label="排产甘特图">
    <header class="gantt-panel-head"><div><h2>排产甘特图</h2><p>横轴：时间　纵轴：产线及质检工位 · 点击任务调整时间和产线</p></div>
    <div class="gantt-controls"><button type="button" data-gantt="prev" aria-label="前一天">‹</button><input type="date" id="gantt-date" aria-label="选择排产日期" value="${day}"><button type="button" data-gantt="next" aria-label="后一天">›</button><button type="button" data-gantt="today">今天</button><button type="button" class="gantt-add" data-gantt="add" ${canEdit?'':'title="无权修改排程"'}>+ 新建任务</button></div></header>
    <div class="gantt-legend">${legend}<span class="gantt-count">当天 ${n} 项任务</span></div>
@@ -138,8 +142,14 @@ function save(ev){ev.preventDefault();if(!ctx.access.has('pmc','schedule','edit'
  const s=state(),idx=s.gantt.findIndex(x=>x.id===candidate.id);
  if(idx>=0)s.gantt[idx]=candidate;else s.gantt.push(candidate);
  s.ganttDay=candidate.start.slice(0,10);
+ const linked=s.flows?.[candidate.orderId];
+ if(linked&&['formal','reserved'].includes(linked.stage)&&candidate.type==='配制'){
+  linked.plannedStart=candidate.start.slice(0,10);
+ }
  s.logs.unshift({at:new Date().toLocaleString('zh-CN'),person:ctx.access.current().name,action:idx>=0?'调整排程任务':'新增排程任务',ref:candidate.id,detail:`${candidate.type} ${candidate.lane} ${candidate.start}`});
- ctx.save();close();rerender();
+ ctx.save();
+ try{ops.checkPrestartMaterials?.()}catch(error){console.error('排程物料复查失败',error)}
+ close();rerender();
 }
 function rerender(){restoreLeft=$('.gantt-scroll')?.scrollLeft??restoreLeft;ctx.render();requestAnimationFrame(()=>{const scroll=$('.gantt-scroll');if(scroll)scroll.scrollLeft=restoreLeft});}
 function onClick(ev){const el=ev.target.closest('[data-gantt]');if(!el)return;ev.stopPropagation();const a=el.dataset.gantt;
