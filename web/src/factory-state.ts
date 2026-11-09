@@ -18,6 +18,8 @@ export interface FactoryAccessAPI {
   current: () => Employee
   has: (dept: string, feature: string, action?: string) => boolean
   switchCurrent: (id: string) => boolean
+  render: () => string
+  handleClick: (element:HTMLElement) => boolean
 }
 export interface WorkItem {
   id: string
