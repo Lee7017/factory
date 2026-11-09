@@ -6,7 +6,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog"
 
-const DATA_KEYS=["factory-workspace-v2","factory-permissions-v2"] as const
+const DATA_KEYS=["factory-workspace-v4","factory-workspace-v2","factory-permissions-v2"] as const
 const FORMAT="factory-browser-backup-v1"
 type Backup={format:string;exportedAt:string;site:string;storage:Record<string,string|null>}
 function validateFile(value:unknown):Backup {
@@ -81,7 +81,7 @@ export function DataBackup(){
   }
   return <div className="space-y-3 border-t border-border/60 pt-4">
     <div className="flex items-center gap-2 text-xs font-semibold"><ShieldCheck size={14}/>浏览器数据备份</div>
-    <p className="text-xs text-muted-foreground">订单、库存、审批及权限目前仅保存在此浏览器。正式切换或清理缓存前，先导出备份。</p>
+    <p className="text-xs text-muted-foreground">订单、库存、审批及权限目前仅保存在此浏览器。备份会同时包含当前版本和旧版本数据。正式切换或清理缓存前，先导出备份。</p>
     <Button variant="outline" size="sm" onClick={exportBackup} className="w-full bg-white/75">
       <Download size={14}/>导出数据和权限（JSON）
     </Button>
