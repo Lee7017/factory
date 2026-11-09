@@ -72,12 +72,12 @@ function stageOf(o){return S.flows[o.id]?.stage||'draft'}
 function stepIndex(stage){return Object.keys(stages).indexOf(stage)}
 // 开工前物料复查只使用正式发布时确认的开工日期，不读取甘特图自动生成的占位任务。
 function plannedStartFromGantt(id){
- const dates=(S.gantt||[]).filter(x=>x.orderId===id&&x.type==='配制'&&/^\\d{4}-\\d{2}-\\d{2}T/.test(String(x.start||''))).map(x=>String(x.start).slice(0,10)).sort();
+ const dates=(S.gantt||[]).filter(x=>x.orderId===id&&x.type==='配制'&&/^\d{4}-\d{2}-\d{2}T/.test(String(x.start||''))).map(x=>String(x.start).slice(0,10)).sort();
  return dates[0]||null;
 }
 function dayBeforeStart(id){
  const start=S.flows?.[id]?.plannedStart;
- if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(start||'')))return null;
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(String(start||'')))return null;
  const day=new Date(start+'T12:00:00');
  if(!Number.isFinite(day.getTime()))return null;
  day.setDate(day.getDate()-1);
