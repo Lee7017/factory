@@ -42,7 +42,11 @@ function propsOf(element:Element,path:string):Record<string,unknown>{
     const name=attributes[attr.name.toLowerCase()]??attr.name
     if(name==="style")props.style=inlineStyle(attr.value)
     else if(booleanAttributes.has(name))props[name]=true
-    else if(name==="value")props.defaultValue=attr.value
+    else if(name==="value"){
+      // <option value> must remain value: defaultValue is only valid for form input state.
+      if(element.localName.toLowerCase()==="input")props.defaultValue=attr.value
+      else props.value=attr.value
+    }
     else if(name==="selected")continue
     else props[name]=attr.value
   }
