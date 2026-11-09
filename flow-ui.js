@@ -120,7 +120,14 @@ const flowConfig={
   ['warehouse','按销售订单成品出库',/仓库按订单出库|仓库成品出库|成品销售出库/],
   ['sales','确认客户收货',/确认客户收货|交付确认/]
  ],loops:[['销售订单评审','退回修改后重新送审','sales'],['QC 判定','不合格 → 生产返工并重新报检','production'],['QA 复核','退回复检 → QC 重新判定','quality']],progress:{draft:-1,review:1,approved:2,trial:3,formal:4,reserved:5,issued:6,blending:7,semi_qc:8,semi_ok:9,packaging:10,final_qc:11,inspected:12,released:13,stored:14,dispatch:15,shipping:15,shipped:16,delivered:17}},
- purchase:{title:'采购单',steps:[['purchase','采购员创建并送审',/创建.*采购|提交.*采购/],['purchase','采购主管审批',/采购主管审批|审批通过|驳回/],['warehouse','按实际到货登记（可分批）',/仓库到货登记|采购到货登记/],['quality','QC 来料检验',/QC|来料检验/],['warehouse','合格批次确认入库',/仓库确认入库|来料入库/]],loops:[['采购主管','审批驳回 → 采购员修改后重新送审','purchase'],['QC 来料检验','不合格 → 隔离 / 供应商补货','warehouse']],progress:{草稿:-1,待审批:0,已驳回:0,待到货:1,部分到货:2,到货处理中:2,已入库:4}},
+ purchase:{title:'采购单',steps:[
+  ['purchase','创建采购单',/采购员创建并送审|创建.*采购/],
+  ['purchase','提交采购审批',/采购员创建并送审|提交.*采购|重新送审/],
+  ['purchase','采购主管审批',/采购主管审批|审批通过|审批驳回/],
+  ['warehouse','登记采购到货',/仓库到货登记|采购到货登记/],
+  ['quality','QC 来料检验',/QC|来料检验/],
+  ['warehouse','确认合格批次入库',/仓库确认入库|来料入库/]
+ ],loops:[['采购主管','审批驳回 → 采购员修改后重新送审','purchase'],['QC 来料检验','不合格 → 隔离 / 供应商补货','warehouse']],progress:{草稿:0,待审批:1,已驳回:1,待到货:2,部分到货:3,到货处理中:3,已入库:5}},
  receipt:{title:'到货单',steps:[['warehouse','仓库登记实收与供应商批次',/仓库到货登记|采购到货登记/],['quality','QC 检验并判定',/QC|检验/],['warehouse','确认合格批次入库',/仓库确认入库|入库确认/]],progress:{待QC:0,合格待入库:1,不合格:0,已入库:2}},
  outbound:{title:'成品出库单',steps:[['sales','销售发货通知',/发货通知/],['warehouse','仓库按成品批次拣货',/成品出库单创建/],['warehouse','核对并确认出库',/成品销售出库/],['sales','跟踪客户收货',/客户收货|交付确认/]],loops:[['仓库复核','批次或数量不符 → 返回重新拣货','warehouse']],progress:{待出库:1,已出库:2}}
 };
