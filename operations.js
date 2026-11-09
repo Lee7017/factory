@@ -89,7 +89,7 @@ function flowActionsFor(feature){const names={orders:'销售订单',orderReview:
  const fl=activeOrders.map(o=>{const stage=stageOf(o),r=requirements(o),available=Object.entries(r).map(([id,qty])=>`${id} 需 ${qty} / 可用 ${availableStock(id)}`).join('；');
   const actions=feature==='orders'?cmd('查看订单','detailFlow',o.id)+cmd('修改订单','editOrder',o.id)+rowActions(o,feature):feature==='kitting'?`${rowActions(o,feature)}<small class="op-inline-note">${esc(available)}</small>`:cmd('查看订单','detailFlow',o.id)+rowActions(o,feature);
   return `<tr>${td(`<strong>${esc(o.id)}</strong>`)}${td(esc(o.product))}${td(`${esc(o.qty)} ${esc(o.unit||'L')}`)}${td(badge(stageForOrder(o)))}${td(`<div class="op-row-actions">${actions}</div>`)}</tr>`});
- const intro={orders:'订单必须有产品、规格和大于 0 的数量。草稿提交后进入销售评审；通过后才能排程。',orderReview:'只有待评审订单可以通过或退回，评审结果决定 PMC 是否可以排程。',schedule:'只能对评审通过的订单试算；试算完成后发布正式排程，才能进行齐套和领料。',kitting:'根据 BOM 用量核对现存物料。库存不足时不能锁库，请先到采购页面完成采购到货。',issue:'仅正式排程并锁定库存后可以发料，确认发料时实际扣减原料和包材库存。',tasks:'配制前须先完成清洗任务的执行与复核；包装前须完成调机调线任务的执行与复核。',batch:'批次任务跟随订单的配制和包装阶段，填写、提交和报检会推动同一订单流程。',inspection:'检验判定统一在质量部 → 报检判定办理，不再提供第二套判定入口。',release:'成品检验合格后，QA 才能确认放行；放行后仓库方能入库。',inventory:'可调整库存数量；成品必须通过质量放行才能入库。'}[feature]||'';
+ const intro={orders:'订单必须有产品、规格和大于 0 的数量。创建保存后自动提交评审；评审通过后才能排程。',orderReview:'只有待评审订单可以通过或退回，评审结果决定 PMC 是否可以排程。',schedule:'只能对评审通过的订单试算；试算完成后发布正式排程，才能进行齐套和领料。',kitting:'根据 BOM 用量核对现存物料。库存不足时不能锁库，请先到采购页面完成采购到货。',issue:'仅正式排程并锁定库存后可以发料，确认发料时实际扣减原料和包材库存。',tasks:'配制前须先完成清洗任务的执行与复核；包装前须完成调机调线任务的执行与复核。',batch:'批次任务跟随订单的配制和包装阶段，填写、提交和报检会推动同一订单流程。',inspection:'检验判定统一在质量部 → 报检判定办理，不再提供第二套判定入口。',release:'成品检验合格后，QA 才能确认放行；放行后仓库方能入库。',inventory:'可调整库存数量；成品必须通过质量放行才能入库。'}[feature]||'';
  let pre='';if(feature==='orders')pre=cmd('新建订单','newOrder','','primary');
  if(feature==='tasks'||feature==='batch')pre=cmd('新增非生产任务','newTask','','primary');
  if(feature==='inventory')pre=cmd('库存调整','adjustStock','','primary');
@@ -167,8 +167,26 @@ function commitForm(values){const state=openForm;if(!state)return;let {type,id}=
  if(type==='order'){
   const product=String(values.product||'').trim(),spec=String(values.spec||'').trim(),qty=Number(values.qty);
   if(!product||!spec||!(qty>0))return warn('订单产品、规格、数量必须填写，且数量要大于 0。');
-  let record=id?orderBy(id):null;if(record&&['draft','review'].includes(stageOf(record))){Object.assign(record,{product,spec,qty});}else if(!id){const idNew=gen('SO');record={id:idNew,product,spec,qty,unit:'L',status:'草稿',owner:'销售部'};ctx.data.orders.unshift(record);S.flows[idNew]={stage:'draft',audit:[]};}else return warn('已进入生产流程的订单不能直接修改，可新建版本。');
-  log('保存销售订单',record.id);close();return success('订单保存成功');
+  let record=id?orderBy(id):null;
+  if(record&&['draft','review'].includes(stageOf(record))){
+   Object.assign(record,{product,spec,qty});
+   // 兼容旧版尚处草稿的订单：保存后也直接送审。
+   if(stageOf(record)==='draft'){
+    S.flows[record.id].stage='review';record.status='待评审';
+    S.flows[record.id].audit??=[];
+    S.flows[record.id].audit.push({at:now(),person:current(),action:'提交评审',from:'sales',to:'sales',state:'待评审'});
+   }
+  }else if(!id){
+   const idNew=gen('SO');
+   record={id:idNew,product,spec,qty,unit:'L',status:'待评审',owner:'销售部'};
+   ctx.data.orders.unshift(record);
+   S.flows[idNew]={stage:'review',audit:[
+    {at:now(),person:current(),action:'保存销售订单',from:'sales',to:'sales',state:'订单已创建'},
+    {at:now(),person:current(),action:'提交评审',from:'sales',to:'sales',state:'待评审'}
+   ]};
+  }else return warn('已进入生产流程的订单不能直接修改，可新建版本。');
+  log(id?'修改销售订单':'创建销售订单并自动提交评审',record.id);
+  close();return success(id?'订单已保存，状态为待评审。':'订单创建成功，已自动提交评审，等待销售部评审。');
  }
  if(type==='task'){
   const typ=values.type,line=String(values.line||'').trim();if(!line)return;let idNew=gen('TK');ctx.data.tasks.push({id:idNew,type:typ,line,status:'待开始',category:'非生产任务',audit:[]});log('新建非生产任务',idNew);close();return success(`任务 ${idNew} 已建立`);
@@ -229,7 +247,7 @@ function handleClick(button){const action=button.dataset.opAction||'',id=button.
  if(action==='newOrder'||action==='editOrder'){
   if(!can('sales','orders',action==='newOrder'?'create':'edit'))return flash(button),true;
   const o=orderBy(id);if(o&&!['draft','review'].includes(stageOf(o)))return warn('订单已进入生产流程，不能直接修改，可另建订单。'),true;
-  modal(o?'编辑销售订单':'新建销售订单',field('product','产品名称','text',o?.product||'720g/L 百菌清悬浮剂')+field('spec','规格','text',o?.spec||'5L × 4桶')+field('qty','计划数量（L）','number',o?.qty||1000),{type:'order',id},'保存订单');return true;
+  modal(o?'编辑销售订单':'新建销售订单',field('product','产品名称','text',o?.product||'720g/L 百菌清悬浮剂')+field('spec','规格','text',o?.spec||'5L × 4桶')+field('qty','计划数量（L）','number',o?.qty||1000),{type:'order',id},o?'保存修改':'创建并提交评审');return true;
  }
  if(action==='newTask'){
   if(!can('production','tasks','execute')&&!can('engineering','engineering','execute'))return flash(button),true;
