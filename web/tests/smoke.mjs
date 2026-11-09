@@ -17,6 +17,7 @@ async function waitForServer(){
   throw new Error("Vite preview server did not start")
 }
 try {
+  await mkdir('test-results',{recursive:true})
   await waitForServer()
   browser=await chromium.launch({headless:true,args:["--no-sandbox"]})
   const page=await browser.newPage({viewport:{width:1440,height:900}, deviceScaleFactor:1})
