@@ -58,6 +58,8 @@ try {
   await page.locator(".native-business .legacy-root").waitFor({state:"visible"})
   const create=page.locator('.native-business [data-op-action="newOrder"]')
   await create.first().waitFor({state:"visible",timeout:10000})
+  assert.equal(await create.first().getAttribute("data-slot"),"button","MES action buttons should be rendered using shadcn Button")
+  assert.ok(await page.locator(".native-business [data-slot=table]").count()>0,"MES tables should be React shadcn Table elements")
   if(await create.count()){
     await create.first().click()
     await page.locator("#ops-form").waitFor({state:"visible",timeout:6000})
