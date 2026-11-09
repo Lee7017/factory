@@ -6,7 +6,7 @@ import {
 import { DEPARTMENTS, FEATURE_HINTS, FEATURE_NAMES, getDepartment, type Department } from "@/catalog"
 import { getDepartmentIcon, getFeatureIcon } from "@/icons"
 import {
-  useFactoryState, updateWorkspace, getTodos, todoLane, dashboardMetrics, type Employee, type Todo
+  useFactoryState, readWorkspace, updateWorkspace, getTodos, todoLane, dashboardMetrics, type Employee, type Todo
 } from "@/factory-state"
 import { NativeBusiness } from "@/business/NativeBusiness"
 import { LeavePage } from "@/business/LeavePage"
@@ -285,7 +285,7 @@ function Roster({dept,staff,employee,can,office,onUpdate}:{
   </Card>
 }
 function readChat(key:string) {
-  try {const data=JSON.parse(localStorage.getItem("factory-workspace-v2")||"{}") as {chatThreads?:Record<string,{from:string;text:string;time:string}[]>};return data.chatThreads?.[key]??[]}
+  try {return readWorkspace().chatThreads?.[key]??[]}
   catch{return []}
 }
 
