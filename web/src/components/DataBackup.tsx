@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog"
 
 const DATA_KEYS=["factory-workspace-v4","factory-permissions-v2"] as const
-const FORMAT="factory-browser-backup-v1"
+const FORMAT="factory-browser-backup-v2"
 type Backup={format:string;exportedAt:string;site:string;storage:Record<string,string|null>}
 function validateFile(value:unknown):Backup {
   if(!value||typeof value!=="object")throw Error("不是有效的备份文件")
