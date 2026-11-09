@@ -162,8 +162,9 @@ function snakeOfCards(steps,kind,stage,history){
  const connector=(a,b)=>{
   const same=a.row===b.row;
   if(same){const dir=b.x>a.x?1:-1,x1=dir>0?a.x+cardW:a.x,x2=dir>0?b.x:b.x+cardW,y=a.y+cardH/2;return `M${x1} ${y} L${x2} ${y}`}
-  const right=a.col===cols-1,outer=right?width-12:12,x1=right?a.x+cardW:a.x,x2=right?b.x+cardW:b.x,y1=a.y+cardH/2,y2=b.y+cardH/2,r=24,dir=right?1:-1;
-  return `M${x1} ${y1} H${outer-dir*r} Q${outer} ${y1} ${outer} ${y1+r} V${y2-r} Q${outer} ${y2} ${outer-dir*r} ${y2} H${x2}`;
+  // 贪吃蛇换行时，下一个节点就在当前节点正下方：从卡片底部中心直接向下进入下一张卡片。
+  const x=a.x+cardW/2,y1=a.y+cardH,y2=b.y;
+  return `M${x} ${y1} V${y2}`;
  };
  const arrows=steps.slice(0,-1).map((_,i)=>{const cls=i===arrivalConnector?'is-arrival':i<arrivalConnector?'is-past':'is-future',d=connector(pos[i],pos[i+1]);return `<path class="journey-snake-arrow ${cls}" ${i===arrivalConnector?'pathLength="1"':''} d="${d}" ${i===arrivalConnector?'':'marker-end="url(#journey-arrow-tip)"'}/>${i===arrivalConnector?`<path class="journey-snake-arrival-tip" d="${d}" marker-end="url(#journey-arrow-tip)"/>`:''}`}).join('');
  const returns=(history||[]).filter(h=>/驳回|退回|不合格|返洗|返工|复检/.test(h.action||''));
@@ -225,8 +226,23 @@ function openDialog(entry){const host=document.querySelector('#flow-transition-h
   ['dispatch','shipping'].includes(liveStage)?{dept:'warehouse',feature:'warehouseOutbound',record:entry.ref}:null;
  activeContinue=orderTarget||entry.nextOpen||nextTargets[entry.action]||null;activeTrackRef=entry.ref||'';
  host.innerHTML=renderGraph(entry);host.classList.remove('flow-dismiss');host.classList.add('flow-visible');
- const dialog=host.querySelector('.journey-dialog'),arrival=Number(dialog?.querySelector('.journey-snake-scroll')?.dataset.arrivalIndex??-1);
- if(dialog&&arrival>=0){requestAnimationFrame(()=>requestAnimationFrame(()=>{dialog.classList.add('is-flowing-current');dismissTimer=setTimeout(()=>dialog.classList.add('is-arrived-current'),1750)}))}
+ const dialog=host.querySelector('.journey-dialog'),snakeScroll=dialog?.querySelector('.journey-snake-scroll'),arrival=Number(snakeScroll?.dataset.arrivalIndex??-1);
+ if(dialog&&snakeScroll&&arrival>=0){
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+   const current=dialog.querySelector(`[data-journey-step="${arrival}"]`),previous=dialog.querySelector(`[data-journey-step="${Math.max(0,arrival-1)}"]`);
+   if(current){
+    const cr=current.getBoundingClientRect(),pr=previous?.getBoundingClientRect()||cr,sr=snakeScroll.getBoundingClientRect(),dr=dialog.getBoundingClientRect();
+    const midX=((cr.left+cr.right+pr.left+pr.right)/4)-sr.left+snakeScroll.scrollLeft;
+    snakeScroll.scrollLeft=Math.max(0,midX-snakeScroll.clientWidth/2);
+    const midY=(Math.min(cr.top,pr.top)+Math.max(cr.bottom,pr.bottom))/2;
+    dialog.scrollTop=Math.max(0,dialog.scrollTop+(midY-(dr.top+dr.height/2)));
+   }
+   requestAnimationFrame(()=>{
+    dialog.classList.add('is-flowing-current');
+    dismissTimer=setTimeout(()=>dialog.classList.add('is-arrived-current'),1750);
+   });
+  }));
+ }
 }
 function show(entry){openDialog(entry)}
 function openDocument(entry){openDialog(entry)}
