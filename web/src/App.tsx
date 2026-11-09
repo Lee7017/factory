@@ -10,6 +10,7 @@ import {
 } from "@/factory-state"
 import { NativeBusiness } from "@/business/NativeBusiness"
 import { LeavePage } from "@/business/LeavePage"
+import { DataBackup } from "@/components/DataBackup"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
