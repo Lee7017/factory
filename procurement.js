@@ -31,14 +31,8 @@ function syncStatus(p){
  p.status=n.stored>=n.ordered&&n.ordered>0?'已入库':n.stored>0?'部分到货':n.registered>0?'到货处理中':'待到货';
 }
 function migrate(){
- for(const p of orders()){
-  // 仅识别系统自带的 PO-001 样例，避免无创建人信息导致初始化示例无法审批。
-  if(p.id==='PO-001'&&!p.createdBy&&p.supplier==='包材供应商'){p.createdBy='system-seed';p.createdName='系统预置样例'}
-  p.qty=Number(p.qty)||0;
-  if(p.status==='已入库'&&!shipments(p.id).length)continue;
-  if(['待到货','部分到货','到货处理中','已入库'].includes(p.status))syncStatus(p);
- }
- // 历史到货单不删除；其中已入库的批次仍沿用原记录，防止重复加库存。
+ // 新版本不读取或迁移旧到货流程数据；当前工作区只按新状态机计算。
+ for(const p of orders()){p.qty=Number(p.qty)||0;if(['待到货','部分到货','到货处理中','已入库'].includes(p.status))syncStatus(p)}
  ctx.save();
 }
 function renderPurchases(){
@@ -67,7 +61,6 @@ function renderIncoming(){
   const qc=M.state.inspections.find(i=>i.incoming===r.id);
   const action=button('查看到货单','viewReceipt',r.id);
   let next='';
-  if(canStore&&['待比对','比对差异','待报检'].includes(r.status))next=button('更正实收','legacyCorrect',r.id)+button('确认到货并送检','legacyInspect',r.id);
   if(r.status==='待QC')next=button('查看检验单','showInspection',r.id);
   if(canStore&&r.status==='合格待入库')next=button('确认入库','storeReceipt',r.id,'primary');
   return `<tr><td><strong>${esc(r.id)}</strong></td><td>${esc(r.purchase)}</td><td>${esc(r.material)} · ${money(r.actualQty??r.qty)}</td><td>${esc(r.supplierLot||'—')}</td><td>${tag(r.status)}${qc?`<small class="proc-sub">${esc(qc.id)} · ${esc(qc.status)}</small>`:''}</td><td><div class="proc-actions">${action}${next}</div></td></tr>`;
@@ -96,6 +89,11 @@ function newReceipt(po){
 function detailsPurchase(idValue){const p=orders().find(x=>x.id===idValue);if(!p)return;
  const n=numbers(p);const related=shipments(p.id).map(x=>`<div class="journey-extra-line"><b>${esc(x.id)}</b><span>${money(x.actualQty??x.qty)} · ${esc(x.status)}</span></div>`).join('');
  window.FactoryFlowUI?.openDocument({kind:'purchase',ref:p.id,docType:'采购单',status:p.status,summary:`${p.material} · 采购 ${money(p.qty)} · ${p.supplier}`,history:p.history||[],nextOpen:{dept:p.status==='待审批'?'purchase':'warehouse',feature:p.status==='待审批'?'purchase':'warehouseIncoming',record:p.id},detailHtml:`<div class="journey-section-head"><strong>采购数量及到货记录</strong><small>创建人：${esc(p.createdName||'历史单据')}　审批人：${esc(p.approvedBy||'未审批')}</small></div><div class="journey-extra-line">采购 ${money(n.ordered)} · 已登记 ${money(n.registered)} · 已入库 ${money(n.stored)} · 剩余可登记 ${money(n.remaining)}</div>${related||'<div class="journey-extra-line">暂无到货记录</div>'}`});
+}
+// 兼容 Modules.startPurchaseReceipt 的采购到货入口，必须复用收货权限校验。
+function openReceipt(po){
+ if(!authorized(['warehouse','warehouseOps','create']))return error('到货登记需要仓库收货权限，应由有权限的仓库员工办理。');
+ return newReceipt(po);
 }
 function detailsReceipt(idValue){const r=arrivals().find(x=>x.id===idValue);if(!r)return;
  const qc=M.state.inspections.find(x=>x.incoming===r.id);
@@ -128,16 +126,6 @@ function saveForm(form){
   close();renderNow();noticeFlow({ref:r.id,docType:'到货单',action:'仓库到货登记',from:'warehouse',to:'quality',status:'待QC',next:'质量部检验到货物料',nextOpen:{dept:'quality',feature:'qaQc',action:'qualityRecord',record:M.state.inspections.find(i=>i.incoming===r.id)?.id}});return;
  }
 }
-function confirmLegacy(r){const p=orders().find(x=>x.id===r.purchase);if(!p)return error('关联采购单不存在。');
- const qty=Number(r.actualQty??r.qty);
- if(r.actualMaterial&&r.actualMaterial!==p.material)return error('旧到货记录的实物编码与采购单不符，请先核对原记录。');
- if(!Number.isFinite(qty)||qty<=0)return error('实收数量应大于 0。');
- const other=shipments(p.id).filter(x=>x.id!==r.id&&activeReceipt(x)).reduce((n,x)=>n+Number(x.actualQty??x.qty),0);
- if(qty+other>p.qty+0.000001)return error(`登记合计超过采购数量 ${money(p.qty)}，请先核对原记录。`);
- r.material=p.material;r.actualMaterial=p.material;r.qty=qty;r.actualQty=qty;r.status='待QC';
- if(!M.state.inspections.some(x=>x.incoming===r.id))M.state.inspections.unshift({id:id('IQC'),phase:'来料',source:'仓库到货登记',material:r.material,batch:r.supplierLot,order:'',incoming:r.id,status:'待判定',date:day()});
- syncStatus(p);renderNow();
-}
 function store(idValue){const r=arrivals().find(x=>x.id===idValue);if(!r||r.status!=='合格待入库')return error('只有 QC 合格且尚未入库的到货单才能入库。');
  const p=orders().find(x=>x.id===r.purchase),qty=Number(r.actualQty??r.qty);
  if(!p||!(qty>0))return error('缺少采购单或有效实收数量，无法入库。');
@@ -148,7 +136,7 @@ function store(idValue){const r=arrivals().find(x=>x.id===idValue);if(!r||r.stat
  renderNow();noticeFlow({ref:r.id,docType:'到货单',action:'仓库确认入库',from:'warehouse',to:'warehouse',status:'已入库',next:'可用库存已更新',nextOpen:{dept:'warehouse',feature:'warehouseIncoming'}});
 }
 function trackShortage(orderId){
- const all=JSON.parse(localStorage.getItem('factory-workspace-v2')||'{}');
+ const all=JSON.parse(localStorage.getItem('factory-workspace-v4')||'{}');
  const order=all.orders?.find(x=>x.id===orderId);
  const stock=O.state.stock,reservations=O.state.reservations||{};
  const committed=Object.values(reservations).reduce((t,x)=>t+Number(x['PK-001']||0),0);
@@ -177,18 +165,14 @@ function onAction(el){const action=el.dataset.procAction,ref=el.dataset.procId;
   renderNow();noticeFlow({ref:p.id,docType:'采购单',action:action==='approve'?'采购主管审批通过':'采购主管驳回',from:'purchase',to:action==='approve'?'warehouse':'purchase',status:p.status,next:action==='approve'?'等待仓库按实际到货登记':'采购员核对后重新提交',nextOpen:action==='approve'?{dept:'warehouse',feature:'warehouseIncoming',record:p.id}:{dept:'purchase',feature:'purchase'}});return;
  }
  if(action==='storeReceipt'){if(!authorized(['warehouse','warehouseOps','execute']))return error('需要仓库入库确认权限。');store(ref);return}
- if(action==='legacyCorrect'){if(!authorized(['warehouse','warehouseOps','execute']))return error('需要仓库权限。');const rec=arrivals().find(r=>r.id===ref);if(rec)M.handleClick({dataset:{moduleAction:'inbound:correct',mid:ref}});return}
- if(action==='legacyInspect'){if(!authorized(['warehouse','warehouseOps','execute']))return error('需要仓库权限。');const rec=arrivals().find(r=>r.id===ref);if(rec)confirmLegacy(rec);return}
 }
 const nativeInit=M.init,nativeRender=O.render;
 M.init=function(context){const result=nativeInit(context);ctx=context;migrate();return result};
 O.render=function(feature){return feature==='purchase'?renderPurchases():nativeRender(feature)};
-const nativeReceipt=M.receiptForPurchase;
-M.receiptForPurchase=function(po){return shipments(po).find(activeReceipt)||nativeReceipt(po)};
-M.startPurchaseReceipt=function(po){ctx.openFeature('warehouseIncoming','warehouse');setTimeout(()=>{const r=shipments(po)[0];const row=[...document.querySelectorAll('#view tr')].find(x=>x.textContent.includes(r?.id||po));row?.scrollIntoView({block:'center',behavior:'smooth'})},40)};
+M.startPurchaseReceipt=function(po){ctx.openFeature('warehouseIncoming','warehouse');setTimeout(()=>openReceipt(po),40)};
 document.addEventListener('click',e=>{const el=e.target.closest('[data-proc-action]');if(el){e.preventDefault();onAction(el)}});
 document.addEventListener('submit',e=>{if(e.target.id==='proc-form'){e.preventDefault();saveForm(e.target)} });
 document.addEventListener('change',e=>{if(e.target.matches('#proc-form [name="purchase"]')){const p=orders().find(x=>x.id===e.target.value);if(p){const n=numbers(p);e.target.form.querySelector('[name="qty"]').value=n.remaining;e.target.form.querySelector('#proc-remaining').textContent=`采购物料 ${p.material}，最多可登记 ${money(n.remaining)}`}}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
-window.FactoryProcurement={renderPurchases,renderIncoming,trackShortage,numbers,shipments,available,store,get context(){return ctx}};
+window.FactoryProcurement={renderPurchases,renderIncoming,trackShortage,numbers,shipments,available,store,openReceipt,get context(){return ctx}};
 })();
