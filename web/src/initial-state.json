@@ -1,0 +1,117 @@
+{
+  "role": "employee",
+  "dept": "it",
+  "feature": null,
+  "expanded": "it",
+  "home": true,
+  "orders": [
+    {
+      "id": "SO-2026-1023-018",
+      "product": "720g/L 百菌清悬浮剂",
+      "spec": "5L × 4桶",
+      "qty": 3000,
+      "unit": "L",
+      "status": "待排产",
+      "owner": "生产计划与物料控制部（PMC）"
+    },
+    {
+      "id": "SO-2026-1106-003",
+      "product": "500g/L 悬浮剂 B",
+      "spec": "1L × 12瓶",
+      "qty": 1800,
+      "unit": "L",
+      "status": "待评审",
+      "owner": "销售部"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "TK-001",
+      "type": "清洗",
+      "line": "L01 配制一线",
+      "status": "待复核",
+      "category": "非生产任务"
+    },
+    {
+      "id": "TK-002",
+      "type": "配制",
+      "line": "L01 配制一线",
+      "status": "待开始",
+      "category": "生产任务"
+    },
+    {
+      "id": "TK-003",
+      "type": "调机调线",
+      "line": "S03-4# 瓶装线",
+      "status": "待开始",
+      "category": "非生产任务"
+    },
+    {
+      "id": "TK-004",
+      "type": "包装",
+      "line": "S03-4# 瓶装线",
+      "status": "待开始",
+      "category": "生产任务"
+    }
+  ],
+  "leaves": [
+    {
+      "id": "LV-001",
+      "person": "员工",
+      "range": "2026-11-10 ~ 2026-11-11",
+      "reason": "个人事务",
+      "status": "待人事审批"
+    }
+  ],
+  "messages": [
+    {
+      "id": 1,
+      "title": "待处理 · 生产任务",
+      "text": "TK-002 配制任务等待生产车间承接",
+      "dept": "production",
+      "date": "11月06日 09:18",
+      "unread": true,
+      "feature": "tasks"
+    },
+    {
+      "id": 2,
+      "title": "待处理 · 请假申请",
+      "text": "LV-001 请假单等待人事审核",
+      "dept": "hr",
+      "date": "11月06日 09:05",
+      "unread": true,
+      "feature": "leaveApproval"
+    },
+    {
+      "id": 3,
+      "title": "排程已更新",
+      "text": "SO-2026-1023-018 已生成正式排程草稿",
+      "dept": "pmc",
+      "date": "11月06日 08:50",
+      "unread": true,
+      "feature": "schedule"
+    }
+  ],
+  "payroll": [
+    {
+      "id": "OT-001",
+      "name": "李明",
+      "type": "加班",
+      "basis": "4 小时",
+      "status": "待人事复核",
+      "amount": "—"
+    },
+    {
+      "id": "IN-001",
+      "name": "王强",
+      "type": "生产激励",
+      "basis": "合格 900 单位",
+      "status": "待财务核准",
+      "amount": "—"
+    }
+  ],
+  "approvals": [],
+  "offices": {},
+  "chatThreads": {},
+  "plans": []
+}
