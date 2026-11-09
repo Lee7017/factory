@@ -20,7 +20,7 @@ try {
   const page=await browser.newPage({viewport:{width:1440,height:900}})
   const errors=[]
   let activeFeature="overview"
-  page.on("pageerror",error=>errors.push(`${activeFeature}: ${error.message}`))
+  page.on("pageerror",error=>errors.push(`${activeFeature}: ${error.message}\n${error.stack??""}`))
   await page.goto(base,{waitUntil:"networkidle"})
   await page.locator(".dashboard-kpis").waitFor()
   assert.equal(await page.locator(".kpi-card").count(),4)
