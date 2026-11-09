@@ -56,8 +56,8 @@ try {
   activeFeature="sales/orders"
   await page.evaluate(()=>{location.hash="#/departments/sales/orders"})
   await page.locator(".native-business .legacy-root").waitFor({state:"visible"})
-  await page.waitForFunction(()=>document.querySelector(".legacy-root #view")?.textContent?.includes("销售订单"))
   const create=page.locator('.native-business [data-op-action="newOrder"]')
+  await create.first().waitFor({state:"visible",timeout:10000})
   if(await create.count()){
     await create.first().click()
     await page.locator("#ops-form").waitFor({state:"visible",timeout:6000})
