@@ -25,6 +25,7 @@ try {
   page.on("pageerror",err=>errors.push(`${err.message}\n${err.stack??""}`))
   await page.goto(base, {waitUntil:"networkidle"})
   await page.locator(".department-tile").first().waitFor()
+  assert.equal(await page.locator("svg.svg-bank[data-icon-library=lucide] symbol[data-lucide-icon]").count(),77,"All 77 legacy business icons must be available to React without iframe")
   assert.equal(await page.locator(".department-tile").count(),12,"Homepage + 11 department squares")
   assert.equal(await page.locator(".dashboard-kpis .kpi-card").count(),4,"Overview has four stat cards")
   await page.screenshot({path:"test-results/overview.png",fullPage:true})
