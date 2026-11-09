@@ -43,6 +43,7 @@ try {
       if(await page.locator("iframe").count())missing.push(`${name}: ${feature} still uses iframe`)
     }catch(error){
       missing.push(`${name} / ${feature}: ${error.message.split("\n")[0]}`)
+      if(missing.length>=3)break
     }
   }
   assert.deepEqual(missing,[],"Every department feature must render without iframe")
