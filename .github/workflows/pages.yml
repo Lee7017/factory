@@ -64,5 +64,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: factory-live-site
-          path: web/test-results/live-github-pages.png
+          path: web/test-results/live-*.png
           if-no-files-found: ignore
