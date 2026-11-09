@@ -1,0 +1,33 @@
+name: Lock React dependencies
+on:
+  push:
+    branches: [feat/react-shadcn-migration]
+    paths: [web/package.json, .github/workflows/lockfile.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/react-shadcn-migration
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Generate reproducible dependency lock
+        working-directory: web
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Commit lockfile to migration branch
+        run: |
+          git add web/package-lock.json
+          if git diff --cached --quiet; then
+            echo "No dependency changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Lock factory React dependencies for reproducible builds"
+          git push origin HEAD:feat/react-shadcn-migration
