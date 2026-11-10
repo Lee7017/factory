@@ -4,7 +4,6 @@ import type { Employee, WorkspaceData, WorkItem } from "@/factory-state"
 import { updateWorkspace } from "@/factory-state"
 import { DataTable, StatusBadge, type Column } from "@/components/DataTable"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle
@@ -76,16 +75,12 @@ export function LeavePage({feature,workspace,employee,can,onRefresh}:{
       disabled={!canApprove||r.status!=="待人事审批"||r.createdBy===employee?.id||r.person===employee?.name}
       onClick={()=>setCandidate(r.id)}><ClipboardCheck size={13}/>审批</Button>}] as Column<LeaveRecord>[]:[])
   ]
-  return <Card className="glass-panel gap-3 p-5">
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div><h2 className="text-sm font-bold">{forApproval?"请假审批":"我的请假"}</h2>
-        <p className="mt-1 text-xs text-muted-foreground">请假和审批记录保存在当前浏览器，与旧版工厂数据共用。</p></div>
-      {!forApproval&&<Button size="sm" onClick={()=>{setCreate(true);setValidation("")}} disabled={!canCreate}>
+  return <section className="business-native-page">
+    {notice&&<p role="status" className="business-native-notice">{notice}</p>}
+    <DataTable rows={records} rowKey={r=>r.id} columns={columns} placeholder="搜索请假单、姓名或日期"
+      actions={!forApproval?<Button size="sm" onClick={()=>{setCreate(true);setValidation("")}} disabled={!canCreate}>
         <Plus size={14}/>发起请假
-      </Button>}
-    </div>
-    {notice&&<p role="status" className="rounded-lg bg-green-50 p-3 text-xs text-green-800">{notice}</p>}
-    <DataTable rows={records} rowKey={r=>r.id} columns={columns} placeholder="搜索请假单、姓名或日期"/>
+      </Button>:undefined}/>
     <Dialog open={create} onOpenChange={setCreate}>
       <DialogContent className="glass-dialog">
         <DialogHeader><DialogTitle>发起请假</DialogTitle>
@@ -109,5 +104,5 @@ export function LeavePage({feature,workspace,employee,can,onRefresh}:{
         <DialogFooter><Button variant="outline" onClick={()=>setCandidate(null)}>取消</Button><Button onClick={approve}>审核通过</Button></DialogFooter>
       </DialogContent>
     </Dialog>
-  </Card>
+  </section>
 }
