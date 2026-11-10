@@ -68,6 +68,13 @@ try{
  await openInspect(first.id)
  assert.equal(await form.locator(".mw-clean-check-row").count(),4)
  assert.match(await form.locator(".mw-clean-info").textContent(),new RegExp(id))
+ const rect=await page.locator(".mw-modal").boundingBox()
+ assert.ok(rect&&rect.y>=10&&rect.y+rect.height<=900-10,
+  "The entire cleaning inspection modal must fit within the browser viewport, not be clipped by the workbench")
+ assert.ok(await page.getByRole("heading",{name:/清洗报检 · QC 逐项检验/}).isVisible(),
+  "QC inspection title must be visible")
+ assert.equal(await page.locator("body > .legacy-modules-portal-root #modules-modal-host").count(),1,
+  "The QC modal host is attached directly to the body rather than the clipped workbench")
  await page.screenshot({path:"test-results/clean-qc-01-real-linked-form.png"})
  await fillQc(["符合","符合","不符合","符合"])
  await form.locator('button[type="submit"]').click()

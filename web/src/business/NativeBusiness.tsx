@@ -107,13 +107,22 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
       <div id="view" className="legacy-workbench"><BusinessMarkup markup={markup}/></div>
       <div id="modal-host"/>
       <div id="ops-modal-host"/>
-      <div id="modules-modal-host"/>
       <div id="proc-modal-host"/>
       <div id="toast-host" aria-live="polite"/>
     </div>
     {toast&&<div className="fixed bottom-5 right-5 z-100 max-w-sm rounded-xl border border-green-200 bg-white/95 p-3 text-xs shadow-xl" role="status">
       {toast}<Button size="icon-xs" variant="ghost" onClick={()=>setToast("")} aria-label="关闭消息" className="ml-3">×</Button>
     </div>}
+    {/* Quality inspection forms can be taller than the workbench. Their fixed modal
+        must use the viewport as its containing block, not the transformed/clipped
+        .business-page-body. React event handlers stay on this portal wrapper. */}
+    {createPortal(
+      <div className="legacy-root legacy-modules-portal-root"
+        onClick={handleClick} onSubmit={handleSubmit}>
+        <div id="modules-modal-host"/>
+      </div>,
+      document.body
+    )}
     {/* A fixed flow window cannot live below .business-page-body (overflow and backdrop-filter
         make that ancestor clip/rebase the old animated journey). Keep the legacy CSS scope,
         but portal the one imperative host to the document body. */}
