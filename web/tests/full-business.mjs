@@ -40,7 +40,7 @@ try {
         await page.locator(".native-business .legacy-root").waitFor({state:"visible",timeout:15000})
         await page.waitForFunction(()=>{
           const view=document.querySelector(".native-business #view")
-          return Boolean(view?.textContent?.trim().length>15)
+          return Boolean(view?.querySelector(".ops-workbench,.mw-page,.proc-page,[data-slot=table],button"))
         },null,{timeout:12000})
       }
       const heading=await page.locator(".crumb-current").textContent()
