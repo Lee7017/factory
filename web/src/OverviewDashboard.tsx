@@ -72,6 +72,7 @@ function GanttPanel({workspace,onSelect}:{workspace:WorkspaceData;onSelect:Props
   const makeTypes=new Set(["配制","包装","清洗","调机调线","半成品 QC","成品 QC","QA 放行"])
   const visibleOrders=(workspace.orders??[]).filter(o=>orderStage(o,workspace)!=="delivered"||
     saved.some(e=>e.orderId===o.id))
+  const unscheduled=visibleOrders.filter(o=>!saved.some(e=>e.orderId===o.id)).length
   const list=expanded?visibleOrders:visibleOrders.slice(0,4)
   const cellStyle={gridTemplateColumns:`repeat(${period.cells.length},minmax(0,1fr))`} as CSSProperties
   const go=(direction:number)=>{
@@ -145,7 +146,8 @@ function GanttPanel({workspace,onSelect}:{workspace:WorkspaceData;onSelect:Props
       </div>
     </div>
     <div className="overview-gantt-foot">
-      <span>{displayed.length?<>本时间段 <strong>{displayed.length}</strong> 项排程 · {displayed.filter(e=>e.source==="订单排程").length?"含系统草案":"来自已保存记录"}</>:
+      <span>{unscheduled>0&&<><strong>待排程 {unscheduled} 单</strong> · </>}
+        {displayed.length?<>本时间段 <strong>{displayed.length}</strong> 项排程 · {displayed.some(e=>e.source==="订单排程")?"含系统草案":"来自已保存记录"}</>:
         "本时间段尚无已保存排程，不自动编造任务日期"}</span>
       {visibleOrders.length>4&&<button type="button" onClick={()=>setExpanded(x=>!x)}>{expanded?"收起订单":`查看全部 ${visibleOrders.length} 单`}</button>}
       <button type="button" className="overview-link" onClick={()=>onSelect("#/departments/pmc/schedule")}>打开排程 <ArrowRight size={13}/></button>
