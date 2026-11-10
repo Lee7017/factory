@@ -235,6 +235,7 @@ function renderGraph(entry){const kind=inferKind(entry),history=getHistory(entry
  return `<div class="flow-veil" data-flow-close aria-hidden="true"></div><section class="flow-window journey-dialog" role="dialog" aria-modal="true" aria-labelledby="journey-title">
  <header class="journey-top"><div><span class="journey-eyebrow">跨部门单据流转</span><h2 id="journey-title">${clean(type)} <span>${clean(entry.ref||'业务记录')}</span></h2><p>${clean(summary)}</p></div></header>
  ${kind==='order'?"<div class=\"journey-tabs\" role=\"tablist\" aria-label=\"订单弹窗\">\n  <button type=\"button\" class=\"journey-tab is-active\" role=\"tab\" id=\"journey-tab-flow\" aria-controls=\"journey-panel-flow\" aria-selected=\"true\" tabindex=\"0\" data-journey-tab=\"flow\">流转图</button>\n  <button type=\"button\" class=\"journey-tab\" role=\"tab\" id=\"journey-tab-order\" aria-controls=\"journey-panel-order\" aria-selected=\"false\" tabindex=\"-1\" data-journey-tab=\"order\">订单内容</button>\n </div>\n <section class=\"journey-tab-panel is-active\" id=\"journey-panel-flow\" role=\"tabpanel\" aria-labelledby=\"journey-tab-flow\" data-journey-panel=\"flow\">":orderDetails(entry,kind)}
+ ${blockedInfo}
  <div class="journey-steps">${snakeOfCards(steps,kind,stage,history,entry.ref)}</div>
  ${kind==='order'?"</section><section class=\"journey-tab-panel\" id=\"journey-panel-order\" role=\"tabpanel\" aria-labelledby=\"journey-tab-order\" data-journey-panel=\"order\" hidden>"+orderDetails(entry,kind)+extras(entry,kind)+'</section>':extras(entry,kind)}
  </section>`}
@@ -244,7 +245,7 @@ function openDialog(entry){const host=document.querySelector('#flow-transition-h
  const orderTarget=liveStage==='delivered'?{dept:'sales',feature:'orderHistory',record:entry.ref}:
   liveStage==='shipped'?{dept:'sales',feature:'orders',record:entry.ref}:
   ['dispatch','shipping'].includes(liveStage)?{dept:'warehouse',feature:'warehouseOutbound',record:entry.ref}:null;
- activeContinue=orderTarget||entry.nextOpen||nextTargets[entry.action]||null;activeTrackRef=entry.ref||'';
+ activeContinue=orderTarget||entry.nextOpen||nextTargets[entry.action]||null;activeTrackRef=entry.nextOpen?.record||entry.ref||'';
  host.innerHTML=renderGraph(entry);host.classList.remove('flow-dismiss');host.classList.add('flow-visible');
  const dialog=host.querySelector('.journey-dialog'),snakeScroll=dialog?.querySelector('.journey-snake-scroll'),arrival=Number(snakeScroll?.dataset.arrivalIndex??-1);
  if(dialog&&snakeScroll&&arrival>=0){
