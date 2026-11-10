@@ -165,89 +165,6 @@
 .native-business .legacy-root .proc-top {
   padding:0!important;min-height:34px;justify-content:flex-end;
 }
-/* Purchase list: status left, one primary action right, table immediately below.
-   No independent blank header or extra approval panel. */
-.native-business .legacy-root .proc-page > .proc-purchase-toolbar {
-  display:flex!important;
-  flex-direction:row!important;
-  flex-wrap:nowrap!important;
-  align-items:center!important;
-  justify-content:space-between!important;
-  gap:12px!important;
-  width:100%;
-  min-height:38px;
-  margin:0!important;
-  padding:0!important;
-  background:transparent!important;
-  border:0!important;
-  box-shadow:none!important;
-}
-.native-business .legacy-root .proc-purchase-toolbar > .proc-toolbar-status {
-  min-width:0;
-  flex:1 1 auto;
-  display:flex;
-  align-items:center;
-}
-.native-business .legacy-root .proc-purchase-toolbar > .proc-toolbar-actions {
-  flex:0 0 auto;
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-}
-.native-business .legacy-root .proc-purchase-toolbar .proc-approval-banner {
-  margin:0!important;
-  padding:0!important;
-  min-height:0!important;
-  gap:3px 9px;
-}
-.native-business .legacy-root .proc-purchase-toolbar .proc-approval-banner strong {
-  white-space:nowrap;
-}
-.native-business .legacy-root .proc-purchase-toolbar .proc-approval-banner span {
-  line-height:1.4;
-}
-.native-business .legacy-root .proc-page:has(> .proc-purchase-toolbar) {
-  gap:8px!important;
-}
-.native-business .legacy-root .proc-page:has(> .proc-purchase-toolbar) > .op-table-wrap {
-  margin:0!important;
-}
-@media(max-width:760px){
-  .native-business .legacy-root .proc-page > .proc-purchase-toolbar {
-    flex-wrap:wrap!important;
-    justify-content:flex-start!important;
-    gap:8px!important;
-  }
-  .native-business .legacy-root .proc-purchase-toolbar > .proc-toolbar-status {
-    flex-basis:100%;
-  }
-  .native-business .legacy-root .proc-purchase-toolbar > .proc-toolbar-actions {
-    margin-left:0;
-  }
-}
-
-.native-business .legacy-root .proc-approval-banner {
-  display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;
-  margin:0!important;padding:5px 0!important;
-  border:0!important;background:transparent!important;
-  box-shadow:none!important;color:#738476!important;
-  font-size:11px;line-height:1.45;
-}
-.native-business .legacy-root .proc-approval-banner strong {
-  color:#3f604a;font-size:11.5px;white-space:nowrap;
-}
-.native-business .legacy-root .proc-approval-banner span {
-  color:#748477;font-size:10.5px;
-}
-.native-business .legacy-root :is(.ops-workbench,.mw-page,.proc-page) {
-  min-height:0;height:auto;
-}
-.native-business .legacy-root :is(.op-table-wrap,.mw-table-scroll,.proc-scroll) {
-  height:auto;min-height:0;max-height:none;
-}
-@media(max-width:600px){
-  .native-business .legacy-root .proc-approval-banner {align-items:flex-start}
-}
 /* One button and status system, preserving data-action and disabled states. */
 .native-business .legacy-root :is(.op-button,.mw-btn,.proc-btn,[data-slot="button"]) {
   border-radius:8px!important;font-size:11.5px;font-weight:650;
@@ -332,223 +249,6 @@
   .native-business .legacy-root :is(.op-form-grid,.mw-modal-fields,.proc-fields) {grid-template-columns:1fr}
   .native-business .legacy-root :is(.op-table,.mw-table,.proc-table) th,
   .native-business .legacy-root :is(.op-table,.mw-table,.proc-table) td {padding:9px!important}
-}
-
-/* Purchase records: toolbar and table are one content surface. No independent header box. */
-.native-business .legacy-root .proc-purchase-page {
-  display:block!important;
-  margin:0!important;
-  padding:0!important;
-  background:transparent!important;
-}
-.native-business .legacy-root .proc-purchase-list {
-  width:100%!important;
-  height:auto!important;
-  min-height:0!important;
-  margin:0!important;
-  padding:0!important;
-  background:rgba(250,253,249,.65)!important;
-  border:1px solid var(--biz-line)!important;
-  border-radius:10px!important;
-  box-shadow:none!important;
-  overflow-x:auto;
-}
-.native-business .legacy-root .proc-list-toolbar {
-  display:flex!important;
-  flex-direction:row!important;
-  align-items:center!important;
-  justify-content:space-between!important;
-  flex-wrap:nowrap!important;
-  gap:12px;
-  width:100%;
-  min-height:46px!important;
-  margin:0!important;
-  padding:7px 12px!important;
-  background:rgba(229,239,230,.38)!important;
-  border:0!important;
-  border-bottom:1px solid var(--biz-line)!important;
-  border-radius:0!important;
-  box-shadow:none!important;
-}
-.native-business .legacy-root .proc-list-status {
-  min-width:0;flex:1 1 auto;
-  display:flex;align-items:center;
-}
-.native-business .legacy-root .proc-list-actions {
-  flex:0 0 auto;
-  display:flex;align-items:center;justify-content:flex-end;
-}
-.native-business .legacy-root .proc-list-toolbar .proc-approval-banner {
-  display:flex!important;
-  align-items:center!important;
-  gap:4px 10px!important;
-  margin:0!important;padding:0!important;
-  background:transparent!important;
-  border:0!important;box-shadow:none!important;
-}
-.native-business .legacy-root .proc-purchase-list > .op-table {
-  width:100%;margin:0!important;
-  border:0!important;border-radius:0!important;
-}
-@media(max-width:760px) {
-  .native-business .legacy-root .proc-list-toolbar {
-    align-items:flex-start!important;
-    flex-wrap:wrap!important;
-    padding:8px 10px!important;
-  }
-  .native-business .legacy-root .proc-list-status {flex-basis:100%}
-  .native-business .legacy-root .proc-list-actions {margin-left:0}
-}
-
-/* Purchase order page — implemented from the agreed visual mockup.
-   This is a purchase-specific arrangement using the shared MES palette. */
-.native-business .legacy-root .proc-purchase-page {
-  display:flex!important;flex-direction:column!important;
-  align-items:stretch!important;gap:15px!important;
-  padding:0!important;margin:0!important;
-}
-.native-business .legacy-root .proc-page-title {
-  display:flex;align-items:center;gap:12px;
-  min-height:44px;padding:0 2px;margin:0 0 1px;
-  background:transparent;border:0;box-shadow:none;
-}
-.native-business .legacy-root .proc-page-title h2 {
-  margin:0!important;padding:0!important;
-  font-size:24px;font-weight:760;line-height:1.35;
-  color:#203b2b;letter-spacing:-.3px;
-}
-.native-business .legacy-root .proc-title-icon {
-  display:inline-flex;align-items:center;justify-content:center;
-  flex:0 0 30px;height:34px;color:#356d4c;
-  font-size:27px;font-weight:700;
-}
-.native-business .legacy-root .proc-purchase-page > .proc-list-toolbar {
-  display:flex!important;flex-direction:row!important;
-  align-items:center!important;justify-content:space-between!important;
-  gap:12px!important;flex-wrap:nowrap!important;
-  width:100%;min-height:61px!important;
-  margin:0!important;padding:9px 13px!important;
-  background:rgba(251,253,250,.86)!important;
-  border:1px solid rgba(108,144,115,.18)!important;
-  border-radius:13px!important;
-  box-shadow:0 5px 20px rgba(38,75,48,.045)!important;
-}
-.native-business .legacy-root .proc-purchase-page .proc-list-status {
-  min-width:0;flex:1 1 auto;display:flex;align-items:center;
-}
-.native-business .legacy-root .proc-purchase-page .proc-list-actions {
-  flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end;
-}
-.native-business .legacy-root .proc-purchase-page .proc-approval-banner {
-  display:flex!important;align-items:center!important;
-  flex-wrap:wrap!important;gap:8px 13px!important;
-  margin:0!important;padding:0!important;
-  background:transparent!important;border:0!important;
-  box-shadow:none!important;
-}
-.native-business .legacy-root .proc-purchase-page .proc-approval-banner strong {
-  display:inline-flex;align-items:center;gap:7px;
-  padding:8px 12px;
-  border-radius:9px;
-  background:rgba(226,238,229,.86);
-  border:1px solid rgba(111,151,120,.2);
-  font-size:13px;font-weight:750;line-height:1.4;
-  color:#28563d;
-}
-.native-business .legacy-root .proc-purchase-page .proc-approval-banner span {
-  font-size:11px;line-height:1.5;color:#788a7e;
-}
-.native-business .legacy-root .proc-purchase-page [data-proc-action="newPurchase"] {
-  min-height:38px!important;padding:8px 17px!important;
-  border-radius:10px!important;background:#3c7452!important;
-  color:#fff!important;font-size:12px!important;
-}
-.native-business .legacy-root .proc-purchase-page > .proc-purchase-list {
-  width:100%;margin:0!important;padding:12px!important;
-  min-height:0!important;height:auto!important;
-  background:rgba(250,252,249,.86)!important;
-  border:1px solid rgba(108,144,115,.17)!important;
-  border-radius:13px!important;
-  box-shadow:0 5px 20px rgba(38,75,48,.045)!important;
-  overflow-x:auto;
-}
-.native-business .legacy-root .proc-purchase-page .proc-purchase-list > .op-table {
-  width:100%;min-width:680px;
-  border:1px solid rgba(108,144,115,.21)!important;
-  border-collapse:separate;border-spacing:0;
-  border-radius:10px;overflow:hidden;
-}
-.native-business .legacy-root .proc-purchase-page .proc-purchase-list .op-table th {
-  background:rgba(220,234,223,.65)!important;
-  padding:13px 14px!important;font-size:12px!important;
-}
-.native-business .legacy-root .proc-purchase-page .proc-purchase-list .op-table td {
-  padding:14px!important;line-height:1.5;
-}
-@media(max-width:760px){
-  .native-business .legacy-root .proc-page-title h2 {font-size:20px}
-  .native-business .legacy-root .proc-purchase-page > .proc-list-toolbar {
-    flex-wrap:wrap!important;align-items:flex-start!important;
-    padding:10px!important;
-  }
-  .native-business .legacy-root .proc-purchase-page .proc-list-status {flex-basis:100%}
-  .native-business .legacy-root .proc-purchase-page > .proc-purchase-list {padding:8px!important}
-}
-
-/* Shared MES operations command row. Rules and actions occupy one line.
-   Eliminates the separated action header / help row used by sales orders. */
-.native-business .legacy-root .ops-workbench > .ops-command-row {
-  display:flex!important;
-  align-items:center!important;
-  justify-content:space-between!important;
-  flex-wrap:nowrap!important;
-  gap:12px!important;
-  width:100%;
-  min-height:38px!important;
-  height:auto!important;
-  margin:0!important;
-  padding:0!important;
-  background:transparent!important;
-  border:0!important;
-  box-shadow:none!important;
-}
-.native-business .legacy-root .ops-command-row > .ops-command-help {
-  flex:1 1 auto;
-  min-width:0;
-  display:flex;align-items:center;
-}
-.native-business .legacy-root .ops-command-row > .op-tools {
-  flex:0 0 auto;
-  display:flex!important;align-items:center!important;
-  justify-content:flex-end!important;
-  margin:0!important;padding:0!important;
-  gap:7px;
-}
-.native-business .legacy-root .ops-command-row .business-help {
-  width:auto;min-width:0;
-  margin:0!important;padding:0!important;
-}
-.native-business .legacy-root .ops-command-row .business-help > summary {
-  min-height:30px;padding:4px 0;
-}
-.native-business .legacy-root .ops-command-row .business-help[open] > p {
-  margin-top:3px;max-width:min(660px,80vw);
-}
-.native-business .legacy-root .ops-workbench:has(> .ops-command-row) {
-  gap:9px!important;
-}
-.native-business .legacy-root .ops-workbench:has(> .ops-command-row) > .op-table-wrap {
-  margin:0!important;min-height:0!important;height:auto!important;
-}
-@media(max-width:600px){
-  .native-business .legacy-root .ops-command-row {
-    flex-wrap:wrap!important;
-    min-height:34px!important;
-    gap:5px 10px!important;
-  }
-  .native-business .legacy-root .ops-command-row > .op-tools {
-    margin-left:auto!important;
-  }
 }
 
 /* Record-list foundation: actions belong to the table surface, never to a detached white header. */
@@ -678,4 +378,55 @@
     min-height:40px!important;
     padding:5px 8px!important;
   }
+}
+
+/* Procurement is a record-list specialization, not a separate visual system. */
+.native-business .legacy-root .proc-purchase-page {
+  display:block!important;
+  margin:0!important;
+  padding:0!important;
+  background:transparent!important;
+}
+.native-business .legacy-root .proc-purchase-page > .proc-purchase-list {
+  width:100%!important;
+  min-height:0!important;
+  height:auto!important;
+  margin:0!important;
+  padding:0!important;
+}
+.native-business .legacy-root .proc-purchase-toolbar {
+  justify-content:space-between!important;
+  gap:12px!important;
+}
+.native-business .legacy-root .proc-purchase-toolbar .proc-list-status {
+  flex:1 1 auto;
+  min-width:0;
+  display:flex;
+  align-items:center;
+}
+.native-business .legacy-root .proc-purchase-toolbar .proc-list-actions {
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+}
+.native-business .legacy-root .proc-purchase-toolbar .proc-approval-banner {
+  display:flex!important;
+  align-items:center!important;
+  flex-wrap:wrap!important;
+  gap:4px 10px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root .proc-purchase-toolbar .proc-approval-banner strong {
+  color:#3e6149!important;
+  font-size:11.5px!important;
+  white-space:nowrap;
+}
+.native-business .legacy-root .proc-purchase-toolbar .proc-approval-banner span {
+  color:var(--biz-muted)!important;
+  font-size:10.5px!important;
 }
