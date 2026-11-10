@@ -651,3 +651,23 @@
   border-top:1px solid var(--biz-line)!important;
   background:rgba(248,251,248,.45)!important;
 }
+
+.native-business .legacy-root .access-table .tag {
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:25px!important;
+  padding:4px 9px!important;
+  border-radius:7px!important;
+  border:1px solid var(--biz-line)!important;
+  background:rgba(248,251,248,.82)!important;
+  color:#6a7d6f!important;
+  font-size:10.5px!important;
+  font-weight:650!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root .access-table .tag.dark {
+  background:rgba(78,119,91,.12)!important;
+  border-color:rgba(78,119,91,.26)!important;
+  color:#3f694c!important;
+}
