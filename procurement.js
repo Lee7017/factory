@@ -48,7 +48,7 @@ function renderPurchases(){
   const progress=p.status==='待审批'?(p.createdBy?'等待其他有审批权限的员工办理':'缺少创建人记录，需先核实单据来源'): `已入库 ${money(n.stored)} / 已登记 ${money(n.registered)} / 采购 ${money(n.ordered)}`;
   return `<tr><td><strong>${esc(p.id)}</strong><small class="proc-sub">创建人：${esc(actor)}</small></td><td>${esc(p.material)}</td><td>${money(p.qty)}</td><td>${esc(p.supplier||'—')}</td><td>${tag(p.status)}<small class="proc-sub">${progress}</small></td><td><div class="proc-actions">${actions}</div></td></tr>`;
  }).join('');
- return `<div class="ops-workbench proc-page"><div class="proc-top proc-purchase-toolbar"><div class="proc-toolbar-status">${pendingInfo}</div><div class="proc-toolbar-actions">${authorized(['purchase','purchase','create'])?button('新建采购单','newPurchase','','primary'):''}</div></div><div class="op-table-wrap"><table class="op-table"><thead><tr><th>采购单</th><th>物料</th><th>采购数量</th><th>供应商</th><th>到货进度 / 状态</th><th>操作</th></tr></thead><tbody>${rows||'<tr><td colspan="6">暂无采购单</td></tr>'}</tbody></table></div></div>`;
+ return `<div class="ops-workbench proc-page proc-purchase-page"><div class="op-table-wrap proc-purchase-list"><div class="proc-list-toolbar"><div class="proc-list-status">${pendingInfo}</div><div class="proc-list-actions">${authorized(['purchase','purchase','create'])?button('新建采购单','newPurchase','','primary'):''}</div></div><table class="op-table"><thead><tr><th>采购单</th><th>物料</th><th>采购数量</th><th>供应商</th><th>到货进度 / 状态</th><th>操作</th></tr></thead><tbody>${rows||'<tr><td colspan="6">暂无采购单</td></tr>'}</tbody></table></div></div>`;
 }
 function renderIncoming(){
  const canReceive=authorized(['warehouse','warehouseOps','create']);
