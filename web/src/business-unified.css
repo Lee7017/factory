@@ -1422,3 +1422,40 @@
  .business-page-body .biz-order-panel .biz-order-stat{padding:4px 9px}
  .business-page-body .biz-order-panel .biz-order-stat strong{font-size:17px}
 }
+
+/* The original animated order/purchase/receipt journey is a viewport modal.
+   It must sit outside the scroll-clipped translucent business workspace. */
+.legacy-flow-portal-root {
+  position:static!important;
+  inset:auto!important;
+  width:0!important;
+  height:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:visible!important;
+  pointer-events:none!important;
+  background:none!important;
+  border:0!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.legacy-flow-portal-root #flow-transition-host {
+  position:fixed!important;
+  inset:0!important;
+  z-index:210!important;
+  pointer-events:auto!important;
+}
+.legacy-flow-portal-root #flow-transition-host:empty {
+  display:none!important;
+}
+.legacy-flow-portal-root .journey-dialog {
+  max-height:calc(100dvh - 32px);
+}
+.native-business .legacy-root .bottleneck-track-highlight > td {
+  background:rgba(255,214,64,.26)!important;
+}
+.native-business .legacy-root .bottleneck-track-highlight:not(tr) {
+  background:rgba(255,214,64,.20)!important;
+}
