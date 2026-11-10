@@ -32,7 +32,7 @@ try{
  browser=await chromium.launch({headless:true,args:["--no-sandbox"]})
  {
    const {page,errors}=await open([["factory-workspace-v4",current],["factory-workspace-v2",obsolete]])
-   assert.equal((await page.locator(".kpi-value").nth(1).textContent()).trim(),"01","Current v4 records must be read")
+   assert.equal((await page.locator(".kpi-value").nth(0).textContent()).trim(),"01","Current v4 records must be read")
    await page.evaluate(()=>{location.hash="#/departments/sales/orders"})
    await page.locator(".native-business .legacy-root").waitFor({state:"visible"})
    const content=await page.locator(".native-business #view").textContent()
@@ -44,7 +44,7 @@ try{
  }
  {
    const {page,errors}=await open([["factory-workspace-v2",obsolete]])
-   assert.equal((await page.locator(".kpi-value").nth(1).textContent()).trim(),
+   assert.equal((await page.locator(".kpi-value").nth(0).textContent()).trim(),
      String(seed.orders.length).padStart(2,"0"),"When v4 is missing use factory seed data, never old v2")
    await page.evaluate(()=>{location.hash="#/departments/sales/orders"})
    await page.locator(".native-business .legacy-root").waitFor({state:"visible"})
@@ -63,7 +63,7 @@ try{
    await page.reload({waitUntil:"networkidle"})
    await page.evaluate(()=>{location.hash="#/overview"})
    await page.locator(".dashboard-kpis .kpi-card").first().waitFor()
-   assert.equal((await page.locator(".kpi-value").nth(1).textContent()).trim(),String(seed.orders.length+1).padStart(2,"0"))
+   assert.equal((await page.locator(".kpi-value").nth(0).textContent()).trim(),String(seed.orders.length+1).padStart(2,"0"))
    assert.deepEqual(errors,[])
    await page.close()
  }
