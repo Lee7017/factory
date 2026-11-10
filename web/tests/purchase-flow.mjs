@@ -40,7 +40,7 @@ try {
   assert.equal(await board.locator('.proc-board-metric').count(),5,"Procurement has five purchase-specific counters")
   assert.equal(await page.locator('.native-business .biz-order-panel[data-order-panel="purchase"]').count(),0,
     "Procurement must never reuse the sales order panel")
-  assert.equal(await board.locator('[data-proc-action="newPurchase"]').count(),1)
+  assert.equal(await board.locator('[data-proc-action="newPurchase"]').count(),0,"Purchasing completes POs; only PMC creates")
   assert.equal(await board.locator('.proc-order-search').isVisible(),true)
   assert.equal(await board.locator('.proc-order-status').isVisible(),true)
   assert.equal(await board.locator('.proc-order-row').count(),1)
