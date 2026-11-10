@@ -132,6 +132,14 @@
 .journey-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 30px 14px}
 .journey-toolbar>span{background:#f1f3f6;border:1px solid #e5e9ee;border-radius:8px;padding:8px 12px;font-size:11px;color:#7a8796}
 .journey-toolbar>span b{color:#293749;margin-left:6px;font-size:12px}
+.journey-tabs{display:flex;gap:6px;margin:0 30px;padding:4px;border:1px solid #e3e8ef;border-radius:10px;background:#f1f4f8;width:max-content;max-width:calc(100% - 60px)}
+.journey-tab{appearance:none;border:1px solid transparent;border-radius:7px;background:transparent;padding:9px 20px;color:#657386;font-size:12px;font-weight:720;cursor:pointer;white-space:nowrap}
+.journey-tab:hover{color:#26394d;background:#e8edf4}
+.journey-tab.is-active{background:#fff;color:#274562;border-color:#d9e2ed;box-shadow:0 1px 4px #18283c13}
+.journey-tab:focus-visible{outline:2px solid #5184bb;outline-offset:2px}
+.journey-tab-panel{padding-bottom:18px}
+.journey-tab-panel[hidden]{display:none!important}
+.journey-tab-panel[data-journey-panel="order"] .journey-extra{max-height:none;overflow:visible}
 .journey-section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:17px 30px 10px;font-size:12px}
 .journey-section-head strong{font-weight:770;color:#283546}
 .journey-section-head small{color:#8c98a5;font-size:11px}
@@ -168,7 +176,7 @@
  .journey-dialog{width:100%;max-height:calc(100dvh - 32px);border-radius:11px}
  .journey-dialog .journey-top{padding:17px 17px 14px}
  .journey-top h2{font-size:17px;overflow-wrap:anywhere}.journey-top h2 span{font-size:14px;display:block;margin:3px 0 0}
- .journey-toolbar{margin:12px 15px}.journey-section-head{margin:14px 15px 8px;align-items:flex-start;flex-wrap:wrap}
+ .journey-toolbar{margin:12px 15px}.journey-tabs{margin:0 15px;max-width:calc(100% - 30px)}.journey-section-head{margin:14px 15px 8px;align-items:flex-start;flex-wrap:wrap}
  .journey-steps{margin:0 15px}
  .journey-card{min-height:106px;padding:10px 13px 9px}
  .journey-extra{margin-left:15px;margin-right:15px}
