@@ -37,21 +37,145 @@ let ctx=null;
 let editId=null;
 let restoreLeft=360;
 const state=()=>ops.state;
+const laneOptions={
+ "清洗": [
+  "L01 配制一线",
+  "L02 配制二线"
+ ],
+ "配制": [
+  "L01 配制一线",
+  "L02 配制二线"
+ ],
+ "半成品 QC": [
+  "QC 检验位"
+ ],
+ "调机调线": [
+  "S03-4# 瓶装线",
+  "S04 包装二线"
+ ],
+ "包装": [
+  "S03-4# 瓶装线",
+  "S04 包装二线"
+ ],
+ "成品 QC": [
+  "QC 检验位"
+ ],
+ "QA 放行": [
+  "QA 放行"
+ ]
+};
+function taskSpan(item){
+ const start=ms(item.start),duration=Number(item.duration);
+ return Number.isFinite(start)&&Number.isFinite(duration)&&duration>0?{start,end:start+duration*60000}:null;
+}
+function hasConflict(a,b){
+ const x=taskSpan(a),y=taskSpan(b);
+ return !!(x&&y&&a.lane===b.lane&&x.start<y.end&&y.start<x.end);
+}
+function dayLayout(entries,day){
+ const start=ms(stamp(day,0)),end=ms(stamp(dayShift(day,1),0));
+ const rows={},conflictIds=new Set(),conflictPairs=new Set(),invalid=[];
+ for(const lane of lanes){
+  const visible=[];
+  for(const item of entries.filter(e=>e.lane===lane.id)){
+   const span=taskSpan(item);
+   if(!span){invalid.push(item);continue}
+   if(span.start<end&&span.end>start)visible.push({item,...span});
+  }
+  visible.sort((a,b)=>a.start-b.start||a.end-b.end||String(a.item.id).localeCompare(String(b.item.id)));
+  const tracks=[],active=[],placements=[];
+  for(const x of visible){
+   for(const prev of active){
+    if(x.start<prev.end){
+     conflictIds.add(x.item.id);conflictIds.add(prev.item.id);
+     conflictPairs.add([String(x.item.id),String(prev.item.id)].sort().join('|'));
+    }
+   }
+   for(let i=active.length-1;i>=0;i--)if(active[i].end<=x.start)active.splice(i,1);
+   let track=tracks.findIndex(lastEnd=>lastEnd<=x.start);
+   if(track===-1){track=tracks.length;tracks.push(x.end)}else tracks[track]=x.end;
+   active.push(x);
+   const left=(Math.max(x.start,start)-start)/(end-start)*100;
+   const width=(Math.min(x.end,end)-Math.max(x.start,start))/(end-start)*100;
+   placements.push({item:x.item,track,left,width,span:x,continuedFromPrevious:x.start<start,continuesNext:x.end>end});
+  }
+  rows[lane.id]={placements,tracks:Math.max(1,tracks.length),height:Math.max(64,tracks.length*48+16)};
+ }
+ return {rows,conflictIds,conflictPairs:[...conflictPairs],invalid};
+}
+function nextFreeSlot(lane,notBefore,duration,occupied){
+ if(!Number.isFinite(notBefore)||!Number.isFinite(duration)||duration<=0||duration>900)return null;
+ let cursor=notBefore;
+ for(let day=0;day<366;day++){
+  const date=dayString(new Date(cursor));
+  const dayOpen=ms(stamp(date,420)),dayClose=ms(stamp(date,1320));
+  let candidate=Math.max(cursor,dayOpen);
+  const busy=occupied.filter(x=>x.lane===lane).map(taskSpan).filter(Boolean)
+   .filter(x=>x.end>candidate&&x.start<dayClose).sort((a,b)=>a.start-b.start);
+  for(const block of busy){
+   if(candidate+duration*60000<=block.start)break;
+   if(block.end>candidate)candidate=block.end;
+  }
+  if(candidate+duration*60000<=dayClose)return candidate;
+  cursor=ms(stamp(dayShift(date,1),420));
+ }
+ return null;
+}
+function allocateOrder(items,occupied,seed,keepOriginalTimes){
+ const result=[];
+ let cursor=seed;
+ for(const item of items){
+  const duration=Number(item.duration);
+  const allowed=laneOptions[item.type]||[];
+  if(!allowed.length||!Number.isFinite(duration)||duration<=0||duration>900)throw Error('自动试排无法安排 '+item.type+'：请检查工序和时长');
+  const earliest=Math.max(cursor,keepOriginalTimes&&Number.isFinite(ms(item.start))?ms(item.start):seed);
+  let choice=null;
+  for(const lane of [item.lane,...allowed].filter((v,i,a)=>allowed.includes(v)&&a.indexOf(v)===i)){
+   const start=nextFreeSlot(lane,earliest,duration,occupied.concat(result));
+   if(start!==null&&(!choice||start<choice.start))choice={lane,start};
+  }
+  if(!choice)throw Error('无法找到空闲工位：'+item.type);
+  result.push({...item,lane:choice.lane,start:dayString(new Date(choice.start))+'T'+pad(new Date(choice.start).getHours())+':'+pad(new Date(choice.start).getMinutes())});
+  cursor=choice.start+duration*60000;
+ }
+ return result;
+}
+function optimizedPlan(stateData,orderIds){
+ const eligible=new Set(orderIds);
+ const occupied=stateData.gantt.filter(x=>!eligible.has(x.orderId));
+ const draftOrders=orderIds.map(id=>({
+  id,items:stateData.gantt.filter(x=>x.orderId===id).sort((a,b)=>stages.indexOf(a.type)-stages.indexOf(b.type))
+ })).filter(x=>x.items.length).sort((a,b)=>{
+  const min=items=>Math.min(...items.map(x=>ms(x.start)).filter(Number.isFinite));
+  return min(a.items)-min(b.items)||a.id.localeCompare(b.id);
+ });
+ const proposed=[];
+ for(const o of draftOrders){
+  const seed=Math.min(...o.items.map(x=>ms(x.start)).filter(Number.isFinite));
+  proposed.push(...allocateOrder(o.items,occupied.concat(proposed),Number.isFinite(seed)?seed:ms(stamp(dayString(new Date()),420)),true));
+ }
+ const byId=new Map(proposed.map(x=>[x.id,x]));
+ const changes=stateData.gantt.filter(x=>byId.has(x.id)&&
+  (x.start!==byId.get(x.id).start||x.lane!==byId.get(x.id).lane)).map(x=>({before:x,after:byId.get(x.id)}));
+ return {changes,entries:stateData.gantt.map(x=>byId.get(x.id)||x)};
+}
+
 function ensure(){
  const s=state();if(!s)return;
- s.gantt??=[];
- s.ganttDay??=dayString(new Date());
- const orders=ctx?.data?.orders||[];
- for(const order of orders){
-   if(s.gantt.some(x=>x.orderId===order.id))continue;
-   const orderIdx=orders.indexOf(order);
-   const day=dayShift(s.ganttDay,orderIdx);
-   defaults.forEach(([type,lane,start,duration],i)=>{
-     s.gantt.push({id:`G-${order.id}-${i+1}`,orderId:order.id,type,lane,
-       start:stamp(day,start),duration,source:'订单排程'});
-   });
+ s.gantt??=[];s.ganttDay??=dayString(new Date());
+ let changed=false;
+ for(const order of ctx?.data?.orders||[]){
+  if(s.flows?.[order.id]?.stage==='delivered')continue;
+  if(s.gantt.some(x=>x.orderId===order.id))continue;
+  const day=dayString(new Date());
+  const jobs=defaults.map(([type,lane,start,duration],i)=>({
+   id:'G-'+order.id+'-'+(i+1),orderId:order.id,type,lane,
+   start:stamp(day,start),duration,source:'自动试排'
+  }));
+  try{s.gantt.push(...allocateOrder(jobs,s.gantt,ms(stamp(day,420)),false));changed=true}
+  catch(error){console.warn('订单自动排程未完成',order.id,error)}
  }
- ctx?.save?.();
+ if(changed)ctx?.save?.();
 }
 function status(entry){
  const flow=state().flows[entry.orderId]?.stage||'draft';
