@@ -9,6 +9,7 @@ import {
   useFactoryState, readWorkspace, updateWorkspace, getTodos, todoLane, type Employee, type Todo
 } from "@/factory-state"
 import { NativeBusiness } from "@/business/NativeBusiness"
+import { businessFamily } from "@/business/layout"
 import { LeavePage } from "@/business/LeavePage"
 import { EmployeesPage } from "@/business/EmployeesPage"
 import { SkillsPage } from "@/business/SkillsPage"
@@ -389,11 +390,12 @@ export default function App() {
             currentDept&&(!currentFeature||!validFeature)?
               <DepartmentPage key={currentDept.id} dept={currentDept} staff={staff} employee={employee}
                 workspace={workspace} can={can} onSelect={navigate} onRefresh={refresh}/>
-              :currentDept&&currentFeature?<div>
-                <div className="mb-4">
+              :currentDept&&currentFeature?<section className={`business-page-frame business-family-${businessFamily(currentFeature)}`} data-business-family={businessFamily(currentFeature)}>
+                <header className="business-page-heading">
                   <h1 className="page-title">{FEATURE_NAMES[currentFeature]??currentFeature}</h1>
                   <p className="page-subtitle">{FEATURE_HINTS[currentFeature]??currentDept.description}</p>
-                </div>
+                </header>
+                <div className="business-page-body">
                 {can(currentDept.id,currentFeature)?
                   currentFeature==="leave"||currentFeature==="leaveApproval"?
                     <LeavePage key={currentFeature} feature={currentFeature} workspace={workspace}
@@ -410,7 +412,8 @@ export default function App() {
                     <p className="text-xs text-muted-foreground">请在员工权限矩阵中配置相应岗位或个人权限。</p>
                     <Button variant="outline" size="sm" className="w-fit" onClick={()=>navigate(`#/departments/${currentDept.id}`)}>返回部门</Button>
                   </Card>}
-              </div>:null}
+                </div>
+              </section>:null}
           <Footer/>
         </main>
       </div>
