@@ -520,3 +520,18 @@
     justify-content:flex-end;
   }
 }
+
+/* Legacy gantt.css applies min-height:440px to every .ops-workbench.
+   Keep that only for planning screens; data/record pages must grow with content. */
+.business-page-frame:not(.business-family-planning) .native-business .legacy-root .ops-workbench,
+.business-page-frame:not(.business-family-planning) .native-business .legacy-root .proc-page,
+.business-page-frame:not(.business-family-planning) .native-business .legacy-root .mw-page,
+.business-page-frame:not(.business-family-planning) .native-business .legacy-root .mw-content {
+  min-height:0!important;
+  height:auto!important;
+}
+.business-page-frame:not(.business-family-planning) .native-business .legacy-root .ops-workbench,
+.business-page-frame:not(.business-family-planning) .native-business .legacy-root .proc-page,
+.business-page-frame:not(.business-family-planning) .native-business .legacy-root .mw-page {
+  align-self:flex-start!important;
+}
