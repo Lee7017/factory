@@ -120,6 +120,72 @@
 .native-business .legacy-root :is(.op-table,.mw-table,.proc-table) tbody tr:last-child td {border-bottom:0!important}
 .native-business .legacy-root :is(.op-table,.mw-table,.proc-table) tbody tr:hover td {background:rgba(225,238,227,.4)!important}
 .native-business .legacy-root :is(.op-table,.mw-table,.proc-table) strong {color:#2d4534}
+/* Content-first business areas. Help is disclosed on demand, never a huge leading card. */
+.business-page-frame,
+.business-page-body,
+.native-business,
+.native-business .legacy-root,
+.native-business .legacy-workbench,
+.native-business .legacy-root #view {
+  height:auto;min-height:0;align-self:flex-start;
+}
+.business-page-body,
+.native-business,
+.native-business .legacy-root,
+.native-business .legacy-workbench,
+.native-business .legacy-root #view {width:100%;min-width:0}
+.native-business .legacy-root .business-help {
+  display:block;max-width:100%;
+  padding:0;margin:0;
+  border:0;background:transparent;box-shadow:none;
+  font-size:11px;line-height:1.55;color:var(--biz-muted);
+}
+.native-business .legacy-root .business-help > summary {
+  display:inline-flex;align-items:center;gap:6px;
+  min-height:26px;padding:4px 2px;
+  cursor:pointer;list-style:none;
+  color:#627b69;font-size:11px;font-weight:650;
+}
+.native-business .legacy-root .business-help > summary::-webkit-details-marker {display:none}
+.native-business .legacy-root .business-help > summary::before {
+  content:"i";display:inline-grid;place-items:center;
+  width:15px;height:15px;border:1px solid #95b09c;
+  border-radius:50%;font:700 10px/1 system-ui;color:#5c8067;
+}
+.native-business .legacy-root .business-help[open] {
+  padding:0 0 8px;
+}
+.native-business .legacy-root .business-help p {
+  margin:4px 0 0;padding:9px 11px;
+  background:rgba(223,234,224,.56);
+  border-left:2px solid #89aa91;border-radius:5px;
+  line-height:1.65;
+}
+.native-business .legacy-root .proc-top {
+  padding:0!important;min-height:34px;justify-content:flex-end;
+}
+.native-business .legacy-root .proc-approval-banner {
+  display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;
+  margin:0!important;padding:5px 0!important;
+  border:0!important;background:transparent!important;
+  box-shadow:none!important;color:#738476!important;
+  font-size:11px;line-height:1.45;
+}
+.native-business .legacy-root .proc-approval-banner strong {
+  color:#3f604a;font-size:11.5px;white-space:nowrap;
+}
+.native-business .legacy-root .proc-approval-banner span {
+  color:#748477;font-size:10.5px;
+}
+.native-business .legacy-root :is(.ops-workbench,.mw-page,.proc-page) {
+  min-height:0;height:auto;
+}
+.native-business .legacy-root :is(.op-table-wrap,.mw-table-scroll,.proc-scroll) {
+  height:auto;min-height:0;max-height:none;
+}
+@media(max-width:600px){
+  .native-business .legacy-root .proc-approval-banner {align-items:flex-start}
+}
 /* One button and status system, preserving data-action and disabled states. */
 .native-business .legacy-root :is(.op-button,.mw-btn,.proc-btn,[data-slot="button"]) {
   border-radius:8px!important;font-size:11.5px;font-weight:650;
