@@ -535,3 +535,119 @@
 .business-page-frame:not(.business-family-planning) .native-business .legacy-root .mw-page {
   align-self:flex-start!important;
 }
+
+/* Permission matrix is a configuration workspace, but it must share the MES visual language. */
+.native-business .legacy-root .access-workbench {
+  gap:10px!important;
+}
+.native-business .legacy-root .access-workbench .panel {
+  background:rgba(250,252,249,.72)!important;
+  border:1px solid var(--biz-line)!important;
+  border-radius:10px!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root .access-side .access-side-head,
+.native-business .legacy-root .access-main .access-main-head {
+  padding:11px 13px!important;
+  border-bottom:1px solid var(--biz-line)!important;
+  background:rgba(222,234,223,.56)!important;
+}
+.native-business .legacy-root .access-side h2,
+.native-business .legacy-root .access-main h2 {
+  color:#35523d!important;
+  font-size:13px!important;
+  font-weight:720!important;
+}
+.native-business .legacy-root .access-main-head span,
+.native-business .legacy-root .access-field-label,
+.native-business .legacy-root .access-tools label,
+.native-business .legacy-root .access-description,
+.native-business .legacy-root .access-footer-hint {
+  color:var(--biz-muted)!important;
+}
+.native-business .legacy-root .access-side .access-content {
+  padding:12px!important;
+}
+.native-business .legacy-root .access-selected-user {
+  padding:10px 0 2px!important;
+}
+.native-business .legacy-root .access-selected-user .avatar {
+  background:#4e775b!important;
+  color:#fff!important;
+  border-radius:8px!important;
+}
+.native-business .legacy-root .access-side h3 {
+  color:#4b6651!important;
+  margin:14px 0 7px!important;
+  font-size:11.5px!important;
+}
+.native-business .legacy-root .access-assigned-list button,
+.native-business .legacy-root .access-role-options button {
+  background:rgba(245,249,245,.82)!important;
+  border-color:var(--biz-line)!important;
+  color:#415947!important;
+  border-radius:7px!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root .access-role-options button.selected,
+.native-business .legacy-root .access-table .permission-toggle.granted {
+  background:#4e775b!important;
+  border-color:#4e775b!important;
+  color:#fff!important;
+}
+.native-business .legacy-root .access-rights-count {
+  border-top-color:var(--biz-line)!important;
+  margin-top:14px!important;
+  padding:11px 0 2px!important;
+}
+.native-business .legacy-root .access-rights-count strong {
+  color:#31523b!important;
+  font-size:18px!important;
+}
+.native-business .legacy-root .access-tools {
+  padding:10px 13px!important;
+  gap:10px!important;
+  border-bottom:1px solid var(--biz-line)!important;
+  background:rgba(248,251,248,.55)!important;
+}
+.native-business .legacy-root .access-description {
+  padding:8px 13px!important;
+  background:rgba(229,239,230,.36)!important;
+  border-bottom:1px solid var(--biz-line)!important;
+  font-size:10.5px!important;
+}
+.native-business .legacy-root .access-table {
+  min-width:690px;
+  border-collapse:collapse!important;
+}
+.native-business .legacy-root .access-table th {
+  background:rgba(222,234,223,.56)!important;
+  color:#506b56!important;
+  border-color:rgba(111,145,117,.18)!important;
+}
+.native-business .legacy-root .access-table td {
+  background:rgba(250,252,249,.54)!important;
+  border-color:rgba(111,145,117,.14)!important;
+  color:#405547!important;
+}
+.native-business .legacy-root .access-table .permission-toggle {
+  min-height:27px!important;
+  border:1px solid var(--biz-line)!important;
+  border-radius:7px!important;
+  background:rgba(248,251,248,.82)!important;
+  color:#506858!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root .access-table .permission-toggle:not(:disabled):hover {
+  background:rgba(226,237,228,.9)!important;
+  color:#31523b!important;
+}
+.native-business .legacy-root .access-table .permission-toggle.granted:not(:disabled):hover {
+  background:#41684c!important;
+  color:#fff!important;
+}
+.native-business .legacy-root .access-footer-hint {
+  padding:8px 13px!important;
+  border-top:1px solid var(--biz-line)!important;
+  background:rgba(248,251,248,.45)!important;
+}
