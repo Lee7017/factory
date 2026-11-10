@@ -153,9 +153,11 @@ function workshopPage(){const t=currentTab.workshop||'request';let content='',to
 }
 function warehousePage(){const t=currentTab.warehouseOps||'batches';let content='',tools='';
  if(t==='batches'){
- tools=btn('登记批次','form:batch','','primary');
- const summary=`<div class="mw-stock-snapshot">${snapshot.map(([name,batches,sum])=>`<div class="mw-snapshot"><span>${esc(name)}</span><strong>${esc(batches)}<small>批</small></strong><div>合计 ${esc(sum)}</div><small>近效期 0 · 冻结 0</small></div>`).join('')}</div><div class="mw-data-note">以上为提供的汇总快照，未包含明细、计量单位及流水，不参与下面的可发库存计算。</div>`;
- content=head('库存分组汇总','原辅料、品牌包材、非品牌包材、半成品、成品')+summary+head('实际批次台账','支持质量状态、效期预警和冻结')+grid(['批次号','物料','分类','数量','入库日期','有效期','质量状态','操作'],S.batches.map(b=>row([esc(b.id),esc(b.material),esc(b.group),money(b.qty)+' '+esc(b.unit),esc(b.received),esc(b.expiry||'—'),status(isExpired(b)?'已过期':isNear(b)?'近效期 · '+b.quality:b.quality),btn(b.quality==='冻结'?'解冻':'冻结','toggleFreeze',b.id)])));
+ const action=btn('登记批次','form:batch','','primary');
+ const summary=`<section class="mw-stock-overview"><div class="mw-stock-overview-head"><strong>库存分组汇总</strong><span>原辅料、品牌包材、非品牌包材、半成品、成品</span></div><div class="mw-stock-snapshot">${snapshot.map(([name,batches,sum])=>`<div class="mw-snapshot"><span>${esc(name)}</span><strong>${esc(batches)}<small>批</small></strong><div>${esc(sum)}</div><small>近效期 0 · 冻结 0</small></div>`).join('')}</div></section>`;
+ const ledger=`<section class="mw-ledger-panel"><div class="mw-ledger-head"><div><strong>实际批次台账</strong><span>质量状态 · 效期预警 · 冻结管理</span></div><div class="mw-actions">${action}</div></div>${grid(['批次号','物料','分类','数量','入库日期','有效期','质量状态','操作'],S.batches.map(b=>row([esc(b.id),esc(b.material),esc(b.group),money(b.qty)+' '+esc(b.unit),esc(b.received),esc(b.expiry||'—'),status(isExpired(b)?'已过期':isNear(b)?'近效期 · '+b.quality:b.quality),btn(b.quality==='冻结'?'解冻':'冻结','toggleFreeze',b.id)])),'暂无批次记录')}`;
+ content=summary+ledger;
+ tools='';
  }else if(t==='incoming'){
   const page=window.FactoryProcurement.renderIncoming();tools=page.tools;content=page.content;
  }else if(t==='pick'){
