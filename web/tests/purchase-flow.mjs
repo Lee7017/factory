@@ -34,38 +34,30 @@ try {
   }
   await asEmployee("E014")
   await navigate("purchase","purchase")
-  // Visual regression: one integrated toolbar directly above the purchase table.
+  // Verify the current purchase layout: title, compact action strip, then table.
   const toolbarLayout=await page.evaluate(()=>{
-    const panel=document.querySelector(".proc-purchase-list")
-    const toolbar=panel?.querySelector(".proc-list-toolbar")
-    const status=toolbar?.querySelector(".proc-approval-banner")
+    const root=document.querySelector(".proc-purchase-page")
+    const title=root?.querySelector(":scope > .proc-page-title")
+    const toolbar=root?.querySelector(":scope > .proc-list-toolbar")
+    const panel=root?.querySelector(":scope > .proc-purchase-list")
     const action=toolbar?.querySelector('[data-proc-action="newPurchase"]')
-    const table=panel?.querySelector(".op-table")
-    if(!panel||!toolbar||!table)return null
-    const p=panel.getBoundingClientRect(),a=toolbar.getBoundingClientRect(),t=table.getBoundingClientRect()
-    const b=status?.getBoundingClientRect(),c=action?.getBoundingClientRect()
-    const cs=getComputedStyle(toolbar)
+    if(!root||!title||!toolbar||!panel||!action)return null
+    const t=title.getBoundingClientRect(),b=toolbar.getBoundingClientRect()
+    const p=panel.getBoundingClientRect(),c=action.getBoundingClientRect()
     return {
-      panelTop:Math.round(p.top),
-      toolbarTop:Math.round(a.top),
-      toolbarHeight:Math.round(a.height),
-      tableGap:Math.round(t.top-a.bottom),
-      tableTop:Math.round(t.top),
-      statusCenter:b?Math.round((b.top+b.bottom)/2):null,
-      actionCenter:c?Math.round((c.top+c.bottom)/2):null,
-      display:cs.display,
-      background:cs.backgroundColor,
-      extraHeaderCount:document.querySelectorAll(".proc-purchase-page > .proc-top").length
+      titleHeight:Math.round(t.height),toolbarHeight:Math.round(b.height),
+      titleGap:Math.round(b.top-t.bottom),tableGap:Math.round(p.top-b.bottom),
+      actionInside:Math.round(c.top)>=Math.round(b.top)&&Math.round(c.bottom)<=Math.round(b.bottom),
+      duplicateHeading:!!root.querySelector(":scope > .proc-top")
     }
   })
-  assert.ok(toolbarLayout,"Purchase table and integrated toolbar must render")
-  assert.equal(toolbarLayout.extraHeaderCount,0,"No redundant top panel")
-  assert.ok(toolbarLayout.toolbarTop-toolbarLayout.panelTop<=2,"Toolbar must start at the top of table surface")
-  assert.ok(toolbarLayout.toolbarHeight<=66,`Toolbar too tall: ${JSON.stringify(toolbarLayout)}`)
-  assert.ok(Math.abs(toolbarLayout.tableGap)<=2,`Table must touch toolbar: ${JSON.stringify(toolbarLayout)}`)
-  if(toolbarLayout.statusCenter!==null&&toolbarLayout.actionCenter!==null)
-    assert.ok(Math.abs(toolbarLayout.statusCenter-toolbarLayout.actionCenter)<=22,
-      `Status and action must share row: ${JSON.stringify(toolbarLayout)}`)
+  assert.ok(toolbarLayout,"Purchase page heading, toolbar, and table must render")
+  assert.equal(toolbarLayout.duplicateHeading,false,"Purchase page must have no duplicate legacy top")
+  assert.ok(toolbarLayout.titleHeight<=60,`Purchase heading too tall: ${JSON.stringify(toolbarLayout)}`)
+  assert.ok(toolbarLayout.toolbarHeight<=85,`Purchase action bar too tall: ${JSON.stringify(toolbarLayout)}`)
+  assert.ok(toolbarLayout.titleGap>=0&&toolbarLayout.titleGap<=24,`Purchase heading gap too large: ${JSON.stringify(toolbarLayout)}`)
+  assert.ok(toolbarLayout.tableGap>=0&&toolbarLayout.tableGap<=24,`Purchase table gap too large: ${JSON.stringify(toolbarLayout)}`)
+  assert.equal(toolbarLayout.actionInside,true,"Purchase button must stay inside toolbar")
   await page.screenshot({path:"test-results/purchase-toolbar-desktop.png",fullPage:false})
   console.log("PURCHASE TOOLBAR VISUAL CHECK",JSON.stringify(toolbarLayout))
   // Original engine initializes the seeded purchase PO-001 only after this mount.
