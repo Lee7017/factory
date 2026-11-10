@@ -43,7 +43,7 @@ try {
           return Boolean(view?.textContent?.trim().length>15)
         },null,{timeout:12000})
       }
-      const heading=await page.locator(".page-title").textContent()
+      const heading=await page.locator(".crumb-current").textContent()
       if(!heading?.trim())missing.push(`${name}: ${feature} title missing`)
       if(await page.locator("iframe").count())missing.push(`${name}: ${feature} still uses iframe`)
       const appearance=await page.evaluate(()=>{
@@ -54,16 +54,19 @@ try {
         return {
           family:frame.getAttribute("data-business-family"),
           frames:document.querySelectorAll(".business-page-frame").length,
-          title:frame.querySelector(".business-page-heading .page-title")?.textContent?.trim(),
+          title:document.querySelector(".crumb-current")?.textContent?.trim(),
+          infoButton:!!document.querySelector(`button[aria-label^="查看"][aria-label$="介绍"]`),
+          redundantTitle:!!frame.querySelector(".business-page-heading"),
           borderRadius:style.borderRadius,
           width:Math.round(rect.width),
           viewport:window.innerWidth,
           horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth+4
         }
       })
-      if(!appearance||appearance.frames!==1||!appearance.family||!appearance.title)
+      if(!appearance||appearance.frames!==1||!appearance.family||!appearance.title||appearance.redundantTitle)
         missing.push(`${name}: ${feature} missing shared business frame`)
       if(appearance?.horizontalOverflow)missing.push(`${name}: ${feature} causes horizontal page overflow`)
+      if(!appearance?.infoButton)missing.push(`${name}: ${feature} missing topbar info button`)
       visualAudit.push({department:dept,feature,...appearance})
       await page.screenshot({
         path:`test-results/business-${dept}-${feature}.jpg`,
@@ -113,7 +116,7 @@ try {
     selectedOption:document.querySelector("#perm-employee")?.value,
     selectedEmployee:window.FactoryAccess?.selectedEmployee,
     selectedText:document.querySelector(".access-selected-user strong")?.textContent,
-    title:document.querySelector(".page-title")?.textContent
+    title:document.querySelector(".crumb-current")?.textContent
   }))))
   await page.waitForFunction(()=>document.querySelector(".access-selected-user strong")?.textContent==="孙浩",null,{timeout:6000})
   assert.equal(await page.locator(".access-selected-user strong").textContent(),"孙浩",
