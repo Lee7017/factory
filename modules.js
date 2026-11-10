@@ -134,7 +134,7 @@ function qualityPage(){const t=currentTab.qaQc||'decision';let content='',toolba
  }else{
  content=note('未经放行或冻结的批次不能参与正常发料')+grid(['批次号','物料','数量','有效期','质量状态','操作'],S.batches.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.material),money(r.qty)+' '+esc(r.unit||''),esc(r.expiry||'—'),status(r.quality),btn(r.quality==='冻结'?'解除冻结':'冻结批次','toggleFreeze',r.id)])));
  }
- const count=cards([['报检判定',S.inspections.filter(r=>r.status==='待判定').length,'待处理'],['抽检',S.samples.filter(r=>r.status==='待判定').length,'待处理'],['清洗报检',S.cleanReports.filter(r=>r.status==='待判定').length,'待处理'],['不合格品处置',S.ncr.filter(r=>r.status==='待处置').length,'待处理'],['质量库存',S.batches.filter(b=>b.quality==='冻结').length,'冻结批次']]);
+ const count=t==='decision'?cards([['报检判定',S.inspections.filter(r=>r.status==='待判定').length,'待处理'],['抽检',S.samples.filter(r=>r.status==='待判定').length,'待处理'],['清洗报检',S.cleanReports.filter(r=>r.status==='待判定').length,'待处理'],['不合格品处置',S.ncr.filter(r=>r.status==='待处置').length,'待处理'],['质量库存',S.batches.filter(b=>b.quality==='冻结').length,'冻结批次']]):'';
  return wrap('qaQc','质量检验及审批','报检判定、抽检、清洗报检、不合格处置与质量库存',toolbar,content,count);
 }
 function workshopPage(){const t=currentTab.workshop||'request';let content='',tools='';
@@ -246,7 +246,7 @@ function settingsPage(){const t=currentTab.settings||'org';let content='',tools=
  content=note('岗位权限与个人追加权限取并集，一个员工可兼任多个岗位')+`<div class="mw-tiles">${navButton('员工权限矩阵','it','permissions')}${navButton('员工档案','it','employees')}${navButton('我的工时','hr','hours')}</div>`;
  }else if(t==='process'){
  const rows=[['cleanQC','清洗必须报检合格才能复核完成'],['requireDoubleSign','车间领料必须仓库签发与车间签收'],['fifo','仓库发料按最早合格批次先出'],['requireSkill','排班须核对岗位技能等级'],['requireLeave','排班须核对已批准请假']];
- content=note('修改需流程与工艺设置权限；流程规则影响对应业务校验')+`<div class="mw-rule-list">${rows.map(([k,label])=>`<div class="mw-rule"><span>${esc(label)}</span>${btn(S.rules[k]?'已启用':'已停用','rule',k,S.rules[k]?'primary':'')}</div>`).join('')}</div>`+`<div class="mw-tiles">${navButton('工艺模板','it','templates')}${navButton('操作标准卡','it','sop')}${navButton('生产排程','pmc','schedule')}</div>`;
+ content=`<div class="mw-rule-list">${rows.map(([k,label])=>`<div class="mw-rule"><span>${esc(label)}</span>${btn(S.rules[k]?'已启用':'已停用','rule',k,S.rules[k]?'primary':'')}</div>`).join('')}</div>`;
  }else if(t==='product'){
  const productCount=ops().products?.length||0,bomCount=ops().bom?.length||0,batchCount=S.batches.length;
  content=grid(['配置对象','管理范围','当前数据','操作'],[
