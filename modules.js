@@ -40,8 +40,13 @@ function td(value){return `<td>${value}</td>`}
 function grid(columns,rows,empty='暂无记录，请通过上方操作按钮新增'){return `<div class="mw-table-scroll"><table class="mw-table"><thead><tr>${columns.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td colspan="${columns.length}" class="mw-empty">${esc(empty)}</td></tr>`}</tbody></table></div>`}
 function row(values){return `<tr>${values.map(td).join('')}</tr>`}
 function wrap(page,title,intro,toolbar,content,stats=''){
- const commandbar=toolbar?`<div class="mw-commandbar"><div class="mw-actions">${toolbar}</div></div>`:'';
- return `<div class="mw-page" data-module-page="${esc(activeFeatureRoute||page)}">${commandbar}${stats}<section class="mw-content">${content}</section></div>`;
+ let body=content;
+ if(toolbar&&body.includes('<div class="mw-table-scroll">')){
+  body=body.replace('<div class="mw-table-scroll">',`<div class="mw-table-scroll"><div class="mw-table-toolbar"><div class="mw-actions">${toolbar}</div></div>`);
+ }else if(toolbar){
+  body=`<div class="mw-inline-toolbar"><div class="mw-actions">${toolbar}</div></div>${body}`;
+ }
+ return `<div class="mw-page" data-module-page="${esc(activeFeatureRoute||page)}">${stats}<section class="mw-content">${body}</section></div>`;
 }
 function cards(rows){return `<div class="mw-metrics">${rows.map(([label,value,sub])=>`<div class="mw-metric"><span>${esc(label)}</span><strong>${esc(value)}</strong><small>${esc(sub||'')}</small></div>`).join('')}</div>`}
 function head(label,extra=''){return `<div class="mw-section-head"><h3>${esc(label)}</h3><span>${esc(extra)}</span></div>`}
