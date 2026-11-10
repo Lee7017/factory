@@ -399,3 +399,98 @@
   .native-business .legacy-root .proc-list-status {flex-basis:100%}
   .native-business .legacy-root .proc-list-actions {margin-left:0}
 }
+
+/* Purchase order page — implemented from the agreed visual mockup.
+   This is a purchase-specific arrangement using the shared MES palette. */
+.native-business .legacy-root .proc-purchase-page {
+  display:flex!important;flex-direction:column!important;
+  align-items:stretch!important;gap:15px!important;
+  padding:0!important;margin:0!important;
+}
+.native-business .legacy-root .proc-page-title {
+  display:flex;align-items:center;gap:12px;
+  min-height:44px;padding:0 2px;margin:0 0 1px;
+  background:transparent;border:0;box-shadow:none;
+}
+.native-business .legacy-root .proc-page-title h2 {
+  margin:0!important;padding:0!important;
+  font-size:24px;font-weight:760;line-height:1.35;
+  color:#203b2b;letter-spacing:-.3px;
+}
+.native-business .legacy-root .proc-title-icon {
+  display:inline-flex;align-items:center;justify-content:center;
+  flex:0 0 30px;height:34px;color:#356d4c;
+  font-size:27px;font-weight:700;
+}
+.native-business .legacy-root .proc-purchase-page > .proc-list-toolbar {
+  display:flex!important;flex-direction:row!important;
+  align-items:center!important;justify-content:space-between!important;
+  gap:12px!important;flex-wrap:nowrap!important;
+  width:100%;min-height:61px!important;
+  margin:0!important;padding:9px 13px!important;
+  background:rgba(251,253,250,.86)!important;
+  border:1px solid rgba(108,144,115,.18)!important;
+  border-radius:13px!important;
+  box-shadow:0 5px 20px rgba(38,75,48,.045)!important;
+}
+.native-business .legacy-root .proc-purchase-page .proc-list-status {
+  min-width:0;flex:1 1 auto;display:flex;align-items:center;
+}
+.native-business .legacy-root .proc-purchase-page .proc-list-actions {
+  flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end;
+}
+.native-business .legacy-root .proc-purchase-page .proc-approval-banner {
+  display:flex!important;align-items:center!important;
+  flex-wrap:wrap!important;gap:8px 13px!important;
+  margin:0!important;padding:0!important;
+  background:transparent!important;border:0!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root .proc-purchase-page .proc-approval-banner strong {
+  display:inline-flex;align-items:center;gap:7px;
+  padding:8px 12px;
+  border-radius:9px;
+  background:rgba(226,238,229,.86);
+  border:1px solid rgba(111,151,120,.2);
+  font-size:13px;font-weight:750;line-height:1.4;
+  color:#28563d;
+}
+.native-business .legacy-root .proc-purchase-page .proc-approval-banner span {
+  font-size:11px;line-height:1.5;color:#788a7e;
+}
+.native-business .legacy-root .proc-purchase-page [data-proc-action="newPurchase"] {
+  min-height:38px!important;padding:8px 17px!important;
+  border-radius:10px!important;background:#3c7452!important;
+  color:#fff!important;font-size:12px!important;
+}
+.native-business .legacy-root .proc-purchase-page > .proc-purchase-list {
+  width:100%;margin:0!important;padding:12px!important;
+  min-height:0!important;height:auto!important;
+  background:rgba(250,252,249,.86)!important;
+  border:1px solid rgba(108,144,115,.17)!important;
+  border-radius:13px!important;
+  box-shadow:0 5px 20px rgba(38,75,48,.045)!important;
+  overflow-x:auto;
+}
+.native-business .legacy-root .proc-purchase-page .proc-purchase-list > .op-table {
+  width:100%;min-width:680px;
+  border:1px solid rgba(108,144,115,.21)!important;
+  border-collapse:separate;border-spacing:0;
+  border-radius:10px;overflow:hidden;
+}
+.native-business .legacy-root .proc-purchase-page .proc-purchase-list .op-table th {
+  background:rgba(220,234,223,.65)!important;
+  padding:13px 14px!important;font-size:12px!important;
+}
+.native-business .legacy-root .proc-purchase-page .proc-purchase-list .op-table td {
+  padding:14px!important;line-height:1.5;
+}
+@media(max-width:760px){
+  .native-business .legacy-root .proc-page-title h2 {font-size:20px}
+  .native-business .legacy-root .proc-purchase-page > .proc-list-toolbar {
+    flex-wrap:wrap!important;align-items:flex-start!important;
+    padding:10px!important;
+  }
+  .native-business .legacy-root .proc-purchase-page .proc-list-status {flex-basis:100%}
+  .native-business .legacy-root .proc-purchase-page > .proc-purchase-list {padding:8px!important}
+}
