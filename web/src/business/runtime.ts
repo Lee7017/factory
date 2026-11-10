@@ -58,6 +58,7 @@ export type BusinessRuntime={
   click:(element:HTMLElement)=>void
   change:(id:string,value:string)=>void
   submit:(event:Event)=>boolean
+  consumeTracking:(dept:string,feature:string)=>string|null
 }
 type Callbacks={
   render:()=>void
@@ -66,6 +67,24 @@ type Callbacks={
   refresh:()=>void
 }
 let singleton:(BusinessRuntime & {callbacks:Callbacks})|undefined
+// Preserve original trackBottleneck semantics across an asynchronous React route mount.
+let pendingTracking:{dept:string;feature:string;ref:string}|null=null
+
+function markTrackedRow(root:ParentNode,ref:string):boolean {
+  const needle=ref.trim()
+  if(!needle)return false
+  const matches=Array.from(root.querySelectorAll<HTMLElement>(
+    "tbody tr,.dept-todo-card,.op-quality-link"
+  ))
+  const found=matches.find(node=>node.textContent?.includes(needle))
+  if(!found)return false
+  found.classList.remove("bottleneck-track-highlight")
+  void found.offsetWidth
+  found.classList.add("bottleneck-track-highlight")
+  found.scrollIntoView({block:"center",behavior:"smooth"})
+  window.setTimeout(()=>found.classList.remove("bottleneck-track-highlight"),3200)
+  return true
+}
 
 export async function getBusinessRuntime():Promise<BusinessRuntime> {
   await ready()
@@ -136,6 +155,12 @@ export async function getBusinessRuntime():Promise<BusinessRuntime> {
       if(modules.submitForm?.(event))return true
       if(ops.submitForm?.(event))return true
       return false
+    },
+    consumeTracking(dept:string,feature:string){
+      if(!pendingTracking||pendingTracking.dept!==dept||pendingTracking.feature!==feature)return null
+      const ref=pendingTracking.ref
+      pendingTracking=null
+      return ref
     }
   }
   const engine=runtime as unknown as BusinessRuntime & {callbacks:Callbacks}
@@ -145,8 +170,24 @@ export async function getBusinessRuntime():Promise<BusinessRuntime> {
   runtimeWindow.FactoryGantt?.init(context)
   modules.init?.(context)
   runtimeWindow.FactoryNavigation={
-    trackBottleneck:(target)=>{
-      if(target.dept&&target.feature)engine.callbacks.navigate(`#/departments/${target.dept}/${target.feature}`)
+    trackBottleneck:(target,ref="")=>{
+      if(!target?.dept||!target?.feature)return
+      const needle=String(ref||target.record||"").trim()
+      if(!engine.access.has(target.dept,target.feature,"view")){
+        pendingTracking=null
+        engine.callbacks.navigate(`#/departments/${target.dept}`)
+        engine.callbacks.notify("当前员工没有该业务环节的查看权限")
+        return
+      }
+      if(engine.activeDept===target.dept&&engine.activeFeature===target.feature){
+        if(needle)window.requestAnimationFrame(()=>{
+          const root=document.querySelector(".native-business .legacy-root")
+          if(root)markTrackedRow(root,needle)
+        })
+        return
+      }
+      pendingTracking={dept:target.dept,feature:target.feature,ref:needle}
+      engine.callbacks.navigate(`#/departments/${target.dept}/${target.feature}`)
     }
   }
   return engine
