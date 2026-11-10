@@ -1,7 +1,7 @@
 import { useMemo, useState, type CSSProperties } from "react"
 import {
   AlertTriangle, ArrowRight, Boxes, ChevronLeft, ChevronRight,
-  ClipboardList, Clock3, Factory, Info, ListTodo, RotateCcw, Sparkles
+  ClipboardList, Factory, Info, ListTodo, Sparkles
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -272,7 +272,7 @@ function AgentCenter({onSelect}:{onSelect:Props["onSelect"]}){
     </Dialog>
   </section>
 }
-export function OverviewDashboard({workspace,onSelect,onRefresh}:Props){
+export function OverviewDashboard({workspace,onSelect}:Props){
   const today=dayString(new Date())
   const metrics=useMemo(()=>overviewMetrics(workspace,today),[workspace,today])
   const kpis=[
@@ -291,12 +291,6 @@ export function OverviewDashboard({workspace,onSelect,onRefresh}:Props){
       note:"按 BOM 与当前现存库存估算",route:"#/departments/pmc/kitting"}
   ]
   return <div className="operations-dashboard">
-    <header className="overview-page-head" aria-label="驾驶舱操作栏">
-      <div className="overview-live-source">
-        <span><Clock3 size={13}/> 当前浏览器业务记录</span>
-        <Button variant="outline" size="sm" onClick={onRefresh} aria-label="刷新运营数据"><RotateCcw size={13}/>刷新</Button>
-      </div>
-    </header>
     <section className="dashboard-kpis overview-kpi-grid" aria-label="核心运营指标">
       {kpis.map(item=><Card key={item.id} className={`glass-panel kpi-card overview-kpi-card metric-${item.id}`}>
         <button type="button" onClick={()=>onSelect(item.route)} aria-label={`查看${item.label}详情`}>
