@@ -594,3 +594,88 @@
 .native-business .legacy-root .ops-workbench > .business-help {
   display:none!important;
 }
+
+/* Shared module foundation: warehouse / quality / workshop / shifts / SOP / settings.
+   Primary actions live with the data they affect, never in a detached white command bar. */
+.native-business .legacy-root .mw-page > .mw-commandbar {
+  display:none!important;
+}
+.native-business .legacy-root .mw-table-scroll > .mw-table-toolbar {
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  width:100%;
+  min-height:42px!important;
+  height:auto!important;
+  margin:0!important;
+  padding:5px 10px!important;
+  background:rgba(222,234,223,.56)!important;
+  border:0!important;
+  border-bottom:1px solid var(--biz-line)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root .mw-table-scroll > .mw-table-toolbar .mw-actions {
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  flex-wrap:wrap!important;
+  gap:7px!important;
+  margin:0!important;
+  padding:0!important;
+}
+.native-business .legacy-root .mw-table-scroll > .mw-table-toolbar + .mw-table {
+  border-top:0!important;
+  border-top-left-radius:0!important;
+  border-top-right-radius:0!important;
+}
+.native-business .legacy-root .mw-inline-toolbar {
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  min-height:40px!important;
+  margin:0 0 8px!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root .mw-inline-toolbar .mw-actions {
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:7px!important;
+  margin:0!important;
+  padding:0!important;
+}
+.native-business .legacy-root .mw-content {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.native-business .legacy-root .mw-content > .mw-section-head {
+  margin:4px 0 0!important;
+}
+.native-business .legacy-root .mw-content > .mw-section-head:first-child {
+  margin-top:0!important;
+}
+/* Warehouse snapshots are one compact summary strip, not five independent cards. */
+.native-business .legacy-root [data-module-page="warehouseOps"] .mw-stock-snapshot {
+  margin:0!important;
+  border-radius:9px!important;
+}
+.native-business .legacy-root [data-module-page="warehouseOps"] .mw-snapshot {
+  min-height:70px!important;
+  padding:9px 13px!important;
+}
+.native-business .legacy-root [data-module-page="warehouseOps"] .mw-data-note {
+  padding:0!important;
+  margin:-2px 0 2px!important;
+  font-size:10.5px!important;
+}
+@media(max-width:760px){
+  .native-business .legacy-root .mw-table-scroll > .mw-table-toolbar {
+    min-height:40px!important;
+    padding:5px 8px!important;
+  }
+}
