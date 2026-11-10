@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react"
 import {
-  ArrowRight, Bell, Check, CheckCheck, ChevronDown, ChevronRight, CircleHelp,
+  ArrowRight, Bell, Check, CheckCheck, ChevronDown, ChevronRight,
   Factory, Info, LockKeyhole, Menu, MessageCircle, Pencil, Search
 } from "lucide-react"
 import { DEPARTMENTS, FEATURE_HINTS, FEATURE_NAMES, getDepartment, type Department } from "@/catalog"
@@ -16,8 +16,7 @@ import { OverviewDashboard } from "@/OverviewDashboard"
 import { SVG_SPRITE } from "@/generated-lucide-sprite"
 import { DataBackup } from "@/components/DataBackup"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
