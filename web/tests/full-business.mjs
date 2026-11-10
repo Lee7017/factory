@@ -232,26 +232,29 @@ try {
   await page.locator('.native-business [data-module-page="warehouseOps"]').waitFor({state:"visible",timeout:10000})
   const warehouseLayout=await page.evaluate(()=>{
     const page=document.querySelector('[data-module-page="warehouseOps"]')
-    const summary=page?.querySelector(".mw-stock-snapshot")
-    const table=page?.querySelector(".mw-table-scroll")
-    const toolbar=table?.querySelector(":scope > .mw-table-toolbar")
-    const action=toolbar?.querySelector('[data-module-action="form:batch"]')
-    if(!page||!summary||!table||!toolbar||!action)return null
-    const p=page.getBoundingClientRect(),s=summary.getBoundingClientRect()
-    const t=table.getBoundingClientRect(),b=toolbar.getBoundingClientRect(),a=action.getBoundingClientRect()
+    const overview=page?.querySelector(".mw-stock-overview")
+    const ledger=page?.querySelector(".mw-ledger-panel")
+    const head=ledger?.querySelector(":scope > .mw-ledger-head")
+    const action=head?.querySelector('[data-module-action="form:batch"]')
+    const table=ledger?.querySelector(":scope > .mw-table-scroll")
+    if(!page||!overview||!ledger||!head||!action||!table)return null
+    const o=overview.getBoundingClientRect(),l=ledger.getBoundingClientRect()
+    const h=head.getBoundingClientRect(),a=action.getBoundingClientRect(),t=table.getBoundingClientRect()
     return {
-      pageTop:Math.round(p.top),summaryTop:Math.round(s.top),
-      toolbarHeight:Math.round(b.height),
-      actionInside:a.top>=b.top-1&&a.bottom<=b.bottom+1,
-      detached:!!page.querySelector(":scope > .mw-commandbar"),
-      tableBelowSummary:t.top>=s.bottom
+      overviewHeight:Math.round(o.height),
+      headHeight:Math.round(h.height),
+      actionInside:a.top>=h.top-1&&a.bottom<=h.bottom+1,
+      tableGap:Math.round(t.top-h.bottom),
+      detached:!!page.querySelector(":scope > .mw-commandbar,.mw-section-head,.mw-data-note"),
+      ledgerBelowOverview:l.top>=o.bottom
     }
   })
-  assert.ok(warehouseLayout,"Warehouse batches must use the shared module record layout")
-  assert.equal(warehouseLayout.detached,false,"Warehouse create action must not float in a detached command area")
-  assert.equal(warehouseLayout.actionInside,true,"Register batch action must sit inside ledger toolbar")
-  assert.equal(warehouseLayout.tableBelowSummary,true,"Inventory summary must precede the actual batch ledger")
-  assert.ok(warehouseLayout.toolbarHeight<=54,`Warehouse ledger toolbar too tall: ${JSON.stringify(warehouseLayout)}`)
+  assert.ok(warehouseLayout,"Warehouse batches must render compact overview and ledger surfaces")
+  assert.equal(warehouseLayout.detached,false,"Warehouse batches must not contain detached headings, notes, or command bars")
+  assert.equal(warehouseLayout.actionInside,true,"Register batch action must sit inside ledger title bar")
+  assert.equal(warehouseLayout.ledgerBelowOverview,true,"Inventory overview must precede the actual batch ledger")
+  assert.ok(warehouseLayout.headHeight<=52,`Warehouse ledger title bar too tall: ${JSON.stringify(warehouseLayout)}`)
+  assert.ok(Math.abs(warehouseLayout.tableGap)<=2,`Warehouse table must directly follow ledger title: ${JSON.stringify(warehouseLayout)}`)
   await page.screenshot({path:"test-results/warehouse-batches-unified.png",fullPage:false})
   console.log("WAREHOUSE UNIFIED LAYOUT CHECK",JSON.stringify(warehouseLayout))
 
