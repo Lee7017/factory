@@ -32,7 +32,8 @@ const scripts=["operations.js","gantt.js","modules.js","flow-ui.js","procurement
 function loadScript(name:string):Promise<void>{
   return new Promise((resolve,reject)=>{
     const script=document.createElement("script")
-    script.src=`${import.meta.env.BASE_URL}legacy/${name}`
+    // Avoid stale browsers showing the previous flow button after a Pages deployment.
+    script.src=`${import.meta.env.BASE_URL}legacy/${name}${name==="flow-ui.js"?"?v=20261110-7ed03dc":""}`
     script.async=false
     script.onload=()=>resolve()
     script.onerror=()=>reject(new Error(`无法加载业务模块 ${name}`))

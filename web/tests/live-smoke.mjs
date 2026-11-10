@@ -56,6 +56,37 @@ try{
   assert.equal(await page.locator("iframe").count(),0,"Production business pages must not use iframe")
   assert.deepEqual(errors,[],"Published website must not throw uncaught JavaScript errors")
   await page.screenshot({path:"test-results/live-github-pages.png",fullPage:true})
+  // Real published-order modal check: a generic page screenshot cannot verify flow controls.
+  await page.evaluate(()=>{window.location.hash="#/departments/sales/orders"})
+  const orderButton=page.locator('.native-business [data-op-action="detailFlow"]').first()
+  await orderButton.waitFor({state:"visible",timeout:20000})
+  await orderButton.click()
+  const dialog=page.locator(".journey-dialog")
+  await dialog.waitFor({state:"visible",timeout:10000})
+  const currentButton=dialog.locator(".journey-card.is-current [data-flow-track]")
+  await currentButton.waitFor({state:"visible",timeout:10000})
+  await currentButton.scrollIntoViewIfNeeded()
+  await page.waitForTimeout(1900)
+  await page.screenshot({path:"test-results/live-current-step-dialog.png"})
+  await currentButton.screenshot({path:"test-results/live-current-step-button.png"})
+  assert.equal((await currentButton.textContent())?.trim(),"跟踪当前环节 →",
+    "Running card has one combined '跟踪当前环节' action")
+  assert.equal(await dialog.locator(".journey-card.is-current .journey-state").count(),0,
+    "Current-step badge must not duplicate tracking button")
+  assert.equal(await dialog.locator('[data-flow-track]').count(),1,
+    "There must be one tracking action in this journey")
+  assert.equal(await dialog.getByText("跟踪卡点",{exact:false}).count(),0,
+    "Outdated tracking button must be absent")
+  await page.setViewportSize({width:390,height:844})
+  await currentButton.scrollIntoViewIfNeeded()
+  await page.screenshot({path:"test-results/live-current-step-mobile.png"})
+  await page.setViewportSize({width:1440,height:900})
+  await currentButton.click()
+  await dialog.waitFor({state:"detached",timeout:10000})
+  assert.match(new URL(page.url()).hash,/^#\\/departments\\/[a-z]+(?:\\/[a-zA-Z]+)?$/,
+    "Tracking action navigates to a department route")
+  console.log("PASS: live current-step button visible on desktop/mobile, no duplicate badge, and click navigates.")
+
   console.log("PASS: published GitHub Pages, Vite assets, React nav, Lucide, shadcn roster and native MES business.")
 }catch(error){failed=true;console.error(error)}
 finally{await browser?.close()}
