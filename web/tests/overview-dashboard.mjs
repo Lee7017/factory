@@ -42,7 +42,7 @@ try{
   page.on("pageerror",err=>errors.push(err.stack??err.message))
   await page.addInitScript(value=>localStorage.setItem("factory-workspace-v4",JSON.stringify(value)),workspace)
   await page.goto(base,{waitUntil:"networkidle"})
-  await page.getByRole("heading",{name:"生产运营驾驶舱"}).waitFor()
+  await page.locator(".overview-kpi-grid").waitFor()
   assert.equal(await page.locator(".overview-gantt-bar").count(),3,"Weekly view draws real saved entries")
   assert.equal(await page.locator(".overview-donut-legend button").count(),4)
   const donutLabel=await page.locator(".overview-donut-chart svg").getAttribute("aria-label")
@@ -61,7 +61,7 @@ try{
   await page.getByRole("dialog").getByRole("button",{name:/查看 PMC 排程/}).click()
   assert.ok((await page.evaluate(()=>location.hash)).includes("/departments/pmc/schedule"))
   await page.evaluate(()=>{location.hash="#/overview"})
-  await page.getByRole("heading",{name:"生产运营驾驶舱"}).waitFor()
+  await page.locator(".overview-kpi-grid").waitFor()
   await page.setViewportSize({width:390,height:844})
   // Wait for the sidebar's CSS transform transition: a mid-transition
   // screenshot incorrectly makes the closed navigation cover half the phone.
