@@ -976,3 +976,195 @@
     padding:6px 8px!important;
   }
 }
+
+/* ========================================================================
+   Flat glass business foundation
+   One continuous glass workspace. Inner hierarchy is expressed with spacing,
+   typography and hairline separators — not nested cards.
+   ======================================================================== */
+.business-page-body {
+  position:relative;
+  min-width:0;
+  background:rgba(246,250,246,.34);
+  border-top:1px solid rgba(255,255,255,.52);
+  border-bottom:1px solid rgba(93,128,101,.14);
+  border-radius:0!important;
+  box-shadow:none!important;
+  backdrop-filter:blur(18px) saturate(108%);
+  -webkit-backdrop-filter:blur(18px) saturate(108%);
+}
+.native-business .legacy-root :is(.ops-workbench,.mw-page,.proc-page),
+.business-native-page {
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+
+/* Tables are flat data planes, not cards. */
+.native-business .legacy-root :is(.op-table-wrap,.mw-table-scroll,.proc-scroll),
+.business-native-list,
+.native-business .legacy-root .mw-quality-surface,
+.native-business .legacy-root .mw-stock-overview,
+.native-business .legacy-root .mw-ledger-panel,
+.native-business .legacy-root .mw-data-section,
+.native-business .legacy-root .op-subsection {
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root :is(.op-table-wrap,.mw-table-scroll,.proc-scroll),
+.business-native-list-table {
+  overflow-x:auto;
+}
+.native-business .legacy-root :is(.op-table,.mw-table,.proc-table),
+.business-native-list [data-slot="table"] {
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+}
+
+/* Section / command bands are just translucent rows separated by hairlines. */
+.native-business .legacy-root :is(
+  .op-table-toolbar,
+  .mw-table-toolbar,
+  .mw-data-section-head,
+  .mw-ledger-head,
+  .mw-stock-overview-head,
+  .mw-quality-command,
+  .op-subsection > header
+),
+.business-native-list-toolbar {
+  min-height:40px!important;
+  margin:0!important;
+  padding:7px 10px!important;
+  border:0!important;
+  border-radius:0!important;
+  border-bottom:1px solid rgba(93,128,101,.16)!important;
+  background:rgba(232,241,233,.28)!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root .mw-quality-command {
+  padding:0 10px 0 0!important;
+}
+
+/* Header rows stay readable, but do not become a second card. */
+.native-business .legacy-root :is(.op-table,.mw-table,.proc-table) th,
+.business-native-list [data-slot="table-header"] {
+  background:rgba(220,233,222,.28)!important;
+}
+.native-business .legacy-root :is(.op-table,.mw-table,.proc-table) th,
+.business-native-list [data-slot="table-head"] {
+  border-bottom:1px solid rgba(93,128,101,.16)!important;
+}
+.native-business .legacy-root :is(.op-table,.mw-table,.proc-table) td,
+.business-native-list [data-slot="table-cell"] {
+  border-bottom:1px solid rgba(93,128,101,.105)!important;
+}
+
+/* Metrics are inline facts on one glass plane, never standalone cards. */
+.native-business .legacy-root .mw-metrics,
+.native-business .legacy-root .mw-stock-snapshot {
+  gap:0!important;
+  margin:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root :is(.mw-metric,.mw-snapshot) {
+  min-height:54px!important;
+  margin:0!important;
+  padding:8px 12px!important;
+  border:0!important;
+  border-radius:0!important;
+  border-right:1px solid rgba(93,128,101,.13)!important;
+  background:rgba(239,246,240,.20)!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root :is(.mw-metric,.mw-snapshot):last-child {
+  border-right:0!important;
+}
+.native-business .legacy-root :is(.mw-metric,.mw-snapshot) strong {
+  font-size:18px!important;
+}
+
+/* QA status facts are one slim status rail. */
+.native-business .legacy-root .mw-quality-status-item {
+  min-height:40px!important;
+  padding:0 10px!important;
+  border:0!important;
+  border-right:1px solid rgba(93,128,101,.13)!important;
+  background:transparent!important;
+}
+.native-business .legacy-root .mw-quality-status-item:last-child {
+  border-right:0!important;
+}
+.native-business .legacy-root .mw-quality-status-item strong {
+  font-size:15px!important;
+}
+
+/* Multi-section pages use simple dividers between logical regions. */
+.native-business .legacy-root .mw-data-section + .mw-data-section,
+.native-business .legacy-root .op-subsection + .op-subsection,
+.native-business .legacy-root .mw-ledger-panel {
+  margin-top:10px!important;
+  padding-top:0!important;
+  border-top:1px solid rgba(93,128,101,.15)!important;
+}
+.native-business .legacy-root .mw-stock-overview + .mw-ledger-panel {
+  margin-top:10px!important;
+}
+
+/* Native React tables follow the same flat glass language. */
+.business-native-list {
+  overflow:hidden;
+}
+.business-native-list-footer {
+  border-top:1px solid rgba(93,128,101,.13)!important;
+  background:rgba(239,246,240,.14)!important;
+}
+.business-native-notice {
+  border:0!important;
+  border-left:2px solid rgba(78,119,91,.38)!important;
+  border-radius:0!important;
+  background:rgba(231,241,232,.26)!important;
+  box-shadow:none!important;
+}
+
+/* Configuration workspace: remove panel-card appearance, keep structural columns. */
+.native-business .legacy-root .access-workbench .panel {
+  background:rgba(246,250,246,.20)!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root .access-side {
+  border-right:1px solid rgba(93,128,101,.15)!important;
+}
+.native-business .legacy-root .access-side .access-side-head,
+.native-business .legacy-root .access-main .access-main-head,
+.native-business .legacy-root .access-tools,
+.native-business .legacy-root .access-description,
+.native-business .legacy-root .access-footer-hint {
+  background:rgba(232,241,233,.22)!important;
+  border-color:rgba(93,128,101,.14)!important;
+}
+
+/* Buttons remain controls; controls may keep a small radius. */
+.native-business .legacy-root :is(button,.op-button,.mw-button,.proc-button),
+.business-native-page button {
+  border-radius:7px!important;
+}
+
+/* No inner component may grow a decorative shadow in the business workspace. */
+.business-page-body :is(
+  .op-table-wrap,.mw-table-scroll,.proc-scroll,
+  .mw-data-section,.op-subsection,.mw-quality-surface,
+  .mw-stock-overview,.mw-ledger-panel,.business-native-list,
+  .mw-metric,.mw-snapshot
+) {
+  box-shadow:none!important;
+}
