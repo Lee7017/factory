@@ -12,7 +12,7 @@
   border:1px solid var(--biz-line);
   border-radius:13px;
   box-shadow:0 8px 26px rgba(45,75,52,.055);
-  padding:0 18px 18px;
+  padding:14px 18px 18px;
 }
 .business-page-heading {
   min-height:72px;padding:16px 0 13px;
@@ -21,7 +21,7 @@
 }
 .business-page-heading .page-title {font-size:19px;line-height:1.35;margin:0;font-weight:760}
 .business-page-heading .page-subtitle {font-size:11.5px;line-height:1.5;margin:0;color:var(--biz-muted)}
-.business-page-body {min-width:0;padding-top:14px}
+.business-page-body {min-width:0;padding-top:0}
 .business-page-body > [data-slot="card"] {
   background:transparent!important;border:0!important;
   box-shadow:none!important;backdrop-filter:none!important;
@@ -189,16 +189,16 @@
 .business-page-body [data-slot="table-cell"] {font-size:12px;color:#354b3b}
 /* Families change only presentation density, never their colors and shell. */
 .business-family-reports .business-page-body,
-.business-family-planning .business-page-body {padding-top:12px}
-.business-family-configuration .business-page-body {padding-top:16px}
+.business-family-planning .business-page-body,
+.business-family-configuration .business-page-body {padding-top:0}
 @media(max-width:900px) {
-  .business-page-frame {padding:0 13px 13px}
+  .business-page-frame {padding:12px 13px 13px}
   .business-page-heading {min-height:63px;padding:12px 0}
   .native-business .legacy-root :is(.mw-metrics,.mw-stock-snapshot) {grid-template-columns:repeat(2,minmax(0,1fr))}
   .native-business .legacy-root :is(.mw-metric,.mw-snapshot) {border-bottom:1px solid var(--biz-line)!important}
 }
 @media(max-width:600px) {
-  .business-page-frame {padding:0 10px 12px}
+  .business-page-frame {padding:10px 10px 12px}
   .native-business .legacy-root :is(.ops-heading,.mw-head,.proc-top,.mw-commandbar) {justify-content:flex-start}
   .native-business .legacy-root :is(.op-tools,.mw-actions,.proc-actions) {justify-content:flex-start}
   .native-business .legacy-root :is(.op-form-grid,.mw-modal-fields,.proc-fields) {grid-template-columns:1fr}
