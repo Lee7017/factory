@@ -83,7 +83,7 @@ try{
   await page.setViewportSize({width:1440,height:900})
   await currentButton.click()
   await dialog.waitFor({state:"detached",timeout:10000})
-  assert.match(new URL(page.url()).hash,/^#\\/departments\\/[a-z]+(?:\\/[a-zA-Z]+)?$/,
+  assert.match(new URL(page.url()).hash,new RegExp("^#/departments/[a-z]+(?:/[a-zA-Z]+)?$"),
     "Tracking action navigates to a department route")
   console.log("PASS: live current-step button visible on desktop/mobile, no duplicate badge, and click navigates.")
 
