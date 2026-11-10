@@ -225,3 +225,19 @@
 .journey-blocker{margin:4px 10px 12px;padding:12px 16px;border:1px solid #cddbcf;border-radius:9px;background:#f2f7f3;color:#2d4939;display:flex;gap:5px;flex-direction:column;font-size:12px;line-height:1.55}
 .journey-blocker strong{font-size:13px;font-weight:700;color:#274e37}
 .journey-blocker small{color:#587465;font-size:11px}
+
+/* Already-completed steps link to the real persisted document, without changing the running-step tracking button. */
+.journey-card-document{display:inline-flex;align-items:center;justify-content:center;max-width:130px;min-height:24px;padding:4px 5px;border:1px solid #a8c8b7;border-radius:5px;background:#e8f4ed;color:#236544;font-size:10px;font-weight:750;line-height:1.25;text-align:center;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
+.journey-card-document:hover{background:#d7ebdf;border-color:#7eaf93;color:#174d30}
+.journey-card-document:focus-visible{outline:2px solid #4d9972;outline-offset:2px}
+.journey-doc-picker-backdrop{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:rgba(23,32,46,.38);padding:16px;box-sizing:border-box}
+.journey-doc-picker{width:min(420px,100%);max-height:min(560px,calc(100dvh - 32px));display:flex;flex-direction:column;border:1px solid #dbe4e0;border-radius:12px;background:#fff;box-shadow:0 24px 65px rgba(16,35,24,.24);overflow:hidden}
+.journey-doc-picker header{display:flex;align-items:center;justify-content:space-between;padding:15px 17px;border-bottom:1px solid #e3eae5;gap:12px}
+.journey-doc-picker header strong{color:#2a4837;font-size:14px}
+.journey-doc-picker header button{border:0;background:transparent;color:#637a6c;font-size:20px;line-height:1;cursor:pointer;padding:4px 7px}
+.journey-doc-picker-list{overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:4px}
+.journey-doc-choice{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:11px 13px;border:1px solid transparent;border-radius:7px;background:#f6f9f7;color:#355342;text-align:left;cursor:pointer;font-size:12px}
+.journey-doc-choice:hover{background:#e9f4ec;border-color:#bfdac8}
+.journey-doc-choice:focus-visible{outline:2px solid #6b9f7a;outline-offset:1px}
+.journey-doc-choice span{color:#718878;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+@media(max-width:760px){.journey-card-document{font-size:9.5px;max-width:130px;padding:3px 5px}}
