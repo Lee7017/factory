@@ -28,7 +28,7 @@ try {
   assert.equal(await page.locator("svg.svg-bank[data-icon-library=lucide] symbol[data-lucide-icon]").count(),77,"All 77 legacy business icons must be available to React without iframe")
   assert.equal(await page.locator(".department-tile").count(),12,"Homepage + 11 department squares")
   assert.equal(await page.locator(".dashboard-kpis .kpi-card").count(),4,"Overview has four stat cards")
-  assert.equal(await page.getByRole("heading",{name:"生产运营驾驶舱"}).count(),1)
+  assert.equal(await page.locator(".overview-kpi-grid").count(),1,"Overview displays the compact KPI row without a redundant heading")
   assert.equal(await page.locator(".overview-gantt-panel").count(),1,"Real Gantt replaces duplicate business links")
   assert.equal(await page.locator(".overview-donut-panel svg").count(),1,"Orders are visualized as donut chart")
   assert.equal(await page.locator(".overview-alerts-panel").count(),1,"Critical alerts are present")
