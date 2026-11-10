@@ -41,10 +41,11 @@ try {
     const panel=root?.querySelector(":scope > .proc-purchase-list")
     const toolbar=panel?.querySelector(":scope > .proc-purchase-toolbar")
     const action=toolbar?.querySelector('[data-proc-action="newPurchase"]')
-    const table=panel?.querySelector(":scope > .op-table")
-    if(!root||!panel||!toolbar||!action||!table)return null
+    const tableContainer=panel?.querySelector(':scope > [data-slot="table-container"]')
+    const table=tableContainer?.querySelector('[data-slot="table"]')
+    if(!root||!panel||!toolbar||!action||!tableContainer||!table)return null
     const p=panel.getBoundingClientRect(),b=toolbar.getBoundingClientRect()
-    const t=table.getBoundingClientRect(),c=action.getBoundingClientRect()
+    const t=tableContainer.getBoundingClientRect(),c=action.getBoundingClientRect()
     return {
       toolbarHeight:Math.round(b.height),
       toolbarTopGap:Math.round(b.top-p.top),
