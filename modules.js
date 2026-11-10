@@ -50,6 +50,7 @@ function wrap(page,title,intro,toolbar,content,stats=''){
 }
 function cards(rows){return `<div class="mw-metrics">${rows.map(([label,value,sub])=>`<div class="mw-metric"><span>${esc(label)}</span><strong>${esc(value)}</strong><small>${esc(sub||'')}</small></div>`).join('')}</div>`}
 function head(label,extra=''){return `<div class="mw-section-head"><h3>${esc(label)}</h3><span>${esc(extra)}</span></div>`}
+function dataSection(label,extra,body,actions=''){return `<section class="mw-data-section"><div class="mw-data-section-head"><div><strong>${esc(label)}</strong>${extra?`<span>${esc(extra)}</span>`:''}</div>${actions?`<div class="mw-actions">${actions}</div>`:''}</div>${body}</section>`}
 function note(extra=''){return ''}
 function field(key,label,kind='text',val='',options=[]){const control=kind==='select'?`<select name="${esc(key)}" id="m-${esc(key)}" required>${options.map(x=>{let [v,t]=Array.isArray(x)?x:[x,x];return `<option value="${esc(v)}" ${String(v)===String(val)?'selected':''}>${esc(t)}</option>`}).join('')}</select>`:kind==='textarea'?`<textarea name="${esc(key)}" id="m-${esc(key)}" rows="3" required>${esc(val)}</textarea>`:`<input name="${esc(key)}" id="m-${esc(key)}" type="${esc(kind)}" value="${esc(val)}" ${kind==='number'?'min="0.01" step="any"':''} required>`;return `<label class="mw-field"><span>${esc(label)}</span>${control}</label>`}
 function modal(title,fields,context){form=context;modDialogOpen=true;$('#modules-modal-host').innerHTML=`<div class="mw-overlay" data-module-action="closeModal"></div><section class="mw-modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><h2>${esc(title)}</h2>${btn('关闭','closeModal')}</header><form id="module-form"><div class="mw-modal-fields">${fields}</div><p class="mw-modal-error" aria-live="polite"></p><footer>${btn('取消','closeModal')}<button class="mw-btn primary" type="submit">${context?.kind==='outbound'?'确认本次出库':'保存并提交'}</button></footer></form></section>`}
@@ -183,14 +184,14 @@ function warehousePage(){const t=currentTab.warehouseOps||'batches';let content=
   return row([`<strong>${esc(o.id)}</strong>`,esc(o.product),money(expected)+' 箱',money(sent)+' 箱',money(due)+' 箱',money(available)+' 箱',money(shortage)+' 箱',status(currentStatus),`<span class="mw-muted">${explanation}</span>`,act]);
  });
  const shipmentRows=S.outbound.map(r=>row([esc(r.order),money(r.qty)+' 箱',esc(r.destination||'客户'),esc((r.allocations||[]).map(x=>x.id+' × '+x.qty).join('、')||'—'),esc(r.shippedAt||r.createdAt||'—'),status(r.status),btn('查看订单','viewOrder',r.order)]));
- content=note('按订单核对发货：应发与已发以箱为单位；库存缺口 = 剩余待发 − 当前合格可发库存（最低为 0）。冻结、待检及不合格批次不能出库；库存足够但未办理出库不算缺货。')+head('订单发货进度与缺口','逐单显示应发、已发、待发和缺货原因')+grid(['销售订单','成品','应发数量','已发数量','待发数量','合格可发','库存缺口','订单状态','缺口说明','操作'],orderRows,'暂无待出库的销售订单')+head('分批出库明细','每次出库按订单和批次留痕')+grid(['销售订单','本次数量','客户 / 去向','成品批次','办理时间','状态','操作'],shipmentRows,'暂无出库记录');
+ content=dataSection('订单发货进度与缺口','逐单显示应发、已发、待发和缺货原因',grid(['销售订单','成品','应发数量','已发数量','待发数量','合格可发','库存缺口','订单状态','缺口说明','操作'],orderRows,'暂无待出库的销售订单'),tools)+dataSection('分批出库明细','每次出库按订单和批次留痕',grid(['销售订单','本次数量','客户 / 去向','成品批次','办理时间','状态','操作'],shipmentRows,'暂无出库记录')); tools='';
  }else if(t==='returns'){
  content=note('退库确认后增加原批次结余并记录入库流水')+grid(['退库单','原批次','物料 / 数量','状态','操作'],S.materialRequests.filter(r=>r.type==='退库').map(r=>row([esc(r.id),esc(r.batch||'—'),esc(r.material)+' / '+money(r.qty),status(r.status),r.status==='待仓库接收'?btn('验收并退库','acceptReturn',r.id,'primary'):'—'])));
  }else{
  const month=today().slice(5,7),monthly=S.ledger.filter(x=>x.time.startsWith(month+'/'));
  const totals={};for(const l of monthly){if(!/质检入库|质量放行入账|双签并扣库|退库接收|成品销售出库/.test(l.type))continue;const m=l.detail.match(/^([A-Z]+-[0-9]+) ([+-][0-9.]+)/);if(!m)continue;totals[m[1]]??={incoming:0,outgoing:0};const val=Number(m[2]);if(val>0)totals[m[1]].incoming+=val;else totals[m[1]].outgoing-=val}
  const summary=Object.entries(totals).map(([code,x])=>{const end=ops().stock[code]||0,start=Math.max(0,end-x.incoming+x.outgoing);return row([esc(code),money(start),money(x.incoming),money(x.outgoing),money(end)])});
- content=head(today().slice(0,7)+' 收发存','按本月已确认出入库业务汇总，单位按物料主数据定义')+grid(['物料编码','期初','本月收入','本月发出','当前结存'],summary)+head('批次收发流水')+grid(['时间','业务','单据号','物料 / 数量','操作人'],monthly.filter(r=>/批次|入库|出库|发料|退库|到货|冻结|领料/.test(r.type)).map(r=>row([esc(r.time),esc(r.type),esc(r.ref),esc(r.detail),esc(r.by)])));
+ content=dataSection(today().slice(0,7)+' 收发存','按本月已确认出入库业务汇总，单位按物料主数据定义',grid(['物料编码','期初','本月收入','本月发出','当前结存'],summary))+dataSection('批次收发流水','',grid(['时间','业务','单据号','物料 / 数量','操作人'],monthly.filter(r=>/批次|入库|出库|发料|退库|到货|冻结|领料/.test(r.type)).map(r=>row([esc(r.time),esc(r.type),esc(r.ref),esc(r.detail),esc(r.by)]))));
  }
  return wrap('warehouseOps','仓库批次、效期与收发存','采购分批到货、质量入库、FIFO 发料、退库和月末流水',tools,content);
 }
@@ -213,7 +214,7 @@ function shiftPage(){const t=currentTab.shift||'plan';let content='',tools='';
  content=note('按员工查看班次安排与工种')+grid(['员工','日期','工位','产线','班次','状态'],S.roster.map(r=>row([esc(ctx.access.staff.find(x=>x.id===r.person)?.name||r.person),esc(r.day),esc(r.position),esc(r.line),esc(r.start+'–'+r.end),status(r.gate||'待检查')])));
  }else if(t==='stats'){
  const passed=S.roster.filter(r=>r.gate==='已通过').length;
- content=cards([['排班记录',S.roster.length,'产线 × 岗位'],['开工前 Gate 通过',passed,'人员、资质、请假、清洗'],['确认工时',S.hours.filter(h=>h.status==='已确认').length,'计入统计'],['未确认工时',S.hours.filter(h=>h.status==='待确认').length,'暂不计入']])+head('班次统计明细')+grid(['产线','排班数','通过数','员工数'],[...new Set(S.roster.map(r=>r.line))].map(l=>{let a=S.roster.filter(r=>r.line===l);return row([esc(l),a.length,a.filter(x=>x.gate==='已通过').length,new Set(a.map(x=>x.person)).size])}));
+ content=cards([['排班记录',S.roster.length,'产线 × 岗位'],['开工前 Gate 通过',passed,'人员、资质、请假、清洗'],['确认工时',S.hours.filter(h=>h.status==='已确认').length,'计入统计'],['未确认工时',S.hours.filter(h=>h.status==='待确认').length,'暂不计入']])+dataSection('班次统计明细','',grid(['产线','排班数','通过数','员工数'],[...new Set(S.roster.map(r=>r.line))].map(l=>{let a=S.roster.filter(r=>r.line===l);return row([esc(l),a.length,a.filter(x=>x.gate==='已通过').length,new Set(a.map(x=>x.person)).size])})));
  }else if(t==='products'){
  const confirms=S.hours.filter(h=>h.status==='已确认'&&h.order);
  const orders=[...new Set(confirms.map(h=>h.order))];
