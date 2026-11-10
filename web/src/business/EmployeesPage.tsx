@@ -1,6 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react"
-import { Pencil, UsersRound } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -69,16 +68,10 @@ export function EmployeesPage({access,workspace,onRefresh}:{
     {key:"actions",label:"操作",render:p=><Button variant="outline" size="sm" disabled={!editable}
       onClick={()=>begin(p)} aria-label={`编辑${p.name}的档案`}><Pencil size={13}/>编辑档案</Button>}
   ]
-  return <Card className="glass-panel gap-3 p-5">
-    <CardHeader className="px-0 pb-1">
-      <CardTitle className="flex items-center gap-2 text-sm"><UsersRound size={17}/>员工基础档案</CardTitle>
-      <CardDescription className="text-xs">员工档案与权限矩阵分开管理。只有拥有信息化部「编辑员工档案」权限的员工可以修改。</CardDescription>
-    </CardHeader>
-    <CardContent className="space-y-3 px-0">
-      {notice&&<p className="rounded-lg border border-green-200 bg-green-50/70 p-3 text-xs text-green-900" role="status">{notice}</p>}
-      <DataTable rows={access.staff} columns={columns} rowKey={p=>p.id}
-        placeholder="按工号、姓名、部门或岗位搜索"/>
-    </CardContent>
+  return <section className="business-native-page">
+    {notice&&<p className="business-native-notice" role="status">{notice}</p>}
+    <DataTable rows={access.staff} columns={columns} rowKey={p=>p.id}
+      placeholder="按工号、姓名、部门或岗位搜索"/>
     <Dialog open={selected!==null} onOpenChange={open=>{if(!open)setSelected(null)}}>
       <DialogContent className="glass-dialog">
         <DialogHeader>
@@ -111,5 +104,5 @@ export function EmployeesPage({access,workspace,onRefresh}:{
         </form>
       </DialogContent>
     </Dialog>
-  </Card>
+  </section>
 }
