@@ -6,7 +6,7 @@
 const families = {
   records: [
     "orders","orderHistory","hours","hoursAppeal","leave","leaveApproval",
-    "warehouseOps","warehouseIncoming","warehouseOutbound","warehouseReturns",
+    "warehouseOps","warehouseIncoming","warehousePick","warehouseOutbound","warehouseReturns",
     "warehouseLedger","inventory","issue","tasks","batch","workshopReceive",
     "workshopDispute","workshopRework","qaQc","qaSampling","qaCleanInspection",
     "qaNcr","qaQualityStock","release","purchase","sopExecutions"
@@ -26,5 +26,7 @@ const familyByFeature = new Map<string,BusinessFamily>(
     .flatMap(([family,features])=>features.map(feature=>[feature,family] as const))
 )
 export function businessFamily(feature:string):BusinessFamily {
-  return familyByFeature.get(feature)??"records"
+  const family=familyByFeature.get(feature)
+  if(!family)throw new Error(`未归类的业务功能：${feature}。请先纳入统一页面类别。`)
+  return family
 }
