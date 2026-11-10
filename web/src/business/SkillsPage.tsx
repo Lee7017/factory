@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from "react"
-import { Award, Pencil } from "lucide-react"
+import { Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DataTable, StatusBadge, type Column } from "@/components/DataTable"
@@ -66,15 +65,9 @@ export function SkillsPage({workspace,access,onRefresh}:{
    {key:"action",label:"操作",render:p=><Button size="sm" variant="outline" disabled={!editable}
      onClick={()=>edit(p)} aria-label={`评定${p.name}技能`}><Pencil size={13}/>调整技能</Button>}
  ]
- return <Card className="glass-panel gap-3 p-5">
-   <CardHeader className="px-0 pb-1">
-     <CardTitle className="flex items-center gap-2 text-sm"><Award size={17}/>员工技能矩阵</CardTitle>
-     <CardDescription className="text-xs">L0 未培训，L1 训练中，L2 可独立作业，L3 可带教。排班至少需要 L2。</CardDescription>
-   </CardHeader>
-   <CardContent className="space-y-3 px-0">
-     {notice&&<p className="rounded-lg border border-green-200 bg-green-50/70 p-3 text-xs text-green-900" role="status">{notice}</p>}
-     <DataTable rows={employees} columns={columns} rowKey={p=>p.id} placeholder="搜索生产车间员工或技能等级"/>
-   </CardContent>
+ return <section className="business-native-page">
+   {notice&&<p className="business-native-notice" role="status">{notice}</p>}
+   <DataTable rows={employees} columns={columns} rowKey={p=>p.id} placeholder="搜索生产车间员工或技能等级"/>
    <Dialog open={person!==null} onOpenChange={open=>{if(!open)setPerson(null)}}>
      <DialogContent className="glass-dialog">
        <DialogHeader>
@@ -106,5 +99,5 @@ export function SkillsPage({workspace,access,onRefresh}:{
        </form>
      </DialogContent>
    </Dialog>
- </Card>
+ </section>
 }
