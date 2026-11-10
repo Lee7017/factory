@@ -37,7 +37,7 @@ try {
   // Purchase uses a foldable status rail; create and search/filter are always available.
   const panel=page.locator('.native-business .biz-order-panel[data-order-panel="purchase"]')
   await panel.waitFor({state:"visible"})
-  assert.equal(await panel.locator(".biz-order-stat").count(),6,"Purchase status rail uses actual purchase states")
+  assert.equal(await panel.locator(".biz-order-stat").count(),9,"Purchase status rail uses actual purchase states")
   assert.equal(await panel.locator(".biz-order-stats").isVisible(),true,"Purchase stats visible by default")
   assert.equal(await panel.locator("[data-proc-action='newPurchase']").count(),1,"Purchase creation stays in list toolbar")
   const fold=panel.locator(".biz-order-fold")
