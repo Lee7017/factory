@@ -37,7 +37,7 @@ const status=s=>`<span class="mw-status ${/已|合格|通过|放行|正常|可�
 function btn(label,action,id='',variant=''){return `<button type="button" class="mw-btn ${variant}" data-module-action="${esc(action)}" data-mid="${esc(id)}">${esc(label)}</button>`}
 function navButton(label,dept,feat){return btn(label,'navigate',`${dept}:${feat}`)}
 function td(value){return `<td>${value}</td>`}
-function grid(columns,rows,empty='暂无记录，请通过上方操作按钮新增'){return `<div class="mw-table-scroll"><table class="mw-table"><thead><tr>${columns.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td colspan="${columns.length}" class="mw-empty">${esc(empty)}</td></tr>`}</tbody></table></div>`}
+function grid(columns,rows,empty='暂无记录'){return `<div class="mw-table-scroll"><table class="mw-table"><thead><tr>${columns.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td colspan="${columns.length}" class="mw-empty">${esc(empty)}</td></tr>`}</tbody></table></div>`}
 function row(values){return `<tr>${values.map(td).join('')}</tr>`}
 function wrap(page,title,intro,toolbar,content,stats=''){
  let body=content;
