@@ -125,6 +125,8 @@ const roleKeys=id=>state.positionRights[id]||[];
 function sources(personId,key){const ids=assigned(personId);if(ids.includes('developer'))return {viaJob:true,viaPersonal:false,developer:true};return {viaJob:ids.some(id=>roleKeys(id).includes(key)),viaPersonal:own(personId).includes(key),developer:false}}
 function hasFor(personId,dept,feat,action='view'){
   if(!departments.some(d=>d.id===dept&&d.features.includes(feat)))return false;
+  // PMC may inspect procurement progress without permission to edit or approve POs.
+  if(dept==='purchase'&&feat==='purchase'&&action==='view'&&assigned(personId).some(p=>p==='pmc'||p==='pmc_manager'))return true;
   const key=`${dept}.${feat}.${action}`;
   const src=sources(personId,key);
   if(src.viaJob||src.viaPersonal||src.developer)return true;
