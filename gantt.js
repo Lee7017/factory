@@ -282,23 +282,31 @@ function save(ev){ev.preventDefault();if(!ctx.access.has('pmc','schedule','edit'
 }
 function optimizeDraft(){
  if(!ctx.access.has('pmc','schedule','edit'))return;
+ const inform=msg=>{
+  if(window.FactoryPrompt?.show)window.FactoryPrompt.show(msg,{title:'排程检查结果'});
+  else window.alert(msg);
+ };
  const eligible=new Set(['draft','review','approved','trial']);
  const ids=(ctx.data.orders||[]).filter(o=>eligible.has(state().flows?.[o.id]?.stage||'draft')&&
   state().gantt.some(x=>x.orderId===o.id)).map(o=>o.id);
- if(!ids.length){window.alert('没有可以自动整理的未发布排程。已发布或已进入生产的订单不会自动移动。');return}
+ if(!ids.length)return inform('没有可以自动整理的未发布排程。已发布或已进入生产的订单不会自动移动。');
  let proposal;
  try{proposal=optimizedPlan(state(),ids)}
- catch(error){window.alert(error.message||'自动整理失败，请检查任务时长与工位配置。');return}
- if(!proposal.changes.length){window.alert('检查完成：未发布排程没有需要调整的工位冲突或工序顺序问题。');return}
+ catch(error){return inform(error.message||'自动整理失败，请检查任务时长与工位配置。')}
+ if(!proposal.changes.length)return inform('检查完成：未发布排程没有需要调整的工位冲突或工序顺序问题。');
  const countOrders=new Set(proposal.changes.map(x=>x.before.orderId)).size;
- if(!window.confirm('将调整 '+countOrders+' 张未发布订单的 '+proposal.changes.length+' 项任务（时间或工位）。\n已发布、已锁库及进入生产的任务不变。\n确认执行自动整理？'))return;
- const moved=new Set(proposal.changes.map(x=>x.before.id));
- state().gantt=proposal.entries.map(x=>moved.has(x.id)?{...x,source:'自动整理排程'}:x);
- (state().logs??=[]).unshift({
-  at:new Date().toLocaleString('zh-CN'),person:ctx.access.current().name,
-  action:'自动整理未发布排程',ref:'PMC',detail:countOrders+' 张订单、'+proposal.changes.length+' 项任务'
- });
- ctx.save();rerender();
+ const message='将调整 '+countOrders+' 张未发布订单的 '+proposal.changes.length+' 项任务（时间或工位）。\n已发布、已锁库及进入生产的任务不变。\n确认执行自动整理？';
+ const apply=()=>{
+  const moved=new Set(proposal.changes.map(x=>x.before.id));
+  state().gantt=proposal.entries.map(x=>moved.has(x.id)?{...x,source:'自动整理排程'}:x);
+  (state().logs??=[]).unshift({
+   at:new Date().toLocaleString('zh-CN'),person:ctx.access.current().name,
+   action:'自动整理未发布排程',ref:'PMC',detail:countOrders+' 张订单、'+proposal.changes.length+' 项任务'
+  });
+  ctx.save();rerender();
+ };
+ if(window.FactoryPrompt?.confirm)window.FactoryPrompt.confirm(message,apply,{title:'自动整理生产排程',confirmLabel:'确认整理'});
+ else if(window.confirm(message))apply();
 }
 function rerender(){restoreLeft=$('.gantt-scroll')?.scrollLeft??restoreLeft;ctx.render();requestAnimationFrame(()=>{const scroll=$('.gantt-scroll');if(scroll)scroll.scrollLeft=restoreLeft});}
 function onClick(ev){const el=ev.target.closest('[data-gantt]');if(!el)return;ev.stopPropagation();const a=el.dataset.gantt;
