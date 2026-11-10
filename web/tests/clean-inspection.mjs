@@ -41,10 +41,9 @@ try{
   await table.locator('[data-module-action="clean:inspect"]').click()
   await form.waitFor({state:"visible",timeout:8000})
  }
- async function fillQc(results){
-  for(let i=0;i<4;i++)await form.locator(`[name="check${i}"]`).selectOption(results[i])
-  await form.locator('[name="basis"]').fill("清洗标准卡 SOP / 现场目视检查")
-  await form.locator('[name="observations"]').fill("现场检查接触面、管路、清场状态和清洗记录，并记录观察情况。")
+ async function fillQc(result,remark=""){
+  await form.locator('[name="result"]').selectOption(result)
+  if(remark)await form.locator('[name="remark"]').fill(remark)
  }
  await route("production","tasks")
  await page.evaluate(order=>{
@@ -66,29 +65,29 @@ try{
  assert.equal(await page.locator('[data-module-action="form:clean"]').count(),0,
   "QC cannot create a fake inspection from a single free-text input")
  await openInspect(first.id)
- assert.equal(await form.locator(".mw-clean-check-row").count(),4)
- assert.match(await form.locator(".mw-clean-info").textContent(),new RegExp(id))
+ assert.equal(await form.locator('[name="result"]').count(),1)
+ assert.equal(await form.locator('[name="remark"]').count(),1)
+ assert.equal(await form.locator(".mw-clean-check-row").count(),0)
+ assert.match(await form.locator(".mw-simple-clean-context").textContent(),new RegExp(id))
  const rect=await page.locator(".mw-modal").boundingBox()
  assert.ok(rect&&rect.y>=10&&rect.y+rect.height<=900-10,
   "The entire cleaning inspection modal must fit within the browser viewport, not be clipped by the workbench")
- assert.ok(await page.getByRole("heading",{name:/清洗报检 · QC 逐项检验/}).isVisible(),
+ assert.ok(await page.getByRole("heading",{name:/清洗报检 · CLQC/}).isVisible(),
   "QC inspection title must be visible")
  const submitBox=await form.locator('button[type="submit"]').boundingBox()
  assert.ok(submitBox&&submitBox.y>=rect.y&&submitBox.y+submitBox.height<=rect.y+rect.height&&submitBox.y+submitBox.height<=890,
   "QC submit must be inside the visible modal, not below the fold")
+ const needScroll=await form.evaluate(el=>el.scrollHeight>el.clientHeight+2)
+ assert.equal(needScroll,false,"Compact cleaning form should not require any scrolling at standard desktop size")
  assert.equal(await page.locator("body > .legacy-modules-portal-root #modules-modal-host").count(),1,
   "The QC modal host is attached directly to the body rather than the clipped workbench")
  await page.screenshot({path:"test-results/clean-qc-01-real-linked-form.png"})
- await fillQc(["符合","符合","不符合","符合"])
- await form.locator('button[type="submit"]').click()
- assert.match(await page.locator(".mw-modal-error").textContent(),/不合格部位或原因/,
-  "A failed check cannot be approved without explaining the actual anomaly")
- await form.locator('[name="failureReason"]').fill("管路出口发现上一生产任务的残液，需重新清洗复核")
+ await fillQc("不合格","管路出口发现残液，需重新清洗")
  await form.locator('button[type="submit"]').click()
  await flow.waitFor({state:"visible"})
  let result=await page.evaluate(reportId=>window.FactoryModules.state.cleanReports.find(r=>r.id===reportId),first.id)
  assert.equal(result.status,"不合格")
- assert.equal(result.items[2].result,"不符合")
+ assert.equal(result.remark,"管路出口发现残液，需重新清洗")
  assert.equal(result.checkedBy,"小明")
  assert.ok(result.checkedAt)
  assert.equal(await page.evaluate(order=>window.FactoryOperations.taskGateForOrder(order,"清洗").status,id),"待开始",
@@ -101,13 +100,13 @@ try{
  const second=await taskReport(task.id)
  assert.notEqual(second.id,first.id,"Re-clean must create a new inspection record, not overwrite the failure")
  await openInspect(second.id)
- await fillQc(["符合","符合","符合","符合"])
+ await fillQc("合格")
  await page.screenshot({path:"test-results/clean-qc-03-complete-reinspection.png"})
  await form.locator('button[type="submit"]').click()
  await flow.waitFor({state:"visible"})
  result=await page.evaluate(reportId=>window.FactoryModules.state.cleanReports.find(r=>r.id===reportId),second.id)
  assert.equal(result.status,"合格")
- assert.equal(result.items.length,4)
+ assert.equal(result.remark,"","Optional remark is blank on passing QC")
  assert.equal(result.checkedBy,"小明")
  assert.ok(result.checkedAt)
  assert.equal(await page.evaluate(order=>window.FactoryOperations.taskGateForOrder(order,"清洗").status,id),"待复核")
@@ -115,14 +114,14 @@ try{
  await route("quality","qaCleanInspection")
  await page.locator(".mw-table tbody tr").filter({hasText:second.id}).locator('[data-module-action="clean:detail"]').click()
  await form.waitFor({state:"visible"})
- assert.equal(await form.locator(".mw-clean-result.ok").count(),4)
+ assert.match(await form.locator(".mw-simple-clean-history").textContent(),/合格/)
  assert.equal(await form.locator('button[type="submit"]').count(),0,"Completed QC is read-only")
  await page.screenshot({path:"test-results/clean-qc-04-signed-history.png"})
  await page.locator('[data-module-action="closeModal"]').last().click()
  await taskAction(task.id,"verify")
  assert.equal(await page.evaluate(order=>window.FactoryOperations.state.flows[order].stage,id),"semi_qc")
  assert.deepEqual(errors,[],"No page JS errors")
- console.log("PASS: production submitted linked QC; 4 required checks; failed QC requires reason, NCR and re-clean; new report passes; signed read-only history; production continues")
+ console.log("PASS: short cleaning form needs only result, optional remark; failure returns for re-clean, pass resumes production, signed history retained, no scrolling")
 }catch(e){failed=true;console.error(e)}
 finally{await browser?.close();server.kill("SIGTERM")}
 if(failed)process.exit(1)
