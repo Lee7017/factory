@@ -15,7 +15,7 @@ const featureRoutes={
 };
 let activeFeatureRoute='';
 const snapshot=[['原辅料','756','12,480 kg'],['品牌包材','387','86,400 个'],['非品牌包材','468','93,200 个'],['半成品','225','18,600 L'],['成品','2077','12,480 箱']];
-const stagesOrder=['draft','review','approved','trial','formal','reserved','issued','blending','semi_qc','semi_ok','packaging','final_qc','inspected','released','stored','dispatch','shipping','shipped','delivered'];
+const stagesOrder=['draft','review','approved','trial','formal','reserved','issued','blending','blend_clean','semi_qc','semi_ok','packaging','pack_clean','final_qc','inspected','released','stored','dispatch','shipping','shipped','delivered'];
 const stamp=()=>new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
 const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
 let ctx, S, currentTab={}, form=null, message='',modDialogOpen=false;
@@ -369,9 +369,9 @@ function gate(idValue){const r=S.roster.find(x=>x.id===idValue);if(!r)return;con
  if(S.rules.requireLeave&&ctx.data.leaves.some(l=>l.person===employee?.name&&l.status==='审核通过'&&l.range?.split(' ~ ')[0]<=r.day&&l.range?.split(' ~ ')[1]>=r.day))problems.push('员工当日存在已批准请假');
  const stage=ops().flows?.[r.order]?.stage;
  if(stage&&stagesOrder.indexOf(stage)<stagesOrder.indexOf('formal'))problems.push('订单尚未发布正式排程');
- if(S.rules.cleanQC&&['配料','搅拌'].includes(r.position)&&!S.cleanReports.some(x=>x.status==='合格'&&ctx.data.tasks.some(t=>t.id===x.task&&t.line===r.line)))problems.push('产线清洗报检尚未合格');
+ // 清洗是配制/包装任务完成后的收尾步骤，不得作为配制前排班的前置门槛。
  const conflict=S.roster.find(x=>x.id!==r.id&&x.day===r.day&&(x.line===r.line&&x.position===r.position||x.person===r.person)&&shiftsOverlap(r,x));if(conflict)problems.push('岗位或员工存在时间撞班 '+conflict.id);
- r.gate=problems.length?'未通过':'已通过';r.gateNote=problems.join('；')||'技能、请假、排程、清洗均已通过';r.checkedAt=stamp();audit('开工前 Gate 检查',r.id,r.gate+' · '+r.gateNote);save(problems.length?'未通过：'+r.gateNote:'开工前 Gate 检查通过。');}
+ r.gate=problems.length?'未通过':'已通过';r.gateNote=problems.join('；')||'技能、请假、排程均已通过（清洗在任务完成后办理）';r.checkedAt=stamp();audit('开工前 Gate 检查',r.id,r.gate+' · '+r.gateNote);save(problems.length?'未通过：'+r.gateNote:'开工前 Gate 检查通过。');}
 function submitForm(ev){if(ev.target.id!=='module-form')return false;ev.preventDefault();const values=Object.fromEntries(new FormData(ev.target).entries());const kind=form?.kind,ref=form?.record;
  try{
  if(kind==='inspection'){S.inspections.unshift({id:id('QC'),source:'人工报检',phase:values.phase,order:values.order,material:values.material,batch:values.batch,status:'待判定',date:today()});audit('创建报检单',values.order,values.phase);return done('报检单已提交，等待质量判定。'),true}
