@@ -14,7 +14,7 @@ const featureRoutes={
  settings:['settings','process'],productSettings:['settings','product'],dictionarySettings:['settings','dictionary']
 };
 let activeFeatureRoute='';
-const snapshot=[['原辅料','756','7559999829.5428'],['品牌包材','387','3869994301.6000'],['非品牌包材','468','4679999184.0000'],['半成品','225','2.4960'],['成品','2077','16.0000']];
+const snapshot=[['原辅料','756','12,480 kg'],['品牌包材','387','86,400 个'],['非品牌包材','468','93,200 个'],['半成品','225','18,600 L'],['成品','2077','12,480 箱']];
 const stagesOrder=['draft','review','approved','trial','formal','reserved','issued','blending','semi_qc','semi_ok','packaging','final_qc','inspected','released','stored','dispatch','shipping','shipped','delivered'];
 const stamp=()=>new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
 const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
