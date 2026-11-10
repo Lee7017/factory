@@ -137,7 +137,7 @@ function flowActionsFor(feature){const names={orders:'销售订单',orderReview:
  const orderToolbar=feature==='orders'?cmd('新建订单','newOrder','','primary'):'';
  const stockToolbar=feature==='inventory'?cmd('库存调整','adjustStock','','primary'):'';
  const taskToolbar=feature==='tasks'?cmd('新增非生产任务','newTask','','primary'):'';
- const stock=feature==='inventory'?recordTable(['物料编码','库存数量','单位','操作'],Object.keys(S.stock).map(id=>`<tr>${td(esc(id))}${td(`<strong>${esc(S.stock[id])}</strong>`)}${td(id==='FG-001'?'箱':id.startsWith('PK-')?'个':id.startsWith('SF-')?'L':'kg')}${td(cmd('调整','adjustStock',id))}</tr>`),stockToolbar):'';
+ const stock=feature==='inventory'?recordTable(['物料编码','库存数量','单位','操作'],Object.keys(S.stock).map(id=>`<tr>${td(esc(id))}${td(`<strong>${esc(S.stock[id])}</strong>`)}${td(id==='FG-001'?'箱':id.startsWith('PK-')?'个':id.startsWith('SF-')?'L':'kg')}${td(cmd('调整','adjustStock',id))}</tr>`)):'';
  const flow=feature==='kitting'
   ?recordTable(['订单号','产品','数量','流程状态','齐套核查','操作'],activeOrders.map(o=>{const r=requirements(o),available=Object.entries(r).map(([id,qty])=>`${id} 需 ${qty} / 可用 ${availableStock(id)}`).join('；');return `<tr>${td(`<strong>${esc(o.id)}</strong>`)}${td(esc(o.product))}${td(`${esc(o.qty)} ${esc(o.unit||'L')}`)}${td(badge(stageForOrder(o)))}${td(`<small class="op-inline-note">${esc(available)}</small>`)}${td(`<div class="op-row-actions">${rowActions(o,feature)}</div>`)}</tr>`}))
   :recordTable(['订单号','产品','数量','流程状态','当前操作'],orderRows(),orderToolbar);
@@ -145,7 +145,7 @@ function flowActionsFor(feature){const names={orders:'销售订单',orderReview:
  if(feature==='inventory'){
   const pending=activeOrders.filter(o=>stageOf(o)==='released');
   const receipt=recordTable(['订单号','产品','数量','流程状态','当前操作'],orderRows(pending));
-  return shell(names[feature],'',`<section class="op-subsection"><header><h3>当前库存</h3></header>${stock}</section><section class="op-subsection"><header><h3>待入库生产订单</h3></header>${receipt}</section>`,intro);
+  return shell(names[feature],'',`<section class="op-subsection"><header><h3>当前库存</h3><div class="op-tools">${stockToolbar}</div></header>${stock}</section><section class="op-subsection"><header><h3>待入库生产订单</h3></header>${receipt}</section>`,intro);
  }
  if(feature==='tasks'){
   return shell(names[feature],'',`<section class="op-subsection"><header><h3>生产订单执行</h3></header>${flow}</section>${tasks}`,intro);
@@ -158,7 +158,7 @@ function flowActionsFor(feature){const names={orders:'销售订单',orderReview:
  }
  return shell(names[feature],'',flow,intro);
 }
-function taskRows(toolbar=''){const list=ctx.data.tasks.filter(t=>['清洗','调机调线','设备点检'].includes(t.type));return `<section class="op-subsection"><header><h3>非生产任务（独立工单）</h3></header>${recordTable(['任务号','分类','任务类型','执行产线','状态','操作'],list.map(t=>`<tr>${td(`<strong>${esc(t.id)}</strong>`)}${td(esc(t.category||'非生产任务'))}${td(esc(t.type))}${td(esc(t.line))}${td(badge(t.status))}${td(`<div class="op-row-actions">${taskButtons(t)}</div>`)}</tr>`),toolbar)}</section>`}
+function taskRows(toolbar=''){const list=ctx.data.tasks.filter(t=>['清洗','调机调线','设备点检'].includes(t.type));return `<section class="op-subsection"><header><h3>非生产任务（独立工单）</h3>${toolbar?`<div class="op-tools">${toolbar}</div>`:''}</header>${recordTable(['任务号','分类','任务类型','执行产线','状态','操作'],list.map(t=>`<tr>${td(`<strong>${esc(t.id)}</strong>`)}${td(esc(t.category||'非生产任务'))}${td(esc(t.type))}${td(esc(t.line))}${td(badge(t.status))}${td(`<div class="op-row-actions">${taskButtons(t)}</div>`)}</tr>`))}</section>`}
 function taskButtons(t){const st=t.status;const op=st==='待开始'?'start':st==='执行中'?'finish':st==='待复核'?'verify':'';return op?cmd({start:'开始执行',finish:'提交复核',verify:'确认复核'}[op],`task:${op}`,t.id):'<span class="op-muted">已闭环</span>'}
 function historyOrderPage(){const rows=ctx.data.orders.filter(o=>stageOf(o)==='delivered').map(o=>{const audit=S.flows[o.id]?.audit||[],last=audit[audit.length-1];return `<tr>${td(`<strong>${esc(o.id)}</strong>`)}${td(esc(o.product))}${td(`${esc(o.qty)} ${esc(o.unit||'L')}`)}${td(esc(o.completedAt||last?.at||'—'))}${td(badge('已完成'))}${td(cmd('查看订单','detailFlow',o.id))}</tr>`});return shell('历史订单','',recordTable(['订单号','产品','数量','完成时间','状态','操作'],rows),'客户交付确认后的订单才会归档。成品入库不是订单完成，仍需销售发货通知、仓库出库和客户收货确认。')}
 function purchasePage(){return genericPage('purchase',S.purchases)}
