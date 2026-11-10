@@ -89,7 +89,8 @@ try{
  await dialog.locator(".journey-card.is-current [data-flow-track]").click()
  await page.locator('.native-business .op-task-inbox').waitFor({state:"visible",timeout:14000})
  assert.equal(await taskRow(blendTask.id).count(),1)
- assert.equal(await taskRow(blendTask.id).locator('[data-op-action="task:qc"]').count(),1)
+ assert.equal(await taskRow(blendTask.id).locator('[data-op-action="task:start"]').count(),1,
+  "New post-blending cleaning must begin with execution, not skip to QC or review")
  await page.screenshot({path:"test-results/production-03-blending-clean-todo.png"})
  await cleanTask(blendTask.id)
  assert.equal(await stage(),"semi_qc")
