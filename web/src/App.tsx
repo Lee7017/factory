@@ -6,12 +6,13 @@ import {
 import { DEPARTMENTS, FEATURE_HINTS, FEATURE_NAMES, getDepartment, type Department } from "@/catalog"
 import { getDepartmentIcon, getFeatureIcon } from "@/icons"
 import {
-  useFactoryState, readWorkspace, updateWorkspace, getTodos, todoLane, dashboardMetrics, type Employee, type Todo
+  useFactoryState, readWorkspace, updateWorkspace, getTodos, todoLane, type Employee, type Todo
 } from "@/factory-state"
 import { NativeBusiness } from "@/business/NativeBusiness"
 import { LeavePage } from "@/business/LeavePage"
 import { EmployeesPage } from "@/business/EmployeesPage"
 import { SkillsPage } from "@/business/SkillsPage"
+import { OverviewDashboard } from "@/OverviewDashboard"
 import { SVG_SPRITE } from "@/generated-lucide-sprite"
 import { DataBackup } from "@/components/DataBackup"
 import { Button } from "@/components/ui/button"
@@ -340,71 +341,6 @@ function DepartmentPage({dept,staff,employee,workspace,can,onSelect,onRefresh}:{
   </div>
 }
 
-function Overview({workspace,onSelect}:{
-  workspace:ReturnType<typeof useFactoryState>["workspace"];
-  onSelect:(hash:string)=>void
-}) {
-  const totals=dashboardMetrics(workspace)
-  const stats=[
-    {label:"部门数量",value:DEPARTMENTS.length,detail:"业务部门与管理部门",icon:Factory},
-    {label:"销售订单",value:totals.orders,detail:`其中 ${totals.activeOrders} 单尚未交付`,icon:ClipboardIcon},
-    {label:"生产任务",value:totals.productionTasks,detail:"配制 / 包装",icon:getDepartmentIcon("production")},
-    {label:"待处理事项",value:totals.pending,detail:"全部 11 个部门的待办单据",icon:CircleHelp}
-  ]
-  return <div className="space-y-4">
-    <header className="mb-4">
-      <h1 className="page-title">工厂运行总览</h1>
-      <p className="page-subtitle">订单、生产、质量、物料及人员的工作入口</p>
-    </header>
-    <div className="dashboard-kpis">
-      {stats.map(x=><Card className="glass-panel kpi-card gap-0 py-0" key={x.label}>
-        <div className="kpi-label"><span>{x.label}</span><x.icon size={17}/></div>
-        <div className="kpi-value">{String(x.value).padStart(2,"0")}</div>
-        <p className="kpi-detail">{x.detail}</p>
-      </Card>)}
-    </div>
-    <div className="dashboard-body">
-      <Card className="glass-panel gap-3 p-5">
-        <CardHeader className="px-0 pb-1">
-          <CardTitle className="text-sm">工厂业务流程</CardTitle>
-          <CardDescription className="text-xs">从销售订单到成品入库的跨部门协作</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-2 px-0 sm:grid-cols-2">
-          {[
-            ["销售订单","sales","orders"],["生产排程","pmc","schedule"],
-            ["采购到货","warehouse","warehouseIncoming"],["仓库备料","warehouse","warehousePick"],
-            ["生产任务","production","tasks"],["质量检验","quality","qaQc"],
-            ["QA 放行","quality","release"],["成品入库","warehouse","inventory"]
-          ].map(([label,d,f],i)=>{
-            const Icon=getFeatureIcon(f)
-            return <button type="button" key={label}
-              className="quick-dept gap-3" onClick={()=>onSelect(`#/departments/${d}/${f}`)}>
-              <Badge variant="secondary" className="min-w-7 rounded-md">{String(i+1).padStart(2,"0")}</Badge>
-              <Icon size={17} className="text-green-800"/>
-              <span className="flex-1">{label}</span><ChevronRight size={13}/>
-            </button>
-          })}
-        </CardContent>
-      </Card>
-      <Card className="glass-panel gap-3 p-5">
-        <CardHeader className="px-0 pb-1">
-          <CardTitle className="text-sm">部门协同</CardTitle>
-          <CardDescription className="text-xs">11 个部门 · 点击进入工作区</CardDescription>
-        </CardHeader>
-        <CardContent className="quick-departments px-0">
-          {DEPARTMENTS.map(d=>{
-            const Icon=getDepartmentIcon(d.id)
-            return <button type="button" className="quick-dept" key={d.id} onClick={()=>onSelect(`#/departments/${d.id}`)}>
-              <Icon size={15}/><span className="min-w-0 truncate">{d.name}</span><ChevronRight size={13} className="ml-auto shrink-0"/>
-            </button>
-          })}
-        </CardContent>
-      </Card>
-    </div>
-  </div>
-}
-function ClipboardIcon({size=17}:{size?:number}) {return <Check size={size}/>}
-
 export default function App() {
   const [route,setRoute]=useState<Route>(()=>parseRoute(window.location.hash))
   const [sidebarOpen,setSidebarOpen]=useState(false)
@@ -450,7 +386,7 @@ export default function App() {
           onOpenSidebar={()=>setSidebarOpen(true)} onSelect={navigate} messages={messages}
           onRead={readMessage} onReadAll={readAllMessages}/>
         <main className="shell-content" id="main-content">
-          {route.kind==="overview"?<Overview workspace={workspace} onSelect={navigate}/>:
+          {route.kind==="overview"?<OverviewDashboard workspace={workspace} onSelect={navigate} onRefresh={refresh}/>:
             currentDept&&(!currentFeature||!validFeature)?
               <DepartmentPage key={currentDept.id} dept={currentDept} staff={staff} employee={employee}
                 workspace={workspace} can={can} onSelect={navigate} onRefresh={refresh}/>
