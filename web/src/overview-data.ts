@@ -181,7 +181,7 @@ export function dashboardAlerts(workspace:WorkspaceData,today=dayString(new Date
     route:"#/departments/production/tasks"
   })
   const weight={high:0,medium:1,low:2}
-  return alerts.sort((a,b)=>weight[a.severity]-weight[b.severity)
+  return alerts.sort((a,b)=>weight[a.severity]-weight[b.severity])
 }
 function completedToday(workspace:WorkspaceData,day:string):number{
   const modules=asRecord(workspace.modules)
