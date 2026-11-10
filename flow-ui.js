@@ -119,9 +119,9 @@ const flowConfig={
   ['sales','确认客户收货',/确认客户收货|交付确认/]
  ],loops:[['销售订单评审','退回修改后重新送审','sales'],['QC 判定','不合格 → 生产返工并重新报检','production']],progress:{draft:-1,review:0,approved:1,trial:2,formal:3,reserved:4,issued:5,blending:6,semi_qc:7,semi_ok:8,packaging:9,final_qc:10,inspected:11,released:11,stored:12,dispatch:13,shipping:13,shipped:14,delivered:15}},
  purchase:{title:'采购单',steps:[
-  ['pmc','PMC 提出采购需求',/创建采购需求/],
-  ['pmc','PMC 主管确认需求',/PMC主管确认采购需求/],
-  ['purchase','采购员编制采购订单',/采购员编制采购订单并送审|采购员创建并送审/],
+  ['pmc','PMC 生成采购单',/PMC 依据销售订单缺料生成采购单|PMC 创建采购单|创建采购需求/],
+  ['pmc','PMC 主管确认需求',/PMC主管确认采购单|PMC主管确认采购需求/],
+  ['purchase','采购员完善采购单',/采购员完善采购单并送审|采购员编制采购订单并送审|采购员创建并送审/],
   ['purchase','采购主管审批',/采购主管审批通过|采购主管驳回/],
   ['finance','财务预算审核',/财务审核通过|财务驳回/],
   ['leadership','总经办审批',/总经办审批通过|总经办驳回/],
@@ -153,15 +153,15 @@ function getHistory(entry,kind){if(entry.history?.length)return entry.history;
 function lastStepRecord(step,history){return [...history].reverse().find(row=>step[2]?.test(String(row.action||'')))}
 function buildSteps(entry,kind){const config=flowConfig[kind];if(kind==='purchase'){
   const p=window.FactoryOperations?.state?.purchases?.find(x=>x.id===entry.ref),plan=p?.approvalPlan;
-  return config.steps.filter((x,i)=>i!==4&&i!==5||(i===4?plan?.finance!==false:plan?.leadership!==false))
+  return config.steps.filter((x,i)=>(i!==1||!p?.pmcAutoConfirmed)&&(i!==4&&i!==5||(i===4?plan?.finance!==false:plan?.leadership!==false)))
  }
  if(config)return config.steps;
  const source=entry.from||'sales',target=entry.to||source;return [[source,entry.action||'业务办理',new RegExp('.*')],[target,entry.next||'下一个业务动作',new RegExp('(?!)')]];}
 function stepState(i,kind,stage,steps){if(kind==='handoff')return i===0?'done':'current';
  if(kind==='purchase'){
-  const index=label=>steps.findIndex(x=>x[1]===label),prior=index('采购主管审批'),finance=index('财务预算审核'),leader=index('总经办审批'),arrival=index('仓库登记到货'),qc=index('QC 来料检验');
+  const index=label=>steps.findIndex(x=>x[1]===label),pmc=index('PMC 主管确认需求'),buyer=index('采购员完善采购单'),prior=index('采购主管审批'),finance=index('财务预算审核'),leader=index('总经办审批'),arrival=index('仓库登记到货'),qc=index('QC 来料检验');
   const waitingQC=stage==='到货处理中'||stage==='部分到货',approvedReceipt=waitingQC&&(window.FactoryModules?.state?.incoming||[]).some(r=>r.purchase===activeTrackRef&&r.status==='合格待入库');
-  const score=stage==='待补采购需求'?-1:stage==='待采购主管审批'?2:stage==='待财务审核'?prior:stage==='待总经办审批'?Math.max(prior,finance):stage==='待到货'?Math.max(prior,finance,leader):waitingQC?(approvedReceipt?qc:arrival):stage==='已入库'?steps.length-1:stage==='已驳回'?2:-1;
+  const score=stage==='待补采购需求'?-1:stage==='待PMC确认'?0:stage==='待采购填写'?(pmc<0?0:pmc):stage==='待采购主管审批'?buyer:stage==='待财务审核'?prior:stage==='待总经办审批'?Math.max(prior,finance):stage==='待到货'?Math.max(prior,finance,leader):waitingQC?(approvedReceipt?qc:arrival):stage==='已入库'?steps.length-1:stage==='已驳回'?0:-1;
   return score>=steps.length-1&&i===steps.length-1?'complete':i<=score?'done':i===score+1?'current':'waiting';
  }
  const score=flowConfig[kind]?.progress?.[stage]??-1,last=(flowConfig[kind]?.steps?.length||0)-1;if(score>=last&&i===last)return 'complete';return i<=score?'done':i===score+1?'current':'waiting'}
