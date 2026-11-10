@@ -141,7 +141,11 @@ function getStage(entry,kind){if(entry.stage!==undefined)return entry.stage;cons
 function getHistory(entry,kind){if(entry.history?.length)return entry.history;
  const ops=window.FactoryOperations?.state,modules=window.FactoryModules?.state,ref=entry.ref;
  if(kind==='order')return ops?.flows?.[ref]?.audit||[];
- if(kind==='purchase'){const p=ops?.purchases?.find(x=>x.id===ref),r=ops?.purchaseRequests?.find(x=>x.id===p?.requestId);return [...(r?.history||[]),...(p?.history||[])]}
+ if(kind==='purchase'){const p=ops?.purchases?.find(x=>x.id===ref),r=ops?.purchaseRequests?.find(x=>x.id===p?.requestId),receipts=(modules?.incoming||[]).filter(x=>x.purchase===ref);
+  const receiptHistory=receipts.flatMap(x=>x.history||[]);
+  const qcHistory=(modules?.inspections||[]).filter(x=>receipts.some(r=>r.id===x.incoming)&&x.status!=='待判定').map(x=>({action:'QC 来料检验'+x.status,person:String(x.result||'').split(' · ')[0]||'质量部',at:String(x.result||'').split(' · ')[1]||'—',from:'quality'}));
+  return [...(r?.history||[]),...(p?.history||[]),...receiptHistory,...qcHistory]
+ }
  if(kind==='receipt')return (modules?.ledger||[]).filter(x=>x.ref===ref).map(x=>({action:x.type,person:x.by,at:x.time,from:x.dept}));
  if(kind==='outbound')return (modules?.ledger||[]).filter(x=>x.ref===ref).map(x=>({action:x.type,person:x.by,at:x.time,from:x.dept}));
  return entry.action?[{action:entry.action,at:entry.at||'',person:entry.operator||'',from:entry.from}]:[];
@@ -156,7 +160,8 @@ function buildSteps(entry,kind){const config=flowConfig[kind];if(kind==='purchas
 function stepState(i,kind,stage,steps){if(kind==='handoff')return i===0?'done':'current';
  if(kind==='purchase'){
   const index=label=>steps.findIndex(x=>x[1]===label),prior=index('采购主管审批'),finance=index('财务预算审核'),leader=index('总经办审批'),arrival=index('仓库登记到货'),qc=index('QC 来料检验');
-  const score=stage==='待补采购需求'?-1:stage==='待采购主管审批'?2:stage==='待财务审核'?prior:stage==='待总经办审批'?Math.max(prior,finance):stage==='待到货'?Math.max(prior,finance,leader):stage==='到货处理中'||stage==='部分到货'?arrival:stage==='已入库'?steps.length-1:stage==='已驳回'?2:-1;
+  const waitingQC=stage==='到货处理中'||stage==='部分到货',approvedReceipt=waitingQC&&(window.FactoryModules?.state?.incoming||[]).some(r=>r.purchase===activeTrackRef&&r.status==='合格待入库');
+  const score=stage==='待补采购需求'?-1:stage==='待采购主管审批'?2:stage==='待财务审核'?prior:stage==='待总经办审批'?Math.max(prior,finance):stage==='待到货'?Math.max(prior,finance,leader):waitingQC?(approvedReceipt?qc:arrival):stage==='已入库'?steps.length-1:stage==='已驳回'?2:-1;
   return score>=steps.length-1&&i===steps.length-1?'complete':i<=score?'done':i===score+1?'current':'waiting';
  }
  const score=flowConfig[kind]?.progress?.[stage]??-1,last=(flowConfig[kind]?.steps?.length||0)-1;if(score>=last&&i===last)return 'complete';return i<=score?'done':i===score+1?'current':'waiting'}

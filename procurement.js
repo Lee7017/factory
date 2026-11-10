@@ -32,7 +32,7 @@ const linkedPo=reqId=>orders().find(p=>p.requestId===reqId);
 const fmt=()=>new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
 const audit=(record,action,from,person=user().name)=>{(record.history??=[]).push({action,from,person,at:fmt()})};
 const validNumber=n=>Number.isFinite(Number(n))&&Number(n)>0;
-const approvedSpend=(exclude='')=>orders().filter(p=>p.id!==exclude&&['待到货','到货处理中','部分到货','已入库'].includes(p.status)&&Number.isFinite(Number(p.totalAmount))).reduce((n,p)=>n+Number(p.totalAmount),0);
+const approvedSpend=(exclude='')=>orders().filter(p=>p.id!==exclude&&['待到货','到货处理中','部分到货','已入库'].includes(p.status)&&Number.isFinite(Number(p.totalAmount))&&String(p.approvedAt||p.submittedAt||'').startsWith(String(new Date().getFullYear()))).reduce((n,p)=>n+Number(p.totalAmount),0);
 function approvalPlan(p){
  const rule=rules(),total=Number(p.totalAmount),budget=rule.budgetLimit===null?null:Number(rule.budgetLimit);
  const overBudget=budget!==null&&approvedSpend(p.id)+total>budget+0.000001;
@@ -298,7 +298,7 @@ function onAction(el){const action=el.dataset.procAction,ref=el.dataset.procId;
 }
 const nativeInit=M.init,nativeRender=O.render;
 M.init=function(context){const result=nativeInit(context);ctx=context;migrate();return result};
-O.render=function(feature){const base=feature==='purchase'?renderPurchases():nativeRender(feature);return feature==='kitting'?base+renderRequests():feature==='finance'?base+renderApprovals('finance'):feature==='approvals'?base+renderApprovals('leadership'):base};
+O.render=function(feature){const base=feature==='purchase'?renderPurchases():nativeRender(feature);return feature==='kitting'?renderRequests()+base:feature==='finance'?base+renderApprovals('finance'):feature==='approvals'?base+renderApprovals('leadership'):base};
 M.startPurchaseReceipt=function(po){ctx.openFeature('warehouseIncoming','warehouse');setTimeout(()=>openReceipt(po),40)};
 document.addEventListener('click',e=>{const el=e.target.closest('[data-proc-action]');if(el){e.preventDefault();onAction(el)}});
 document.addEventListener('submit',e=>{if(e.target.id==='proc-form'){e.preventDefault();saveForm(e.target)} });
