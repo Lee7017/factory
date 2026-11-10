@@ -86,9 +86,8 @@ function taskForOrder(order,type,create=false,phase='',newRun=false){
   (type!=='清洗'||t.cleanPhase===cleanPhase||(!t.cleanPhase&&cleanPhase==='配制'&&t.line===line));
  let task=ctx.data.tasks.find(t=>linked(t)&&(!newRun||t.status!=='已完成'));
  if(!task&&!newRun)task=ctx.data.tasks.find(linked);
- if(!task&&create){
-  task=ctx.data.tasks.find(t=>t.type===type&&!t.orderId&&!t.order&&t.line===line&&t.status!=='已完成'&&
-   (type!=='清洗'||!t.cleanPhase||t.cleanPhase===cleanPhase));
+ if(!task&&create&&type!=='清洗'){
+  task=ctx.data.tasks.find(t=>t.type===type&&!t.orderId&&!t.order&&t.line===line&&t.status!=='已完成');
   if(task){task.orderId=o.id;if(type==='清洗')task.cleanPhase=cleanPhase;ctx.save()}
  }
  if(!task&&create){
