@@ -140,34 +140,36 @@ try {
   activeFeature="sales/orders"
   await page.evaluate(()=>{location.hash="#/departments/sales/orders"})
   await page.locator(".native-business .legacy-root").waitFor({state:"visible"})
-  // Sales-order layout must never separate the help label and create button
-  // with a tall blank header. Measure what the browser actually rendered.
+  // Sales orders use one table surface: compact toolbar + table, no duplicate rules row.
   const salesLayout=await page.evaluate(()=>{
     const root=document.querySelector(".native-business .ops-workbench")
-    const row=root?.querySelector(":scope > .ops-command-row")
-    const help=row?.querySelector(".business-help")
-    const button=row?.querySelector('[data-op-action="newOrder"]')
-    const table=root?.querySelector(":scope > .op-table-wrap")
-    if(!root||!row||!help||!button||!table)return null
-    const a=row.getBoundingClientRect(),b=help.getBoundingClientRect()
-    const c=button.getBoundingClientRect(),d=table.getBoundingClientRect()
+    const wrap=root?.querySelector(":scope > .op-table-wrap")
+    const toolbar=wrap?.querySelector(":scope > .op-table-toolbar")
+    const button=toolbar?.querySelector('[data-op-action="newOrder"]')
+    const table=wrap?.querySelector(":scope > .op-table")
+    if(!root||!wrap||!toolbar||!button||!table)return null
+    const w=wrap.getBoundingClientRect(),a=toolbar.getBoundingClientRect()
+    const b=button.getBoundingClientRect(),t=table.getBoundingClientRect()
     return {
-      rowHeight:Math.round(a.height),
-      tableGap:Math.round(d.top-a.bottom),
-      helpCenter:Math.round((b.top+b.bottom)/2),
-      buttonCenter:Math.round((c.top+c.bottom)/2),
-      duplicateHeading:!!root.querySelector(":scope > .ops-heading"),
-      separateHelp:!!root.querySelector(":scope > .business-help")
+      toolbarHeight:Math.round(a.height),
+      toolbarTopGap:Math.round(a.top-w.top),
+      tableGap:Math.round(t.top-a.bottom),
+      buttonInside:b.top>=a.top-1&&b.bottom<=a.bottom+1,
+      detachedCommand:!!root.querySelector(":scope > .ops-command-row"),
+      detachedHelp:!!root.querySelector(":scope > .business-help"),
+      helpInside:!!wrap.querySelector(".business-help")
     }
   })
-  assert.ok(salesLayout,"Sales orders must use shared compact command row")
-  assert.ok(salesLayout.rowHeight<=55,`Sales toolbar has excessive whitespace: ${JSON.stringify(salesLayout)}`)
-  assert.ok(salesLayout.tableGap>=0&&salesLayout.tableGap<=20,`Sales table does not follow actions: ${JSON.stringify(salesLayout)}`)
-  assert.ok(Math.abs(salesLayout.helpCenter-salesLayout.buttonCenter)<=18,`Help and create action must align: ${JSON.stringify(salesLayout)}`)
-  assert.equal(salesLayout.duplicateHeading,false,"Remove duplicate operation heading")
-  assert.equal(salesLayout.separateHelp,false,"Help must not occupy a second row")
-  await page.screenshot({path:"test-results/sales-orders-command-row.png",fullPage:false})
-  console.log("SALES COMMAND ROW VISUAL CHECK",JSON.stringify(salesLayout))
+  assert.ok(salesLayout,"Sales orders must render actions inside the table surface")
+  assert.ok(salesLayout.toolbarHeight<=50,`Sales table toolbar too tall: ${JSON.stringify(salesLayout)}`)
+  assert.ok(Math.abs(salesLayout.toolbarTopGap)<=2,`Toolbar must start at table surface top: ${JSON.stringify(salesLayout)}`)
+  assert.ok(Math.abs(salesLayout.tableGap)<=2,`Table must directly follow toolbar: ${JSON.stringify(salesLayout)}`)
+  assert.equal(salesLayout.buttonInside,true,"New order button must stay inside table toolbar")
+  assert.equal(salesLayout.detachedCommand,false,"No detached sales command row")
+  assert.equal(salesLayout.detachedHelp,false,"No detached sales help row")
+  assert.equal(salesLayout.helpInside,false,"Operation rules belong in topbar info, not table content")
+  await page.screenshot({path:"test-results/sales-orders-table-toolbar.png",fullPage:false})
+  console.log("SALES TABLE TOOLBAR VISUAL CHECK",JSON.stringify(salesLayout))
   const create=page.locator('.native-business [data-op-action="newOrder"]')
   await create.first().waitFor({state:"visible",timeout:10000})
   assert.equal(await create.first().getAttribute("data-slot"),"button","MES action buttons should be rendered using shadcn Button")
