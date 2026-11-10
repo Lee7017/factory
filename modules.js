@@ -330,7 +330,21 @@ function handleClick(node){const a=node.dataset.moduleAction||'',key=node.datase
   if(flow&&r.phase!=='来料'){ctx.ops.handleClick({dataset:{opAction:'flow:'+flow,opId:r.order}})}else save('报检判定已保存。');return true;
  }
  if(a.startsWith('sample:')){const r=S.samples.find(x=>x.id===key);if(!r||r.status!=='待判定')return false;r.status=a.endsWith(':pass')?'合格':'不合格';const lot=getBatch(r.batch);if(lot&&r.status==='合格'){lot.quality='合格';if(!lot.counted){ops().stock[lot.material]=(ops().stock[lot.material]||0)+Number(lot.qty);lot.counted=true;audit('批次质量放行入账',lot.id,`${lot.material} +${lot.qty}`)}}if(r.status==='不合格')nonconform('抽检',r.id,r.batch,`${r.item}不合格`,r.qty);audit('抽检判定',r.id,r.status);save('抽检判定已保存。');return true}
- if(a.startsWith('clean:')){const r=S.cleanReports.find(x=>x.id===key);if(!r||r.status!=='待判定')return false;r.status=a.endsWith(':pass')?'合格':'不合格';if(r.status==='不合格')nonconform('清洗报检',r.task,'',`${r.task} 清洗不合格`);audit('清洗报检判定',r.task,r.status);save('清洗检验结果已保存。');return true}
+ if(a.startsWith('clean:')){
+  if(!check('quality','qaCleanInspection','approve'))return true;
+  const r=S.cleanReports.find(x=>x.id===key);if(!r||r.status!=='待判定')return false;
+  const passed=a.endsWith(':pass');r.status=passed?'合格':'不合格';r.checkedBy=me().name;r.checkedAt=stamp();
+  const task=ctx.data.tasks.find(t=>t.id===r.task);
+  if(!passed){nonconform('清洗报检',r.task,'',`${r.task} 清洗不合格`);if(task)task.status='待开始'}
+  audit(passed?'清洗报检合格':'清洗报检不合格',r.task,r.status);
+  save(passed?'清洗 QC 已合格，可返回任务确认完工复核。':'清洗 QC 不合格，工单已退回重新清洗。');
+  window.FactoryFlowUI?.show({ref:r.id,docType:'清洗报检单',summary:(task?.line||r.line)+' · 清洗工单 '+r.task,
+    action:passed?'清洗报检合格':'清洗报检不合格',from:'quality',to:'production',
+    status:r.status,operator:me().name,at:stamp(),
+    next:passed?'生产任务确认清洗完工复核':'生产任务重新执行清洗',
+    nextOpen:{dept:'production',feature:'tasks',record:r.task}});
+  return true;
+ }
  if(a==='dispose'){const r=S.ncr.find(x=>x.id===key);if(!r)return false;modal('不合格品处置 · '+key,field('disposal','处置方式','select','隔离',['隔离','返洗','返工','报废'])+field('reason','处置依据','textarea',r.reason),{kind:'dispose',record:key});return true}
  if(a==='toggleFreeze'){const b=getBatch(key);if(!b)return false;b.quality=b.quality==='冻结'?'待检':'冻结';audit('质量库存状态调整',b.id,b.quality);save('批次质量状态已更新；解冻后仍需检验放行。');return true}
  if(a==='prepare'){const r=getRequest(key);if(!r||r.status!=='待备料')return false;const allocations=allocateFIFO(r.material,r.qty);if(!allocations)return fail('合格、未冻结、未过期批次合计数量不足，请先报检入库。');r.allocations=allocations;r.batch=allocations[0].id;r.status='待仓库签发';audit('按 FIFO 完成备料',r.id,allocations.map(x=>x.id+' × '+x.qty).join('、'));save(`已依入库先后分配 ${allocations.length} 个批次，等待仓库签发。`);return true}
@@ -381,6 +395,16 @@ function submitForm(ev){if(ev.target.id!=='module-form')return false;ev.preventD
  return fail('无法识别表单类型。')
  }catch(error){return fail('保存失败：'+(error?.message||'未知错误'))}
 }
+function ensureCleaningReport(taskId){
+ const task=ctx.data.tasks.find(t=>t.id===taskId&&t.type==='清洗');
+ if(!task||task.status!=='待复核')return null;
+ const passed=S.cleanReports.find(r=>r.task===taskId&&r.status==='合格');
+ if(passed)return passed;
+ const waiting=S.cleanReports.find(r=>r.task===taskId&&r.status==='待判定');
+ if(waiting)return waiting;
+ const report={id:id('CLQC'),task:task.id,line:task.line,order:task.orderId||'',remark:'清洗执行完毕，申请 QC 检验确认',status:'待判定'};
+ S.cleanReports.unshift(report);audit('清洗报检提交',task.id,task.line);ctx.save();return report;
+}
 function hasCleaningPass(task){return S.cleanReports.some(r=>r.task===task&&r.status==='合格')}
 function hasFlowInspection(orderId,phase){return S.inspections.some(r=>r.order===orderId&&r.phase===phase&&r.status==='合格')}
 function blockedFromFlow(material){return S.batches.filter(x=>x.material===material&&x.counted&&x.quality!=='合格').reduce((a,x)=>a+Number(x.qty),0)}
@@ -388,5 +412,5 @@ function onPurchaseReceipt(idValue){return S.incoming.some(r=>r.purchase===idVal
 function startPurchaseReceipt(purchaseId){ctx.openFeature('warehouseIncoming','warehouse');setTimeout(()=>window.FactoryProcurement?.openReceipt?.(purchaseId),40)}
 function openQualityRecord(idValue){currentTab.qaQc='decision';ctx.openFeature('qaQc','quality');setTimeout(()=>{const row=[...document.querySelectorAll('.mw-table tbody tr')].find(x=>x.textContent.includes(idValue));row?.scrollIntoView({block:'center',behavior:'smooth'});row?.classList.add('mw-highlight');},40)}
 function openTodo(item){const page=item.feature;ctx.openFeature(page,item.dept);setTimeout(()=>{const row=[...document.querySelectorAll('.mw-table tbody tr')].find(x=>x.textContent.includes(item.id));row?.scrollIntoView({block:'center',behavior:'smooth'});row?.classList.add('mw-highlight');},30)}
-window.FactoryModules={init,render,supports,handleClick,submitForm,pendingForDept,openTodo,openQualityRecord,startPurchaseReceipt,ensureFlowInspection,hasCleaningPass,hasFlowInspection,blockedFromFlow,onPurchaseReceipt,receiveFinishedGoods,get state(){return S}};
+window.FactoryModules={init,render,supports,handleClick,submitForm,pendingForDept,openTodo,openQualityRecord,startPurchaseReceipt,ensureFlowInspection,ensureCleaningReport,hasCleaningPass,hasFlowInspection,blockedFromFlow,onPurchaseReceipt,receiveFinishedGoods,get state(){return S}};
 })();
