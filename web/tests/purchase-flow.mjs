@@ -34,36 +34,25 @@ try {
   }
   await asEmployee("E014")
   await navigate("purchase","purchase")
-  // Purchase follows the same record-list foundation as sales: one table surface,
-  // status and primary action in its toolbar, no content-area title or detached panel.
-  const toolbarLayout=await page.evaluate(()=>{
-    const root=document.querySelector(".proc-purchase-page")
-    const panel=root?.querySelector(":scope > .proc-purchase-list")
-    const toolbar=panel?.querySelector(":scope > .proc-purchase-toolbar")
-    const action=toolbar?.querySelector('[data-proc-action="newPurchase"]')
-    const tableContainer=panel?.querySelector(':scope > [data-slot="table-container"]')
-    const table=tableContainer?.querySelector('[data-slot="table"]')
-    if(!root||!panel||!toolbar||!action||!tableContainer||!table)return null
-    const p=panel.getBoundingClientRect(),b=toolbar.getBoundingClientRect()
-    const t=tableContainer.getBoundingClientRect(),c=action.getBoundingClientRect()
-    return {
-      toolbarHeight:Math.round(b.height),
-      toolbarTopGap:Math.round(b.top-p.top),
-      tableGap:Math.round(t.top-b.bottom),
-      actionInside:c.top>=b.top-1&&c.bottom<=b.bottom+1,
-      duplicateTitle:!!root.querySelector(":scope > .proc-page-title"),
-      detachedToolbar:!!root.querySelector(":scope > .proc-list-toolbar")
-    }
-  })
-  assert.ok(toolbarLayout,"Purchase shared table toolbar must render")
-  assert.equal(toolbarLayout.duplicateTitle,false,"Purchase must not duplicate its title in content")
-  assert.equal(toolbarLayout.detachedToolbar,false,"Purchase must not use a detached action panel")
-  assert.ok(toolbarLayout.toolbarHeight<=58,`Purchase table toolbar too tall: ${JSON.stringify(toolbarLayout)}`)
-  assert.ok(Math.abs(toolbarLayout.toolbarTopGap)<=2,`Purchase toolbar must start at table surface top: ${JSON.stringify(toolbarLayout)}`)
-  assert.ok(Math.abs(toolbarLayout.tableGap)<=2,`Purchase table must directly follow toolbar: ${JSON.stringify(toolbarLayout)}`)
-  assert.equal(toolbarLayout.actionInside,true,"Purchase primary action must stay inside table toolbar")
+  // Purchase uses a foldable status rail; create and search/filter are always available.
+  const panel=page.locator('.native-business .biz-order-panel[data-order-panel="purchase"]')
+  await panel.waitFor({state:"visible"})
+  assert.equal(await panel.locator(".biz-order-stat").count(),6,"Purchase status rail uses actual purchase states")
+  assert.equal(await panel.locator(".biz-order-stats").isVisible(),true,"Purchase stats visible by default")
+  assert.equal(await panel.locator("[data-proc-action='newPurchase']").count(),1,"Purchase creation stays in list toolbar")
+  const fold=panel.locator(".biz-order-fold")
+  await fold.click()
+  assert.equal(await panel.locator(".biz-order-stats").isVisible(),false,"Folding hides only status statistics")
+  assert.equal(await panel.locator(".biz-order-search").isVisible(),true,"Purchase search remains visible")
+  assert.equal(await panel.locator(".biz-order-status").isVisible(),true,"Purchase status filter remains visible")
+  assert.equal(await panel.locator("[data-proc-action='newPurchase']").isVisible(),true,"Purchase create action remains visible")
+  await panel.locator(".biz-order-search").fill("NO-MATCH-PURCHASE")
+  assert.equal(await panel.locator(".biz-order-row:visible").count(),0,"Purchase search filters actual rows")
+  await panel.locator(".biz-order-search").fill("")
+  await fold.click()
+  assert.equal(await panel.locator(".biz-order-stats").isVisible(),true,"Purchase summary can expand again")
   await page.screenshot({path:"test-results/purchase-toolbar-desktop.png",fullPage:false})
-  console.log("PURCHASE TOOLBAR VISUAL CHECK",JSON.stringify(toolbarLayout))
+  console.log("PURCHASE FOLD & FILTER VISUAL CHECK",await panel.locator(".biz-order-row").count())
   // Original engine initializes the seeded purchase PO-001 only after this mount.
   const previous=(await getData()).ops?.purchases?.length??0
   const create=page.locator('[data-proc-action="newPurchase"]')
