@@ -122,7 +122,7 @@ function recordTable(cols,rows){return `<div class="op-table-wrap"><table class=
 const td=x=>`<td>${x}</td>`;
 function cmd(label,op,id='',style=''){return `<button type="button" class="op-button ${style}" data-op-action="${esc(op)}" data-op-id="${esc(id)}">${esc(label)}</button>`}
 function badge(status){let done=/已通过|已完成|已入库|已核准|已关闭|已发布|合格|已放行/.test(status);return `<span class="op-badge ${done?'complete':''}">${esc(status)}</span>`}
-function tip(text){return `<div class="op-rule"><strong>操作规则</strong>${esc(text)}</div>`}
+function tip(text){return `<details class="business-help"><summary>操作规则</summary><p>${esc(text)}</p></details>`}
 function shell(title,toolbar,content,tipText=''){return `<div class="ops-workbench">${toolbar?`<div class="ops-heading"><div><strong>业务记录与操作</strong><small>修改后更新本浏览器内的关联记录</small></div><div class="op-tools">${toolbar}</div></div>`:''}${tipText?tip(tipText):''}${content}</div>`}
 function historyView(){const rows=S.logs.slice(0,5);return `<details class="op-history"><summary>最近操作记录 <span>${S.logs.length} 条</span></summary>${rows.length?rows.map(x=>`<div><time>${esc(x.at)}</time><strong>${esc(x.action)}</strong><span>${esc(x.ref)} · ${esc(x.person)}</span></div>`).join(''):'<p>尚无操作</p>'}</details>`}
 function rowActions(o,which=''){const stage=stageOf(o);let list=Object.entries(orderActions).filter(([k,v])=>v[4]===stage&&(!which||(featureActions[which]||[]).includes(k)));return list.map(([key,meta])=>cmd(meta[0],`flow:${key}`,o.id,key==='reject'?'muted':'')).join('')||'<span class="op-muted">等待下一环节</span>'}
