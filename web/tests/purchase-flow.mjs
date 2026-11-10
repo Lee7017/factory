@@ -145,6 +145,7 @@ try {
   data=await getData()
   assert.equal(data.modules.incoming.find(r=>r.id===rec.id).status,"合格待入库","QC must release to warehouse")
   // The purchase journey must reflect both the real warehouse event and the QC pass.
+  await asEmployee("E014")
   await navigate("purchase","purchase")
   await page.locator(`[data-proc-action="viewPurchase"][data-proc-id="${poId}"]`).click()
   const purchaseDialog=page.locator(".journey-dialog")
