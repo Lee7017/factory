@@ -221,6 +221,32 @@ try {
     await page.reload({waitUntil:"networkidle"})
     assert.ok(await page.evaluate(()=>JSON.parse(localStorage.getItem("factory-workspace-v4")||"{}").orders?.some(o=>o.product==="自动化测试产品")),"Created order survives refresh and React hydration")
   }else missing.push("Sales order creation button unavailable for default developer")
+  // The original animated cross-department journey must remain visible in React,
+  // including its running border, full-page overlay and precise bottleneck tracking.
+  await page.locator('.native-business [data-op-action="detailFlow"]').first().waitFor({state:"visible"})
+  await page.locator('.native-business [data-op-action="detailFlow"]').first().click()
+  const flow=page.locator('body > .legacy-flow-portal-root #flow-transition-host')
+  await flow.locator('.journey-dialog').waitFor({state:"visible",timeout:8000})
+  assert.equal(await page.locator('.native-business #flow-transition-host').count(),0,"Flow must not be clipped inside business glass")
+  const flowRect=await flow.boundingBox()
+  assert.ok(flowRect&&Math.abs(flowRect.x)<=2&&Math.abs(flowRect.y)<=2,
+    "Journey overlay must cover viewport, not only business workbench")
+  const runningBorder=flow.locator('.journey-marquee rect').first()
+  await runningBorder.waitFor({state:"attached",timeout:7000})
+  const borderAnimation=await runningBorder.evaluate(el=>getComputedStyle(el).animationName)
+  assert.ok(borderAnimation.includes("journey-border-march"),"Animated journey border must retain running animation")
+  const tracking=flow.locator('[data-flow-track]')
+  await tracking.waitFor({state:"visible",timeout:7000})
+  await page.screenshot({path:"test-results/order-animated-journey.png",fullPage:false})
+  const sourceHash=await page.evaluate(()=>location.hash)
+  await tracking.click()
+  await page.waitForFunction(source=>location.hash!==source,sourceHash,{timeout:8000})
+  const tracked=page.locator('.native-business .bottleneck-track-highlight')
+  await tracked.first().waitFor({state:"visible",timeout:9000})
+  console.log("JOURNEY MARQUEE AND BOTTLENECK TRACKING CHECK",JSON.stringify({
+    borderAnimation,target:await page.evaluate(()=>location.hash),
+    trackedText:(await tracked.first().textContent())?.slice(0,80)
+  }))
   // Inventory batches are the representative module-record page:
   // summary first, actual ledger table second, create action belongs to that ledger table.
   activeFeature="warehouse/warehouseOps"
