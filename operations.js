@@ -119,6 +119,54 @@ function stageForOrder(o){return stages[stageOf(o)]||'未知状态'}
 function reservedTotal(id){return Object.values(S.reservations||{}).reduce((sum,res)=>sum+Number(res[id]||0),0)}
 function availableStock(id){return Math.max(0,(S.stock[id]||0)-reservedTotal(id))}
 function recordTable(cols,rows,toolbar=''){return `<div class="op-table-wrap">${toolbar?`<div class="op-table-toolbar"><div class="op-tools">${toolbar}</div></div>`:''}<table class="op-table"><thead><tr>${cols.map(x=>`<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td colspan="${cols.length}" class="op-empty">暂无记录</td></tr>`}</tbody></table></div>`}
+
+ // Shared order-list controls. Status facts fold independently from always-available filters.
+ const orderPanelFolded=Object.create(null);
+ function orderPanel({key,table,stats=[],toolbar='',statuses=[],item='销售订单',placeholder='搜索单号 / 产品'}){
+  const folded=Boolean(orderPanelFolded[key]);
+  const opts=[...new Set(statuses.filter(Boolean))];
+  const count=(table.match(/class="biz-order-row"/g)||[]).length;
+  return `<section class="biz-order-panel ${folded?'is-folded':''}" data-order-panel="${esc(key)}">
+   <div class="biz-order-stats" id="biz-order-stats-${esc(key)}" ${folded?'hidden':''}>${stats.map(([label,num])=>`<div class="biz-order-stat"><span>${esc(label)}</span><strong>${Number(num)||0}</strong></div>`).join('')}</div>
+   <div class="biz-order-toolbar">
+    ${toolbar?`<div class="biz-order-create">${toolbar}</div>`:''}
+    <input class="biz-order-search" type="search" placeholder="${esc(placeholder)}" aria-label="搜索${esc(item)}">
+    <select class="biz-order-status" aria-label="${esc(item)}状态筛选"><option value="">状态：全部</option>${opts.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('')}</select>
+    <button type="button" class="biz-order-fold" data-op-action="orderUi:fold" data-op-id="${esc(key)}" aria-expanded="${!folded}" aria-controls="biz-order-stats-${esc(key)}"><span class="biz-fold-arrow" aria-hidden="true">${folded?'⌄':'⌃'}</span><span>${folded?'展开状态统计':'收起状态统计'}</span></button>
+   </div>
+   <div class="biz-order-table-area">${table}</div>
+   <div class="biz-order-footer">共 <strong class="biz-order-visible-count">${count}</strong> 条${esc(item)}</div>
+  </section>`;
+ }
+ function filterOrderPanel(panel){
+  if(!panel)return;
+  const search=(panel.querySelector('.biz-order-search')?.value||'').trim().toLocaleLowerCase();
+  const status=panel.querySelector('.biz-order-status')?.value||'';
+  let visible=0;
+  for(const row of panel.querySelectorAll('.biz-order-row')){
+   const matches=(!search||(row.textContent||'').toLocaleLowerCase().includes(search))&&(!status||row.dataset.orderStatus===status);
+   row.hidden=!matches;
+   if(matches)visible++;
+  }
+  const count=panel.querySelector('.biz-order-visible-count');if(count)count.textContent=String(visible);
+ }
+ document.addEventListener('input',event=>{
+  if(event.target instanceof Element&&event.target.matches('.biz-order-search'))filterOrderPanel(event.target.closest('.biz-order-panel'));
+ });
+ document.addEventListener('change',event=>{
+  if(event.target instanceof Element&&event.target.matches('.biz-order-status'))filterOrderPanel(event.target.closest('.biz-order-panel'));
+ });
+ window.FactoryOrderListUI={panel:orderPanel,filter:filterOrderPanel};
+ function salesOrderStats(){
+  const all=ctx.data.orders||[];
+  const count=keys=>all.filter(o=>keys.includes(stageOf(o))).length;
+  return [
+   ['待评审',count(['review'])],['待排程',count(['approved','trial'])],
+   ['正式排程',count(['formal','reserved'])],
+   ['生产中',count(['issued','blending','semi_qc','semi_ok','packaging','final_qc'])],
+   ['已交付',count(['delivered'])]
+  ];
+ }
 const td=x=>`<td>${x}</td>`;
 function cmd(label,op,id='',style=''){return `<button type="button" class="op-button ${style}" data-op-action="${esc(op)}" data-op-id="${esc(id)}">${esc(label)}</button>`}
 function badge(status){let done=/已通过|已完成|已入库|已核准|已关闭|已发布|合格|已放行/.test(status);return `<span class="op-badge ${done?'complete':''}">${esc(status)}</span>`}
@@ -290,6 +338,15 @@ function commitForm(values){const state=openForm;if(!state)return;let {type,id}=
 }
 function gen(prefix){newIdSeq+=1;return `${prefix}-${String(Date.now()).slice(-5)}-${String(newIdSeq).padStart(2,'0')}`}
 function handleClick(button){const action=button.dataset.opAction||'',id=button.dataset.opId||'';
+ if(action==='orderUi:fold'){
+  const panel=button.closest('.biz-order-panel');if(!panel)return true;
+  const folded=panel.classList.toggle('is-folded');orderPanelFolded[id]=folded;
+  const stats=panel.querySelector('.biz-order-stats');if(stats)stats.hidden=folded;
+  button.setAttribute('aria-expanded',String(!folded));
+  const arrow=button.querySelector('.biz-fold-arrow');if(arrow)arrow.textContent=folded?'⌄':'⌃';
+  const label=button.querySelector('.biz-fold-arrow + span');if(label)label.textContent=folded?'展开状态统计':'收起状态统计';
+  return true;
+ }
  if(action==='close'){close();return true}
  if(action==='detailFlow'){inspectFlow(id);return true}
  if(action==='qaRecord'){close();window.FactoryModules?.openQualityRecord?.(id);return true}
