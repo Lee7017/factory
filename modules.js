@@ -522,7 +522,65 @@ function hasFlowInspection(orderId,phase){return S.inspections.find(r=>r.order==
 function blockedFromFlow(material){return S.batches.filter(x=>x.material===material&&x.counted&&x.quality!=='合格').reduce((a,x)=>a+Number(x.qty),0)}
 function onPurchaseReceipt(idValue){return S.incoming.some(r=>r.purchase===idValue&&r.status==='已入库')}
 function startPurchaseReceipt(purchaseId){ctx.openFeature('warehouseIncoming','warehouse');setTimeout(()=>window.FactoryProcurement?.openReceipt?.(purchaseId),40)}
+
+// 流转图已办理卡片的“查看单据”：只读真实业务记录，不重新建单、也不触发审批。
+function openRecordDocument(kind,recordId){
+ const number=String(recordId||'');
+ if(kind==='clean'){
+  const r=S.cleanReports.find(x=>x.id===number);
+  if(!r){ctx.toast('清洗报检单不存在或已删除');return false}
+  cleanInspectionModal(r,true);return true;
+ }
+ const source={
+  purchase:()=>ops().purchases?.find(r=>r.id===number),
+  receipt:()=>S.incoming.find(r=>r.id===number),
+  inspection:()=>S.inspections.find(r=>r.id===number),
+  ncr:()=>S.ncr.find(r=>r.id===number),
+  material:()=>S.materialRequests.find(r=>r.id===number),
+  outbound:()=>S.outbound.find(r=>r.id===number),
+  task:()=>ctx.data.tasks.find(r=>r.id===number),
+  batch:()=>S.batches.find(r=>r.id===number),
+  sample:()=>S.samples.find(r=>r.id===number)
+ };
+ const titles={purchase:'采购单',receipt:'采购到货单',inspection:'检验单',ncr:'不合格品处置单',
+  material:'领料 / 退库单',outbound:'成品出库单',task:'生产任务工单',batch:'库存批次',sample:'抽检单'};
+ const item=source[kind]?.();
+ if(!item){ctx.toast('关联单据不存在或已删除');return false}
+ const records={
+  purchase:[['物料',item.material],['采购数量',item.qty],['关联销售订单',item.sourceOrder],
+   ['状态',item.status],['供应商',item.supplier],['采购单价',item.unitPrice],
+   ['采购总金额',item.totalAmount],['计划到货日期',item.deliveryDate],['PMC确认',item.pmcConfirmedBy],
+   ['采购经办',item.purchaseBy],['采购主管审批',item.approvedBy]],
+  receipt:[['关联采购单',item.purchase],['物料',item.material],['实收数量',item.actualQty??item.qty],
+   ['供应商批次',item.supplierLot],['到货日期',item.received],['状态',item.status],
+   ['入库批次',item.batch]],
+  inspection:[['检验类型',item.phase],['关联销售订单',item.order],['关联到货单',item.incoming],
+   ['检验对象',item.material],['批次',item.batch],['检验结果',item.status],
+   ['检验人 / 时间',item.result],['检验日期',item.date],['备注',item.remark]],
+  ncr:[['来源',item.source],['关联业务单据',item.ref],['物料 / 批次',item.material],
+   ['问题描述',item.reason],['处理状态',item.status],['处置方案',item.disposal],
+   ['处置人',item.disposedBy],['处理时间',item.disposedAt],['关联工单',item.task]],
+  material:[['单据类型',item.type],['销售订单',item.order],['物料',item.material],['数量',item.qty],
+   ['生产线',item.line],['处理状态',item.status],['申请人',item.requestBy],['仓库签发',item.warehouseBy],
+   ['车间签收',item.shopBy],['签发时间',item.warehouseTime],['签收时间',item.shopTime]],
+  outbound:[['销售订单',item.order],['本次出库数量（箱）',item.qty],['客户 / 去向',item.destination],
+   ['状态',item.status],['成品批次分配',(item.allocations||[]).map(x=>x.id+' × '+x.qty).join('、')],
+   ['创建人',item.createdBy],['创建时间',item.createdAt],['出库时间',item.shippedAt]],
+  task:[['任务类型',item.type],['清洗阶段',item.cleanPhase],['生产线',item.line],['关联订单',item.orderId||item.order],
+   ['状态',item.status],['开始时间',item.startedAt],['执行完工',item.finishedAt],
+   ['完工人员',item.finishedBy],['复核人员',item.verifiedBy],['复核时间',item.verifiedAt]],
+  batch:[['物料',item.material],['关联订单',item.order],['到货单',item.incoming],['批次分类',item.group],
+   ['数量',item.qty+' '+(item.unit||'')],['质量状态',item.quality],['入库时间',item.received],['有效期',item.expiry]],
+  sample:[['批次',item.batch],['抽检项目',item.item],['数量',item.qty],['状态',item.status]]
+ };
+ const fields=(records[kind]||[]).filter(([,v])=>v!==undefined&&v!==null&&String(v).trim()!=='')
+  .map(([name,value])=>`<div class="mw-record-field"><span>${esc(name)}</span><strong>${esc(value)}</strong></div>`).join('');
+ modal(titles[kind]+' · '+number,`<div class="mw-record-view">
+  <div class="mw-record-id"><strong>${esc(number)}</strong><span>原业务单据 · 只读查看</span></div>
+  ${fields||'<p>该单据暂没有可显示的明细。</p>'}</div>`,{kind:'cleanView',record:number});
+ return true;
+}
 function openQualityRecord(idValue){currentTab.qaQc='decision';ctx.openFeature('qaQc','quality');setTimeout(()=>{const row=[...document.querySelectorAll('.mw-table tbody tr')].find(x=>x.textContent.includes(idValue));row?.scrollIntoView({block:'center',behavior:'smooth'});row?.classList.add('mw-highlight');},40)}
 function openTodo(item){const page=item.feature;ctx.openFeature(page,item.dept);setTimeout(()=>{const row=[...document.querySelectorAll('.mw-table tbody tr')].find(x=>x.textContent.includes(item.id));row?.scrollIntoView({block:'center',behavior:'smooth'});row?.classList.add('mw-highlight');},30)}
-window.FactoryModules={init,render,supports,handleClick,submitForm,pendingForDept,openTodo,openQualityRecord,startPurchaseReceipt,ensureFlowInspection,ensureCleaningReport,hasCleaningPass,hasFlowInspection,blockedFromFlow,onPurchaseReceipt,receiveFinishedGoods,get state(){return S}};
+window.FactoryModules={init,render,supports,handleClick,submitForm,pendingForDept,openTodo,openQualityRecord,openRecordDocument,startPurchaseReceipt,ensureFlowInspection,ensureCleaningReport,hasCleaningPass,hasFlowInspection,blockedFromFlow,onPurchaseReceipt,receiveFinishedGoods,get state(){return S}};
 })();
