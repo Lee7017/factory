@@ -96,7 +96,7 @@ function docMeta(entry){
  };
 }
 function currentTime(){return new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
-let dismissTimer=null,activeContinue=null,activeTrackRef='';
+let dismissTimer=null,activeContinue=null,activeTrackRef='',activeFlowDocuments=[];
 const arrowRight='<svg class="journey-arrow" viewBox="0 0 48 26" aria-hidden="true"><path d="M2 13 H42 M33 4 L42 13 L33 22"/></svg>';
 const arrowReturn='<svg class="journey-return-arrow" viewBox="0 0 80 39" aria-hidden="true"><path d="M73 5 H27 Q9 5 9 20 V32 M2 24 L9 32 L16 24"/></svg>';
 const flowConfig={
@@ -173,12 +173,83 @@ function stepState(i,kind,stage,steps,ref){if(kind==='handoff')return i===0?'don
   return score>=steps.length-1&&i===steps.length-1?'complete':i<=score?'done':i===score+1?'current':'waiting';
  }
  const score=flowConfig[kind]?.progress?.[stage]??-1,last=(flowConfig[kind]?.steps?.length||0)-1;if(score>=last&&i===last)return 'complete';return i<=score?'done':i===score+1?'current':'waiting'}
-function makeCard(step,i,state,history){const [dept,act]=step,record=lastStepRecord(step,history),done=['done','complete'].includes(state),operator=record?.person||record?.by||(done?'历史记录未注明':'待分配'),time=record?.at||record?.time||'—',canTrack=Boolean(activeContinue)&&['current','complete'].includes(state);return `<div class="journey-card is-${state}" data-journey-step="${i}">
- <div class="journey-card-head"><span class="journey-seq">${String(i+1).padStart(2,'0')}</span><div class="journey-card-head-actions">${canTrack?'<button type="button" class="journey-card-track" data-flow-track>'+(state==='complete'?'查看已办结环节':'跟踪当前环节')+' →</button>':`<span class="journey-state">${state==='done'?'已办理':state==='current'?'当前环节':state==='complete'?'已办结':'待办理'}</span>`}</div></div>
- <div class="journey-dept">${clean(label(dept))}</div><strong class="journey-task">${clean(act)}</strong><div class="journey-person"><time class="journey-time">${clean(time)}</time><span class="journey-operator" title="${clean(operator)}">${clean(operator)}</span></div>
- ${['current','complete'].includes(state)?'<svg class="journey-marquee" aria-hidden="true"><rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)" rx="12"/></svg>':''}</div>`}
+
+/* 只从已存在的业务记录找单据；没有单号就保留“已办理”，不生成假链接。 */
+function linkedDocuments(entry,kind,step){
+ const name=step[1],ref=String(entry.ref||''),ops=window.FactoryOperations?.state||{},modules=window.FactoryModules?.state||{};
+ const cleanReports=modules.cleanReports||[],inspections=modules.inspections||[],ncr=modules.ncr||[];
+ const incoming=modules.incoming||[],outbound=modules.outbound||[],batches=modules.batches||[];
+ const documents=[];
+ const add=(records,type,title)=>{for(const record of records||[])if(record?.id)documents.push({type,title,ref:String(record.id)})};
+ const fromInspection=xs=>{const ids=new Set(xs.map(x=>x.id));return ncr.filter(r=>ids.has(r.ref)||ids.has(r.inspection))};
+ if(kind==='order'){
+  const cleanFor=phase=>cleanReports.filter(r=>r.order===ref&&(r.phase===phase||(!r.phase&&/配制/.test(r.line||'')&&phase==='配制')||(!r.phase&&/包装|瓶装/.test(r.line||'')&&phase==='包装')));
+  if(name==='确认物料齐套并锁库')add((ops.purchases||[]).filter(p=>p.sourceOrder===ref),'purchase','采购单');
+  if(name==='确认领料发料')add((modules.materialRequests||[]).filter(r=>r.order===ref&&r.type==='领料'),'material','领料单');
+  if(name==='配制线清洗执行与复核'||name==='包装线清洗执行与复核'){
+   const phase=name.startsWith('配制')?'配制':'包装';
+   const reports=cleanFor(phase);
+   add(reports,'clean','清洗报检单');
+   if(!reports.length){
+    const tasks=window.FactoryOperations?.tasksForOrder?.(ref,'清洗',phase)||[];
+    add(tasks,'task','清洗工单');
+   }
+  }
+  if(name==='半成品检验判定'||name==='成品检验判定并放行'){
+   const phase=name.startsWith('半成品')?'半成品':'成品';
+   const records=inspections.filter(r=>r.order===ref&&r.phase===phase);
+   add(records,'inspection',phase+'检验单');
+   add(fromInspection(records),'ncr','不合格品处置单');
+  }
+  if(name==='调机调线执行与复核')add(window.FactoryOperations?.tasksForOrder?.(ref,'调机调线')||[],'task','调机调线工单');
+  if(name==='成品入库')add(batches.filter(b=>b.order===ref&&b.group==='成品'),'batch','成品库存批次');
+  if(name==='按销售订单成品出库')add(outbound.filter(r=>r.order===ref),'outbound','成品出库单');
+ }else if(kind==='purchase'){
+  if(['PMC 生成采购单','采购员完善采购单'].includes(name))
+   add((ops.purchases||[]).filter(r=>r.id===ref),'purchase','采购单');
+  const receipts=incoming.filter(r=>r.purchase===ref);
+  if(name==='仓库登记到货')add(receipts,'receipt','采购到货单');
+  if(name==='QC 来料检验'){
+   const ids=new Set(receipts.map(r=>r.id));
+   const checks=inspections.filter(r=>ids.has(r.incoming));
+   add(checks,'inspection','来料检验单');add(fromInspection(checks),'ncr','不合格品处置单');
+  }
+  if(name==='确认合格批次入库')add(batches.filter(b=>receipts.some(r=>r.id===b.incoming||r.batch===b.id)),'batch','入库批次');
+ }else if(kind==='receipt'){
+  if(name==='仓库登记实收与供应商批次')add(incoming.filter(r=>r.id===ref),'receipt','采购到货单');
+  if(name==='QC 检验并判定'){
+   const checks=inspections.filter(r=>r.incoming===ref);
+   add(checks,'inspection','来料检验单');add(fromInspection(checks),'ncr','不合格品处置单');
+  }
+  if(name==='确认合格批次入库')add(batches.filter(b=>b.incoming===ref||incoming.some(r=>r.id===ref&&r.batch===b.id)),'batch','入库批次');
+ }else if(kind==='outbound'){
+  if(['仓库按成品批次拣货','核对并确认出库'].includes(name))
+   add(outbound.filter(r=>r.id===ref),'outbound','成品出库单');
+ }
+ return documents.filter((d,i)=>documents.findIndex(x=>x.type===d.type&&x.ref===d.ref)===i);
+}
+function makeCard(step,i,state,history,documents=[]){
+ const [dept,act]=step,record=lastStepRecord(step,history),done=['done','complete'].includes(state);
+ const operator=record?.person||record?.by||(done?'历史记录未注明':'待分配'),time=record?.at||record?.time||'—';
+ const canTrack=Boolean(activeContinue)&&['current','complete'].includes(state);
+ const title=documents.length===1?documents[0].title:
+  documents.every(d=>d.title===documents[0]?.title)?`${documents[0].title}（${documents.length}）`:`相关单据（${documents.length}）`;
+ const docButton=done&&documents.length?
+  `<button type="button" class="journey-card-document" data-flow-document-step="${i}" title="${clean('查看'+title)}">查看${clean(title)}</button>`:'';
+ const status=state==='done'?'已办理':state==='current'?'当前环节':state==='complete'?'已办结':'待办理';
+ const head=docButton||(canTrack?
+  `<button type="button" class="journey-card-track" data-flow-track>${state==='complete'?'查看已办结环节':'跟踪当前环节'} →</button>`:
+  `<span class="journey-state">${status}</span>`);
+ return `<div class="journey-card is-${state}" data-journey-step="${i}">
+  <div class="journey-card-head"><span class="journey-seq">${String(i+1).padStart(2,'0')}</span>
+   <div class="journey-card-head-actions">${head}</div></div>
+  <div class="journey-dept">${clean(label(dept))}</div><strong class="journey-task">${clean(act)}</strong>
+  <div class="journey-person"><time class="journey-time">${clean(time)}</time>
+   <span class="journey-operator" title="${clean(operator)}">${clean(operator)}</span></div>
+  ${['current','complete'].includes(state)?'<svg class="journey-marquee" aria-hidden="true"><rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)" rx="12"/></svg>':''}</div>`;
+}
 // 所有单据共用同一条顺时针闭合路线。只有历史上确实发生退回时才绘制回环。
-function snakeOfCards(steps,kind,stage,history,ref){
+function snakeOfCards(steps,kind,stage,history,ref,documentsByStep){
  const cols=4,cardW=176,cardH=122,gapX=36,gapY=72,padX=34,padY=34;
  const rows=Math.ceil(steps.length/cols),width=padX*2+cols*cardW+(cols-1)*gapX,height=padY*2+rows*cardH+Math.max(0,rows-1)*gapY;
  const pos=steps.map((_,i)=>{const row=Math.floor(i/cols),slot=i%cols,col=row%2===0?slot:cols-1-slot;return {row,col,x:padX+col*(cardW+gapX),y:padY+row*(cardH+gapY)}});
@@ -197,7 +268,7 @@ function snakeOfCards(steps,kind,stage,history,ref){
   const x1=a.x+cardW/2,y1=a.y+cardH/2,x2=b.x+cardW/2,y2=b.y+cardH/2,lift=42+i*18,cy=Math.min(y1,y2)-lift;
   return `<path class="journey-snake-return" d="M${x1} ${y1} C${x1} ${cy} ${x2} ${cy} ${x2} ${y2}" marker-end="url(#journey-return-tip)"/>`;
  }).join('');
- const cards=steps.map((step,i)=>`<div class="journey-snake-position" style="left:${pos[i].x}px;top:${pos[i].y}px;width:${cardW}px;height:${cardH}px">${makeCard(step,i,states[i],history,steps.length)}</div>`).join('');
+ const cards=steps.map((step,i)=>`<div class="journey-snake-position" style="left:${pos[i].x}px;top:${pos[i].y}px;width:${cardW}px;height:${cardH}px">${makeCard(step,i,states[i],history,documentsByStep?.[i]||[])}</div>`).join('');
  return `<div class="journey-snake-scroll" role="region" aria-label="连续折返流程图" tabindex="0" data-arrival-index="${currentIndex}"><div class="journey-snake" style="width:${width}px;height:${height}px"><svg viewBox="0 0 ${width} ${height}" class="journey-snake-paths" aria-hidden="true"><defs><marker id="journey-arrow-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#62758a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="journey-return-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#b76b44" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>${arrows}${returnLines}</svg>${cards}</div></div>`;
 }
 
@@ -230,13 +301,14 @@ function extras(entry,kind){if(entry.detailHtml)return `<div class="journey-extr
  }return ''}
 function renderGraph(entry){const kind=inferKind(entry),history=getHistory(entry,kind),cfg=flowConfig[kind],stage=getStage(entry,kind),type=entry.docType||cfg?.title||docMeta(entry).type;
  const steps=buildSteps(entry,kind);const summary=entry.summary||'';
+ const documentsByStep=steps.map(step=>linkedDocuments(entry,kind,step));
  const blocker=entry.blockedTask;
  const blockedInfo=blocker?`<div class="journey-blocker" role="status"><strong>当前卡点：${clean(blocker.type)}工单 ${clean(blocker.id)} · ${clean(blocker.status)}</strong><span>${clean(blocker.line)} · ${clean(blocker.note)}</span><small>点击流程图当前环节的“跟踪当前环节”，直接前往实际待办。</small></div>`:'';
  return `<div class="flow-veil" data-flow-close aria-hidden="true"></div><section class="flow-window journey-dialog" role="dialog" aria-modal="true" aria-labelledby="journey-title">
  <header class="journey-top"><div><span class="journey-eyebrow">跨部门单据流转</span><h2 id="journey-title">${clean(type)} <span>${clean(entry.ref||'业务记录')}</span></h2><p>${clean(summary)}</p></div></header>
  ${kind==='order'?"<div class=\"journey-tabs\" role=\"tablist\" aria-label=\"订单弹窗\">\n  <button type=\"button\" class=\"journey-tab is-active\" role=\"tab\" id=\"journey-tab-flow\" aria-controls=\"journey-panel-flow\" aria-selected=\"true\" tabindex=\"0\" data-journey-tab=\"flow\">流转图</button>\n  <button type=\"button\" class=\"journey-tab\" role=\"tab\" id=\"journey-tab-order\" aria-controls=\"journey-panel-order\" aria-selected=\"false\" tabindex=\"-1\" data-journey-tab=\"order\">订单内容</button>\n </div>\n <section class=\"journey-tab-panel is-active\" id=\"journey-panel-flow\" role=\"tabpanel\" aria-labelledby=\"journey-tab-flow\" data-journey-panel=\"flow\">":orderDetails(entry,kind)}
  ${blockedInfo}
- <div class="journey-steps">${snakeOfCards(steps,kind,stage,history,entry.ref)}</div>
+ <div class="journey-steps">${snakeOfCards(steps,kind,stage,history,entry.ref,documentsByStep)}</div>
  ${kind==='order'?"</section><section class=\"journey-tab-panel\" id=\"journey-panel-order\" role=\"tabpanel\" aria-labelledby=\"journey-tab-order\" data-journey-panel=\"order\" hidden>"+orderDetails(entry,kind)+extras(entry,kind)+'</section>':extras(entry,kind)}
  </section>`}
 function openDialog(entry){const host=document.querySelector('#flow-transition-host');if(!host||!entry)return;
@@ -246,6 +318,7 @@ function openDialog(entry){const host=document.querySelector('#flow-transition-h
   liveStage==='shipped'?{dept:'sales',feature:'orders',record:entry.ref}:
   ['dispatch','shipping'].includes(liveStage)?{dept:'warehouse',feature:'warehouseOutbound',record:entry.ref}:null;
  activeContinue=orderTarget||entry.nextOpen||nextTargets[entry.action]||null;activeTrackRef=entry.nextOpen?.record||entry.ref||'';
+ activeFlowDocuments=buildSteps(entry,inferKind(entry)).map(step=>linkedDocuments(entry,inferKind(entry),step));
  host.innerHTML=renderGraph(entry);host.classList.remove('flow-dismiss');host.classList.add('flow-visible');
  const dialog=host.querySelector('.journey-dialog'),snakeScroll=dialog?.querySelector('.journey-snake-scroll'),arrival=Number(snakeScroll?.dataset.arrivalIndex??-1);
  if(dialog&&snakeScroll&&arrival>=0){
@@ -267,12 +340,42 @@ function openDialog(entry){const host=document.querySelector('#flow-transition-h
 }
 function show(entry){openDialog(entry)}
 function openDocument(entry){openDialog(entry)}
-function dismiss(){const host=document.querySelector('#flow-transition-host');if(!host)return;host.classList.remove('flow-visible');host.classList.add('flow-dismiss');host.innerHTML='';activeContinue=null;activeTrackRef=''}
+function dismiss(){const host=document.querySelector('#flow-transition-host');if(!host)return;host.classList.remove('flow-visible');host.classList.add('flow-dismiss');host.innerHTML='';activeContinue=null;activeTrackRef='';activeFlowDocuments=[];activeDocumentChoices=[]}
+function openLinkedDocument(doc){
+ if(!doc)return;
+ if(!window.FactoryModules?.openRecordDocument){window.alert('单据查看功能尚不可用');return}
+ dismiss();
+ window.FactoryModules.openRecordDocument(doc.type,doc.ref);
+}
+function chooseLinkedDocuments(docs){
+ const host=document.querySelector('#flow-transition-host');
+ if(!host||!docs.length)return;
+ if(docs.length===1)return openLinkedDocument(docs[0]);
+ host.querySelector('[data-flow-document-picker]')?.remove();
+ const body=docs.map((doc,i)=>`<button type="button" class="journey-doc-choice" data-flow-document-choice="${i}">
+  <strong>${clean(doc.title)}</strong><span>${clean(doc.ref)}</span></button>`).join('');
+ host.insertAdjacentHTML('beforeend',`<div class="journey-doc-picker-backdrop" data-flow-document-picker>
+  <section class="journey-doc-picker" role="dialog" aria-modal="true" aria-label="选择关联单据">
+   <header><strong>选择要查看的单据</strong><button type="button" data-flow-document-dismiss aria-label="关闭关联单据列表">×</button></header>
+   <div class="journey-doc-picker-list">${body}</div>
+  </section></div>`);
+ activeDocumentChoices=docs;
+}
+let activeDocumentChoices=[];
 function fromAudit(row,history,defaultDept){const rule=routes[row.type]||Object.entries(routes).find(([k])=>String(row.type).includes(k))?.[1],from=rule?.[0]||defaultDept||'当前部门',to=rule?.[1]||from;
  show({ref:row.ref,action:row.type,from,to,status:row.detail||'已记录',summary:row.detail||'',operator:row.by||'当前用户',at:row.time||'',history,next:rule?.[2]||'查看单据状态',nextOpen:nextTargets[row.type]||Object.entries(nextTargets).find(([k])=>String(row.type).includes(k))?.[1]});}
 document.addEventListener('click',event=>{
  const tab=event.target.closest('[data-journey-tab]');
  if(tab){const dialog=tab.closest('.journey-dialog'),name=tab.dataset.journeyTab;if(dialog){dialog.querySelectorAll('[data-journey-tab]').forEach(btn=>{const on=btn===tab;btn.classList.toggle('is-active',on);btn.setAttribute('aria-selected',on?'true':'false');btn.setAttribute('tabindex',on?'0':'-1')});dialog.querySelectorAll('[data-journey-panel]').forEach(panel=>{const on=panel.dataset.journeyPanel===name;panel.hidden=!on;panel.classList.toggle('is-active',on)});dialog.scrollTop=0}return;}
+ const choice=event.target.closest('[data-flow-document-choice]');
+ if(choice){const item=activeDocumentChoices[Number(choice.dataset.flowDocumentChoice)];return openLinkedDocument(item)}
+ if(event.target.closest('[data-flow-document-dismiss]')||event.target.matches?.('[data-flow-document-picker]')){
+  document.querySelector('[data-flow-document-picker]')?.remove();activeDocumentChoices=[];return;
+ }
+ const linked=event.target.closest('[data-flow-document-step]');
+ if(linked){const docs=activeFlowDocuments[Number(linked.dataset.flowDocumentStep)]||[];
+  chooseLinkedDocuments(docs);return;
+ }
  if(event.target.closest('[data-flow-track]')){const target=activeContinue?{...activeContinue}:null,ref=activeTrackRef;dismiss();if(target)window.FactoryNavigation?.trackBottleneck?.(target,ref);return;}
  if(event.target.closest('[data-flow-close]')||(event.target.closest('#flow-transition-host')&&!event.target.closest('.journey-dialog')))dismiss();});
 document.addEventListener('keydown',event=>{
