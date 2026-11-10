@@ -174,7 +174,7 @@ function cleanInspectionModal(report,readOnly=false){
   <div><span>清洗工单</span><strong>${esc(report.task)}</strong></div>
   <div><span>关联订单</span><strong>${esc(order)}</strong></div>
   <div><span>清洗阶段 / 产线</span><strong>${esc(phase)}线 · ${esc(report.line||task?.line||'—')}</strong></div>
-  <div><span>清洗完工</span><strong>${esc(task?.finishedAt||'未登记')}</strong></div>
+  <div><span>清洗完工经办 / 时间</span><strong>${esc(task?.finishedBy||report.taskFinishedBy||'历史记录未登记')} · ${esc(task?.finishedAt||report.taskFinishedAt||'历史记录未登记')}</strong></div>
   <div><span>报检提交</span><strong>${esc(report.submittedBy||'生产任务')} · ${esc(report.submittedAt||'—')}</strong></div></section>`;
  const rows=cleaningItems.map(([label,detail],i)=>{
   const result=report.items?.[i]?.result||'';
@@ -492,7 +492,7 @@ function submitForm(ev){if(ev.target.id!=='module-form')return false;ev.preventD
    checkedBy:me().name,checkedId:me().id,checkedAt:stamp()});
   if(!passed){task.status='待开始';task.rejectReason=failureReason;nonconform('清洗报检',r.id,'',`${task.id}：${failureReason}`)}
   audit(passed?'清洗检验合格':'清洗检验不合格',r.id,`${task.id} · ${r.status} · ${results.map(x=>x.name+':'+x.result).join('、')}`);
-  save(passed?'QC 检验合格，返回生产任务复核。':'QC 检验不合格，清洗工单已退回重新执行。');
+  done(passed?'QC 检验合格，返回生产任务复核。':'QC 检验不合格，清洗工单已退回重新执行。');
   window.FactoryFlowUI?.show({ref:r.id,docType:'清洗报检单',summary:`${task.cleanPhase||'生产'}线 · ${task.line} · 工单 ${task.id}`,
    action:passed?'清洗检验合格':'清洗检验不合格',from:'quality',to:'production',
    status:r.status,operator:me().name,at:r.checkedAt,
