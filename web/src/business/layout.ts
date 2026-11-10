@@ -3,7 +3,7 @@
  * Each feature is rendered through the same outer page frame. The family only
  * changes content density; the original business engine owns all state/actions.
  */
-const families = {
+export const businessFamilies = {
   records: [
     "orders","orderHistory","hours","hoursAppeal","leave","leaveApproval",
     "warehouseOps","warehouseIncoming","warehousePick","warehouseOutbound","warehouseReturns",
@@ -20,9 +20,9 @@ const families = {
   approval: ["orderReview","approvals"]
 } as const
 
-export type BusinessFamily = keyof typeof families
+export type BusinessFamily = keyof typeof businessFamilies
 const familyByFeature = new Map<string,BusinessFamily>(
-  (Object.entries(families) as [BusinessFamily,readonly string[]][])
+  (Object.entries(businessFamilies) as [BusinessFamily,readonly string[]][])
     .flatMap(([family,features])=>features.map(feature=>[feature,family] as const))
 )
 export function businessFamily(feature:string):BusinessFamily {
