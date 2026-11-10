@@ -263,3 +263,16 @@
   .overview-kpi-card>button{min-height:66px;padding:8px;gap:6px}
   .overview-kpi-icon{flex:0 0 30px;width:30px;height:30px}
 }
+
+/* 指标卡内容优先：删除独立刷新行后，将空间返还给四张 KPI。 */
+.overview-kpi-card{min-height:106px!important}
+.overview-kpi-card>button{min-height:106px;padding:12px 14px;align-items:flex-start}
+.overview-kpi-icon{flex:0 0 38px;width:38px;height:38px}
+.overview-kpi-label{font-size:12px}
+.overview-kpi-number .kpi-value{font-size:27px}
+.overview-kpi-detail{display:block;font-size:10.5px;line-height:1.35;margin-top:5px}
+.overview-kpi-note{display:block;font-size:9px;line-height:1.3;margin-top:2px}
+@media(max-width:700px){
+  .overview-kpi-card{min-height:106px!important}
+  .overview-kpi-card>button{min-height:106px;padding:10px;gap:8px}
+}
