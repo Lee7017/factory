@@ -1,8 +1,7 @@
 import { useMemo, useState, type CSSProperties } from "react"
 import {
-  AlertTriangle, ArrowRight, BellRing, Boxes, CalendarDays, ChevronLeft,
-  ChevronRight, ClipboardList, Clock3, Factory, Info, Layers3,
-  ListTodo, RotateCcw, Sparkles
+  AlertTriangle, ArrowRight, Boxes, ChevronLeft, ChevronRight,
+  ClipboardList, Clock3, Factory, Info, ListTodo, RotateCcw, Sparkles
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
