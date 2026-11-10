@@ -34,35 +34,38 @@ try {
   }
   await asEmployee("E014")
   await navigate("purchase","purchase")
-  // Visual layout regression: status and action share one row, table follows it.
+  // Visual regression: one integrated toolbar directly above the purchase table.
   const toolbarLayout=await page.evaluate(()=>{
-    const toolbar=document.querySelector(".proc-purchase-toolbar")
+    const panel=document.querySelector(".proc-purchase-list")
+    const toolbar=panel?.querySelector(".proc-list-toolbar")
     const status=toolbar?.querySelector(".proc-approval-banner")
     const action=toolbar?.querySelector('[data-proc-action="newPurchase"]')
-    const table=document.querySelector(".proc-page > .op-table-wrap")
-    if(!toolbar||!table)return null
-    const a=toolbar.getBoundingClientRect()
-    const t=table.getBoundingClientRect()
-    const b=status?.getBoundingClientRect()
-    const c=action?.getBoundingClientRect()
+    const table=panel?.querySelector(".op-table")
+    if(!panel||!toolbar||!table)return null
+    const p=panel.getBoundingClientRect(),a=toolbar.getBoundingClientRect(),t=table.getBoundingClientRect()
+    const b=status?.getBoundingClientRect(),c=action?.getBoundingClientRect()
+    const cs=getComputedStyle(toolbar)
     return {
-      height:Math.round(a.height),
+      panelTop:Math.round(p.top),
+      toolbarTop:Math.round(a.top),
+      toolbarHeight:Math.round(a.height),
       tableGap:Math.round(t.top-a.bottom),
+      tableTop:Math.round(t.top),
       statusCenter:b?Math.round((b.top+b.bottom)/2):null,
       actionCenter:c?Math.round((c.top+c.bottom)/2):null,
-      statusVisible:!!b,
-      actionVisible:!!c,
-      toolbarTop:Math.round(a.top),
-      tableTop:Math.round(t.top)
+      display:cs.display,
+      background:cs.backgroundColor,
+      extraHeaderCount:document.querySelectorAll(".proc-purchase-page > .proc-top").length
     }
   })
-  assert.ok(toolbarLayout,"Purchase toolbar and table must render")
-  assert.ok(toolbarLayout.height<=65,`Purchase toolbar must not grow into a blank panel: ${JSON.stringify(toolbarLayout)}`)
-  assert.ok(toolbarLayout.tableGap>=0&&toolbarLayout.tableGap<=18,`Table must follow toolbar directly: ${JSON.stringify(toolbarLayout)}`)
-  if(toolbarLayout.statusVisible&&toolbarLayout.actionVisible){
+  assert.ok(toolbarLayout,"Purchase table and integrated toolbar must render")
+  assert.equal(toolbarLayout.extraHeaderCount,0,"No redundant top panel")
+  assert.ok(toolbarLayout.toolbarTop-toolbarLayout.panelTop<=2,"Toolbar must start at the top of table surface")
+  assert.ok(toolbarLayout.toolbarHeight<=66,`Toolbar too tall: ${JSON.stringify(toolbarLayout)}`)
+  assert.ok(Math.abs(toolbarLayout.tableGap)<=2,`Table must touch toolbar: ${JSON.stringify(toolbarLayout)}`)
+  if(toolbarLayout.statusCenter!==null&&toolbarLayout.actionCenter!==null)
     assert.ok(Math.abs(toolbarLayout.statusCenter-toolbarLayout.actionCenter)<=22,
-      `Approval summary and create button must share a visual row: ${JSON.stringify(toolbarLayout)}`)
-  }
+      `Status and action must share row: ${JSON.stringify(toolbarLayout)}`)
   await page.screenshot({path:"test-results/purchase-toolbar-desktop.png",fullPage:false})
   console.log("PURCHASE TOOLBAR VISUAL CHECK",JSON.stringify(toolbarLayout))
   // Original engine initializes the seeded purchase PO-001 only after this mount.
