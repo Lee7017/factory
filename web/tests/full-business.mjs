@@ -26,7 +26,7 @@ try {
   assert.equal(await page.locator(".kpi-card").count(),4)
   const initial=await page.evaluate(()=>JSON.parse(localStorage.getItem("factory-workspace-v4")||"null"))
   // React can bootstrap legacy data before opening any business function.
-  assert.ok(await page.locator(".kpi-value").nth(1).textContent(),"Seed orders show in the dashboard")
+  assert.ok(await page.locator(".kpi-value").nth(0).textContent(),"Active orders show in the dashboard")
   assert.equal(await page.locator("iframe").count(),0,"No iframe in dashboard")
   const missing=[]
   for(const [dept,feature,name] of features){
