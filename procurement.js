@@ -53,6 +53,16 @@ function renderRequests(){
  }).join('');
  return `<section class="proc-page proc-linked-panel" aria-label="PMC 采购需求"><div class="mw-data-section"><div class="mw-data-section-head"><div><strong>采购需求 · PMC 确认</strong><span>根据订单排程、BOM 与库存缺口提出需求；提交人与确认人必须不同</span></div><div class="mw-actions">${mayCreate?button('提出采购需求','newRequest','','primary'):''}</div></div><div class="op-table-wrap"><table class="op-table"><thead><tr><th>需求单号</th><th>生产订单</th><th>物料</th><th>数量</th><th>需用日期</th><th>状态</th><th>办理</th></tr></thead><tbody>${rows||'<tr><td colspan="7">暂无采购需求。PMC 可根据实际缺料或安全库存提出需求。</td></tr>'}</tbody></table></div></div></section>`;
 }
+function pmcQueue(){
+ const items=orders().filter(p=>p.status==='待PMC确认');if(!items.length)return '';
+ const rows=items.map(p=>`<tr class="biz-order-row"><td><strong>${esc(p.id)}</strong></td><td>${esc(p.material)}</td><td>${money(p.qty)}</td><td>${tag(p.status)}</td><td><div class="proc-actions">${button('查看采购单','viewPurchase',p.id)}${canPmcReview(p)?button('确认采购单','approvePmcPurchase',p.id,'primary')+button('退回','rejectPmcPurchase',p.id):''}</div></td></tr>`).join('');
+ return `<section class="proc-page proc-pmc-inbox"><div class="mw-data-section"><div class="mw-data-section-head"><div><strong>待 PMC 确认的采购单</strong><span>仅人工补货需要主管确认；系统已校验的订单缺料无需重复审核</span></div></div><div class="op-table-wrap"><table class="op-table"><thead><tr><th>采购单号</th><th>物料</th><th>数量</th><th>状态</th><th>办理</th></tr></thead><tbody>${rows}</tbody></table></div></div></section>`;
+}
+function newDirectPurchase(){
+ if(!authorized(['pmc','kitting','execute']))return error('当前员工没有 PMC 创建权限');
+ const items=[...new Set([...(O.state.bom||[]).map(r=>r.child),...Object.keys(O.state.stock||{})])];
+ modal('直接新建补货采购单',`<label class="proc-field"><span>采购物料</span><select name="material" required>${items.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select></label>${field('数量','qty',10,'number')}${field('需用日期','neededBy',day(),'date')}${field('采购原因','reason','安全库存补货')}`,'','directPo');
+}
 function renderApprovals(dept){
  const finance=dept==='finance',stage=finance?'待财务审核':'待总经办审批',canReview=authorized(finance?['finance','finance','approve']:['leadership','approvals','approve']);
  const items=orders().filter(p=>p.status===stage);
@@ -185,7 +195,7 @@ function renderIncoming(){
 function host(){let h=document.getElementById('proc-modal-host');if(!h){h=document.createElement('div');h.id='proc-modal-host';document.body.append(h)}return h;}
 const close=()=>{host().innerHTML='';focusPurchase=''};
 function modal(title,contents,actions='',formType='',record=''){
- host().innerHTML=`<div class="proc-overlay" data-proc-action="close"></div><section class="proc-modal" role="dialog" aria-modal="true" aria-labelledby="proc-title"><header><h2 id="proc-title">${esc(title)}</h2>${button('关闭','close')}</header>${formType?`<form id="proc-form" data-kind="${esc(formType)}" data-record="${esc(record)}"><div class="proc-fields">${contents}</div><p class="proc-error" role="alert"></p><footer>${button('取消','close')}<button type="submit" class="proc-btn primary">${formType==='receipt'?'确认到货并送检':formType==='request'?'提交需求待PMC确认':formType==='policy'?'保存审批规则':'创建并提交采购主管审批'}</button></footer></form>`:`<div class="proc-details">${contents}</div><footer>${button('关闭','close')}${actions}</footer>`}</section>`;
+ host().innerHTML=`<div class="proc-overlay" data-proc-action="close"></div><section class="proc-modal" role="dialog" aria-modal="true" aria-labelledby="proc-title"><header><h2 id="proc-title">${esc(title)}</h2>${button('关闭','close')}</header>${formType?`<form id="proc-form" data-kind="${esc(formType)}" data-record="${esc(record)}"><div class="proc-fields">${contents}</div><p class="proc-error" role="alert"></p><footer>${button('取消','close')}<button type="submit" class="proc-btn primary">${formType==='receipt'?'确认到货并送检':formType==='directPo'?'生成采购单':formType==='policy'?'保存审批规则':'创建并提交采购主管审批'}</button></footer></form>`:`<div class="proc-details">${contents}</div><footer>${button('关闭','close')}${actions}</footer>`}</section>`;
 }
 const field=(label,name,value,type='text')=>`<label class="proc-field"><span>${esc(label)}</span><input name="${esc(name)}" type="${type}" value="${esc(value)}" required ${type==='number'?'min="0.01" step="any"':''}></label>`;
 function error(message){const x=host().querySelector('.proc-error');if(x)x.textContent=message;else if(ctx)ctx.toast(message,'purchase');}
@@ -239,6 +249,14 @@ function saveForm(form){
   if(item){Object.assign(item,{qty,material,reason,neededBy,sourceOrder,status:'待PMC确认'});audit(item,'PMC 采购需求修改并重新提交','pmc')}
   else{item={id:id('PR'),material,qty,sourceOrder,reason,neededBy,status:'待PMC确认',createdBy:user().id,createdName:user().name,history:[]};audit(item,'创建采购需求','pmc');requests().unshift(item)}
   close();renderNow();ctx.toast('采购需求已提交，等待另一位具有权限的 PMC 主管确认。');return;
+ }
+ if(kind==='directPo'){
+  if(!authorized(['pmc','kitting','execute']))return error('当前员工没有 PMC 创建权限');
+  const material=String(values.material||''),qty=Number(values.qty),reason=String(values.reason||'').trim(),neededBy=String(values.neededBy||'');
+  if(!material||!validNumber(qty)||!reason||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(neededBy))return error('请填有效物料、数量、需用日期和原因');
+  const p={id:id('PO'),material,qty,reason,neededBy,status:'待PMC确认',sourceOrder:'',
+   createdBy:user().id,createdName:user().name,history:[]};
+  audit(p,'PMC 创建采购单','pmc');orders().unshift(p);close();renderNow();detailsPurchase(p.id);return;
  }
  if(kind==='policy'){
   if(!authorized(['leadership','approvals','approve']))return error('只有总经办能维护审批规则');
@@ -326,6 +344,14 @@ function trackShortage(orderId){
 function onAction(el){const action=el.dataset.procAction,ref=el.dataset.procId;
  if(action==='close'){close();return}
  if(action==='newPurchase'){return error('采购单由 PMC 直接生成，采购员完善同一张单据即可')}
+ if(action==='newDirectPurchase'){newDirectPurchase();return}
+ if(action==='approvePmcPurchase'||action==='rejectPmcPurchase'){
+  const p=orders().find(x=>x.id===ref);
+  if(!canPmcReview(p))return error('请由另一位具备权限的 PMC 主管确认采购单');
+  const yes=action==='approvePmcPurchase';p.status=yes?'待采购填写':'已驳回';
+  if(yes){p.pmcConfirmedAt=new Date().toISOString();p.pmcConfirmedBy=user().name}
+  audit(p,yes?'PMC主管确认采购单':'PMC主管退回采购单','pmc');renderNow();detailsPurchase(p.id);return;
+ }
  if(action==='createPurchaseFromShortage'){createFromShortage(ref);return}
  if(action==='viewShortagePurchase'){document.querySelector('#ops-modal-host')?.replaceChildren();detailsPurchase(ref);return}
  if(action==='editPurchase'){const p=orders().find(x=>x.id===ref);if(!canEdit(p))return error('只能由采购员完善待处理的原采购单');newPurchase(p);return}
@@ -368,7 +394,14 @@ function onAction(el){const action=el.dataset.procAction,ref=el.dataset.procId;
 }
 const nativeInit=M.init,nativeRender=O.render;
 M.init=function(context){const result=nativeInit(context);ctx=context;migrate();return result};
-O.render=function(feature){const base=feature==='purchase'?renderPurchases():nativeRender(feature);return feature==='finance'?base+renderApprovals('finance'):feature==='approvals'?base+renderApprovals('leadership'):base};
+O.render=function(feature){
+ const base=feature==='purchase'?renderPurchases():nativeRender(feature);
+ if(feature==='kitting'){
+  const b=authorized(['pmc','kitting','execute'])?button('手动补货采购','newDirectPurchase'):'';
+  return base.replace('<div class="biz-order-toolbar">','<div class="biz-order-toolbar">'+b)+pmcQueue();
+ }
+ return feature==='finance'?base+renderApprovals('finance'):feature==='approvals'?base+renderApprovals('leadership'):base;
+};
 M.startPurchaseReceipt=function(po){ctx.openFeature('warehouseIncoming','warehouse');setTimeout(()=>openReceipt(po),40)};
 document.addEventListener('input',e=>{if(e.target.matches?.('.proc-order-search'))filterPurchases()});
 document.addEventListener('change',e=>{if(e.target.matches?.('.proc-order-status'))filterPurchases()});
