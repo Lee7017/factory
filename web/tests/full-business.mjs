@@ -35,7 +35,7 @@ try {
     await page.evaluate(hash=>{location.hash=hash},`#/departments/${dept}/${feature}`)
     try {
       if(["leave","leaveApproval","employees","skills"].includes(feature)){
-        await page.locator(".glass-panel [data-slot='table']").waitFor({state:"visible",timeout:15000})
+        await page.locator(".business-native-list [data-slot='table']").waitFor({state:"visible",timeout:15000})
       }else{
         await page.locator(".native-business .legacy-root").waitFor({state:"visible",timeout:15000})
         await page.waitForFunction(()=>{
@@ -67,6 +67,28 @@ try {
         missing.push(`${name}: ${feature} missing shared business frame`)
       if(appearance?.horizontalOverflow)missing.push(`${name}: ${feature} causes horizontal page overflow`)
       if(!appearance?.infoButton)missing.push(`${name}: ${feature} missing topbar info button`)
+      if(["leave","leaveApproval","employees","skills"].includes(feature)){
+        const native=await page.evaluate(()=>{
+          const list=document.querySelector(".business-native-list")
+          const toolbar=list?.querySelector(".business-native-list-toolbar")
+          const table=list?.querySelector(".business-native-list-table")
+          if(!list||!toolbar||!table)return null
+          const l=list.getBoundingClientRect(),t=toolbar.getBoundingClientRect(),b=table.getBoundingClientRect()
+          return {
+            toolbarHeight:Math.round(t.height),
+            toolbarTopGap:Math.round(t.top-l.top),
+            tableGap:Math.round(b.top-t.bottom),
+            duplicateHeading:!!document.querySelector(".business-native-page h1,.business-native-page h2")
+          }
+        })
+        if(!native)missing.push(`${name}: ${feature} missing native shared list foundation`)
+        else{
+          if(native.toolbarHeight>58)missing.push(`${name}: ${feature} native toolbar too tall (${native.toolbarHeight}px)`)
+          if(Math.abs(native.toolbarTopGap)>2)missing.push(`${name}: ${feature} native toolbar not attached to list surface`)
+          if(Math.abs(native.tableGap)>2)missing.push(`${name}: ${feature} native table detached from toolbar`)
+          if(native.duplicateHeading)missing.push(`${name}: ${feature} duplicates title inside content`)
+        }
+      }
       const boxes=await page.evaluate(()=>{
         const selectors=[".shell-content",".business-page-frame",".business-page-body",".legacy-root",".legacy-workbench",".ops-workbench",".proc-page",".proc-top",".proc-approval-banner",".op-table-wrap",".op-table",".mw-page",".mw-content",".mw-table-scroll"]
         return selectors.flatMap(selector=>{
