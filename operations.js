@@ -264,7 +264,7 @@ function taskRows(toolbar=''){
  const tasks=ctx.data.tasks.filter(t=>['清洗','调机调线','设备点检'].includes(t.type))
   .sort((a,b)=>(a.status==='已完成'?1:0)-(b.status==='已完成'?1:0));
  const rows=tasks.map(t=>`<tr class="${t.status==='已完成'?'':'op-task-pending'}" data-task-row="${esc(t.id)}">
-  ${td(`<strong>${esc(t.id)}</strong>`)}${td(esc(t.type))}${td(esc(t.line))}
+  ${td(`<strong>${esc(t.id)}</strong>`)}${td(esc(t.type==='清洗'&&t.cleanPhase?t.cleanPhase+'线清洗':t.type))}${td(esc(t.line))}
   ${td(esc(t.orderId||t.order||'—'))}${td(badge(t.status))}
   ${td(`<div class="op-row-actions">${taskButtons(t)}</div>`)}
  </tr>`);
@@ -347,9 +347,23 @@ function applyFlow(key,id,button){const o=orderBy(id),step=orderActions[key];if(
 function applyTask(mode,id,button){let task=ctx.data.tasks.find(t=>t.id===id);if(!task)return;const dept=task.type==='调机调线'?'engineering':'production',feat=dept==='engineering'?'engineering':'tasks';if(!can(dept,feat,'execute'))return flash(button);const map={start:['待开始','执行中','任务开工'],finish:['执行中','待复核','提交完工复核'],verify:['待复核','已完成','复核完成']};const [from,to,label]=map[mode]||[];if(task.status!==from)return warn(`任务 ${id} 当前状态为${task.status}，不能${label}`);
  if(mode==='verify'&&task.type==='清洗'&&window.FactoryModules?.state?.rules?.cleanQC&&!window.FactoryModules.hasCleaningPass(id))return trackCleanQc(id);
  task.status=to;log(label,id,task.type);
+ let progressed=false;
  if(mode==='verify'&&task.orderId&&S.flows[task.orderId]){
-  S.flows[task.orderId].audit??=[];
-  S.flows[task.orderId].audit.push({at:now(),person:current(),action:task.type+'任务复核完成',from:dept,to:'production',state:id+' · 已完成'});
+  const flow=S.flows[task.orderId],stage=flow.stage,phase=task.cleanPhase||(stage==='pack_clean'?'包装':'配制');
+  const expected=phase==='包装'?'pack_clean':'blend_clean',next=phase==='包装'?'final_qc':'semi_qc';
+  if(task.type==='清洗'&&stage===expected&&taskForOrder(task.orderId,'清洗',false,phase)?.id===task.id){
+   flow.stage=next;
+   const order=orderBy(task.orderId);
+   if(order)order.status=stages[next];
+   const inspection=window.FactoryModules?.ensureFlowInspection?.(task.orderId,phase==='包装'?'成品':'半成品');
+   flow.audit??=[];
+   flow.audit.push({at:now(),person:current(),action:phase+'线清洗执行与复核',from:'production',to:'quality',state:id+' · 已完成'});
+   log(phase+'线清洗后转检验',task.orderId,inspection?.id||id);
+   progressed=true;
+  }else if(task.type==='调机调线'){
+   flow.audit??=[];
+   flow.audit.push({at:now(),person:current(),action:'调机调线任务复核完成',from:dept,to:'production',state:id+' · 已完成'});
+  }
  }
  success(`任务 ${id} ${to}`);
  if(mode==='verify'&&task.orderId){inspectFlow(task.orderId);return}
