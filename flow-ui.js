@@ -107,19 +107,20 @@ const flowConfig={
   ['pmc','发布正式排程',/发布正式排程/],
   ['pmc','确认物料齐套并锁库',/确认齐套并锁库/],
   ['warehouse','确认领料发料',/确认领料发料/],
-  ['production','清洗执行与复核',/清洗任务复核完成/],
   ['production','配制开工',/配制开工/],
-  ['production','配制报检',/配制报检/],
+  ['production','配制任务完成',/配制任务完成|配制报检/],
+  ['production','配制线清洗执行与复核',/配制线清洗执行与复核/],
   ['quality','半成品检验判定',/半成品检验合格|半成品不合格/],
   ['engineering','调机调线执行与复核',/调机调线任务复核完成/],
   ['production','包装开工',/包装开工/],
-  ['production','包装报检',/包装报检/],
+  ['production','包装任务完成',/包装任务完成|包装报检/],
+  ['production','包装线清洗执行与复核',/包装线清洗执行与复核/],
   ['quality','成品检验判定并放行',/成品检验合格并放行|成品检验合格|质量放行|成品不合格/],
   ['warehouse','成品入库',/成品入库/],
   ['sales','发起发货通知',/发起发货通知/],
   ['warehouse','按销售订单成品出库',/仓库按订单出库|仓库成品出库|成品销售出库/],
   ['sales','确认客户收货',/确认客户收货|交付确认/]
- ],loops:[['销售订单评审','退回修改后重新送审','sales'],['QC 判定','不合格 → 生产返工并重新报检','production']],progress:{draft:-1,review:0,approved:1,trial:2,formal:3,reserved:4,issued:5,blending:7,semi_qc:8,semi_ok:9,packaging:11,final_qc:12,inspected:13,released:13,stored:14,dispatch:15,shipping:15,shipped:16,delivered:17}},
+ ],loops:[['销售订单评审','退回修改后重新送审','sales'],['QC 判定','不合格 → 生产返工并重新报检','production']],progress:{draft:-1,review:0,approved:1,trial:2,formal:3,reserved:4,issued:5,blending:6,blend_clean:7,semi_qc:8,semi_ok:9,packaging:11,pack_clean:12,final_qc:13,inspected:14,released:14,stored:15,dispatch:16,shipping:16,shipped:17,delivered:18}},
  purchase:{title:'采购单',steps:[
   ['pmc','PMC 生成采购单',/PMC 依据销售订单缺料生成采购单|PMC 创建采购单|创建采购需求/],
   ['pmc','PMC 主管确认需求',/PMC主管确认采购单|PMC主管确认采购需求/],
@@ -160,10 +161,9 @@ function buildSteps(entry,kind){const config=flowConfig[kind];if(kind==='purchas
  if(config)return config.steps;
  const source=entry.from||'sales',target=entry.to||source;return [[source,entry.action||'业务办理',new RegExp('.*')],[target,entry.next||'下一个业务动作',new RegExp('(?!)')]];}
 function stepState(i,kind,stage,steps,ref){if(kind==='handoff')return i===0?'done':'current';
- if(kind==='order'&&['issued','semi_ok'].includes(stage)){
-  const kindOfTask=stage==='issued'?'清洗':'调机调线';
-  const linked=window.FactoryOperations?.taskGateForOrder?.(ref,kindOfTask);
-  const score=stage==='issued'?(linked?.status==='已完成'?6:5):(linked?.status==='已完成'?10:9);
+ if(kind==='order'&&stage==='semi_ok'){
+  const linked=window.FactoryOperations?.taskGateForOrder?.(ref,'调机调线');
+  const score=linked?.status==='已完成'?10:9;
   return i<=score?'done':i===score+1?'current':'waiting';
  }
  if(kind==='purchase'){
