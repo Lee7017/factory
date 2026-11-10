@@ -106,7 +106,16 @@ try {
           commandAlignment:b&&help?Math.round(Math.abs((b.top+b.bottom-help.top-help.bottom)/2)):null,
           hasDetachedToolbar:!!view?.querySelector(".ops-workbench > .ops-heading"),
           hasDetachedHelp:!!view?.querySelector(".ops-workbench > .business-help"),
-          legacyCssLinks:document.querySelectorAll('link[href*="legacy-business.css"]').length
+          legacyCssLinks:document.querySelectorAll('link[href*="legacy-business.css"]').length,
+          moduleDetachedCommand:!!view?.querySelector(".mw-page > .mw-commandbar"),
+          moduleTableToolbarHeight:(()=>{
+            const el=view?.querySelector(".mw-table-scroll > .mw-table-toolbar")
+            return el?Math.round(el.getBoundingClientRect().height):null
+          })(),
+          moduleToolbarInsideTable:(()=>{
+            const el=view?.querySelector(".mw-table-scroll > .mw-table-toolbar")
+            return el?el.parentElement?.classList.contains("mw-table-scroll")??false:null
+          })()
         }
       })
       if(layout.legacyCssLinks!==1)missing.push(`${name}: ${feature} legacy CSS must be loaded once in document head`)
@@ -121,6 +130,12 @@ try {
         missing.push(`${name}: ${feature} action/help alignment off by ${layout.commandAlignment}px`)
       if(layout.hasDetachedToolbar||layout.hasDetachedHelp)
         missing.push(`${name}: ${feature} still has split legacy toolbar/help`)
+      if(layout.moduleDetachedCommand)
+        missing.push(`${name}: ${feature} still has detached module command bar`)
+      if(layout.moduleTableToolbarHeight!==null&&layout.moduleTableToolbarHeight>54)
+        missing.push(`${name}: ${feature} module table toolbar too tall (${layout.moduleTableToolbarHeight}px)`)
+      if(layout.moduleToolbarInsideTable===false)
+        missing.push(`${name}: ${feature} module action toolbar is not inside table surface`)
       visualAudit.push({department:dept,feature,...appearance,boxes,layout})
       if(dept==="purchase"&&feature==="purchase")console.log("PURCHASE LAYOUT AUDIT",JSON.stringify(boxes))
       await page.screenshot({
@@ -187,6 +202,36 @@ try {
     await page.reload({waitUntil:"networkidle"})
     assert.ok(await page.evaluate(()=>JSON.parse(localStorage.getItem("factory-workspace-v4")||"{}").orders?.some(o=>o.product==="自动化测试产品")),"Created order survives refresh and React hydration")
   }else missing.push("Sales order creation button unavailable for default developer")
+  // Inventory batches are the representative module-record page:
+  // summary first, actual ledger table second, create action belongs to that ledger table.
+  activeFeature="warehouse/warehouseOps"
+  await page.evaluate(()=>{location.hash="#/departments/warehouse/warehouseOps"})
+  await page.locator('.native-business [data-module-page="warehouseOps"]').waitFor({state:"visible",timeout:10000})
+  const warehouseLayout=await page.evaluate(()=>{
+    const page=document.querySelector('[data-module-page="warehouseOps"]')
+    const summary=page?.querySelector(".mw-stock-snapshot")
+    const table=page?.querySelector(".mw-table-scroll")
+    const toolbar=table?.querySelector(":scope > .mw-table-toolbar")
+    const action=toolbar?.querySelector('[data-module-action="form:batch"]')
+    if(!page||!summary||!table||!toolbar||!action)return null
+    const p=page.getBoundingClientRect(),s=summary.getBoundingClientRect()
+    const t=table.getBoundingClientRect(),b=toolbar.getBoundingClientRect(),a=action.getBoundingClientRect()
+    return {
+      pageTop:Math.round(p.top),summaryTop:Math.round(s.top),
+      toolbarHeight:Math.round(b.height),
+      actionInside:a.top>=b.top-1&&a.bottom<=b.bottom+1,
+      detached:!!page.querySelector(":scope > .mw-commandbar"),
+      tableBelowSummary:t.top>=s.bottom
+    }
+  })
+  assert.ok(warehouseLayout,"Warehouse batches must use the shared module record layout")
+  assert.equal(warehouseLayout.detached,false,"Warehouse create action must not float in a detached command area")
+  assert.equal(warehouseLayout.actionInside,true,"Register batch action must sit inside ledger toolbar")
+  assert.equal(warehouseLayout.tableBelowSummary,true,"Inventory summary must precede the actual batch ledger")
+  assert.ok(warehouseLayout.toolbarHeight<=54,`Warehouse ledger toolbar too tall: ${JSON.stringify(warehouseLayout)}`)
+  await page.screenshot({path:"test-results/warehouse-batches-unified.png",fullPage:false})
+  console.log("WAREHOUSE UNIFIED LAYOUT CHECK",JSON.stringify(warehouseLayout))
+
   assert.deepEqual(missing,[],"Complete business screen and order write regression")
   assert.deepEqual(errors,[],"No runtime errors after writing")
 
