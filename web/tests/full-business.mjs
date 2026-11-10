@@ -183,10 +183,11 @@ try {
     const wrap=root?.querySelector(":scope > .op-table-wrap")
     const toolbar=wrap?.querySelector(":scope > .op-table-toolbar")
     const button=toolbar?.querySelector('[data-op-action="newOrder"]')
-    const table=wrap?.querySelector(":scope > .op-table")
-    if(!root||!wrap||!toolbar||!button||!table)return null
+    const tableContainer=wrap?.querySelector(':scope > [data-slot="table-container"]')
+    const table=tableContainer?.querySelector('[data-slot="table"]')
+    if(!root||!wrap||!toolbar||!button||!tableContainer||!table)return null
     const w=wrap.getBoundingClientRect(),a=toolbar.getBoundingClientRect()
-    const b=button.getBoundingClientRect(),t=table.getBoundingClientRect()
+    const b=button.getBoundingClientRect(),t=tableContainer.getBoundingClientRect()
     return {
       toolbarHeight:Math.round(a.height),
       toolbarTopGap:Math.round(a.top-w.top),
