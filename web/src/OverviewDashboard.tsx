@@ -291,11 +291,7 @@ export function OverviewDashboard({workspace,onSelect,onRefresh}:Props){
       note:"按 BOM 与当前现存库存估算",route:"#/departments/pmc/kitting"}
   ]
   return <div className="operations-dashboard">
-    <header className="overview-page-head">
-      <div>
-        <h1>生产运营驾驶舱</h1>
-        <p>订单 · 计划 · 生产 · 物料 · 质量 · 交付 <span className="overview-head-separator">|</span> 一体化运营</p>
-      </div>
+    <header className="overview-page-head" aria-label="驾驶舱操作栏">
       <div className="overview-live-source">
         <span><Clock3 size={13}/> 当前浏览器业务记录</span>
         <Button variant="outline" size="sm" onClick={onRefresh} aria-label="刷新运营数据"><RotateCcw size={13}/>刷新</Button>
