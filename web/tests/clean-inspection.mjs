@@ -73,6 +73,8 @@ try{
   "The entire cleaning inspection modal must fit within the browser viewport, not be clipped by the workbench")
  assert.ok(await page.getByRole("heading",{name:/清洗报检 · QC 逐项检验/}).isVisible(),
   "QC inspection title must be visible")
+ assert.ok(await form.locator('button[type="submit"]').isVisible(),
+  "QC submit action must stay visible, even when the checklist is longer than the screen")
  assert.equal(await page.locator("body > .legacy-modules-portal-root #modules-modal-host").count(),1,
   "The QC modal host is attached directly to the body rather than the clipped workbench")
  await page.screenshot({path:"test-results/clean-qc-01-real-linked-form.png"})
