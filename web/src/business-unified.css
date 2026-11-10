@@ -165,6 +165,67 @@
 .native-business .legacy-root .proc-top {
   padding:0!important;min-height:34px;justify-content:flex-end;
 }
+/* Purchase list: status left, one primary action right, table immediately below.
+   No independent blank header or extra approval panel. */
+.native-business .legacy-root .proc-page > .proc-purchase-toolbar {
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:nowrap!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+  width:100%;
+  min-height:38px;
+  margin:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root .proc-purchase-toolbar > .proc-toolbar-status {
+  min-width:0;
+  flex:1 1 auto;
+  display:flex;
+  align-items:center;
+}
+.native-business .legacy-root .proc-purchase-toolbar > .proc-toolbar-actions {
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+}
+.native-business .legacy-root .proc-purchase-toolbar .proc-approval-banner {
+  margin:0!important;
+  padding:0!important;
+  min-height:0!important;
+  gap:3px 9px;
+}
+.native-business .legacy-root .proc-purchase-toolbar .proc-approval-banner strong {
+  white-space:nowrap;
+}
+.native-business .legacy-root .proc-purchase-toolbar .proc-approval-banner span {
+  line-height:1.4;
+}
+.native-business .legacy-root .proc-page:has(> .proc-purchase-toolbar) {
+  gap:8px!important;
+}
+.native-business .legacy-root .proc-page:has(> .proc-purchase-toolbar) > .op-table-wrap {
+  margin:0!important;
+}
+@media(max-width:760px){
+  .native-business .legacy-root .proc-page > .proc-purchase-toolbar {
+    flex-wrap:wrap!important;
+    justify-content:flex-start!important;
+    gap:8px!important;
+  }
+  .native-business .legacy-root .proc-purchase-toolbar > .proc-toolbar-status {
+    flex-basis:100%;
+  }
+  .native-business .legacy-root .proc-purchase-toolbar > .proc-toolbar-actions {
+    margin-left:0;
+  }
+}
+
 .native-business .legacy-root .proc-approval-banner {
   display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;
   margin:0!important;padding:5px 0!important;
