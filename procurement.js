@@ -42,7 +42,7 @@ function approvalPlan(p){
  return {finance,leadership,overBudget,newSupplier,budgetUnset:budget===null,financeLimit:rule.financeLimit,leadershipLimit:rule.leadershipLimit};
 }
 const canPmcReview=r=>r?.status==='待PMC确认'&&r.createdBy&&r.createdBy!==user().id&&authorized(['pmc','kitting','approve']);
-const canPurchaseApprove=p=>p?.status==='待采购主管审批'&&p.createdBy&&p.createdBy!==user().id&&demandOf(p)?.status==='已确认'&&validNumber(p.totalAmount)&&authorized(['purchase','purchase','approve']);
+const canPurchaseApprove=p=>p?.status==='待采购主管审批'&&p.purchaseId&&p.purchaseId!==user().id&&p.pmcConfirmedAt&&validNumber(p.totalAmount)&&authorized(['purchase','purchase','approve']);
 const canDepartmentApprove=(p,dept)=>p?.status===(dept==='finance'?'待财务审核':'待总经办审批')&&p.createdBy&&p.createdBy!==user().id&&p.approvedId!==user().id&&p.financeId!==user().id&&authorized(dept==='finance'?['finance','finance','approve']:['leadership','approvals','approve']);
 const requestChoices=(poId='')=>requests().filter(r=>r.status==='已确认'&&(!linkedPo(r.id)||linkedPo(r.id)?.id===poId));
 function renderRequests(){
@@ -84,9 +84,9 @@ function detailsRequest(idValue){
 
 // 按部门权限和每张单据的创建人、审批人做分离校验。
 const canApprove=canPurchaseApprove;
-const canEdit=p=>Boolean(p)&&['草稿','已驳回'].includes(p.status)&&p.createdBy===user().id&&authorized(['purchase','purchase','edit']);
+const canEdit=p=>Boolean(p)&&['待采购填写','草稿','已驳回'].includes(p.status)&&authorized(['purchase','purchase','edit']);
 function syncStatus(p){
- if(!p||['草稿','待审批'].includes(p.status))return;
+ if(!p||!['待到货','部分到货','到货处理中','已入库'].includes(p.status))return;
  const n=numbers(p);
  p.status=n.stored>=n.ordered&&n.ordered>0?'已入库':n.stored>0?'部分到货':n.registered>0?'到货处理中':'待到货';
 }
@@ -95,6 +95,9 @@ function migrate(){
  rules();requests();
  for(const p of orders()){p.qty=Number(p.qty)||0;
   if(p.status==='待审批')p.status=p.requestId?'待采购主管审批':'待补采购需求';
+  const old=requests().find(r=>r.id===p.requestId);
+  if(old?.status==='已确认'&&!p.pmcConfirmedAt){p.pmcConfirmedAt=p.submittedAt||new Date().toISOString();p.pmcConfirmedBy=old.reviewedBy||'原 PMC 主管'}
+  if(p.status==='待采购主管审批'&&!p.purchaseId)p.purchaseId=p.createdBy||'历史采购员';
   if(['待到货','部分到货','到货处理中','已入库'].includes(p.status))syncStatus(p);
  }
  ctx.save();
@@ -111,7 +114,7 @@ function renderPurchases(){
  const rows=all.map(p=>{
   const n=numbers(p),r=demandOf(p),plan=p.approvalPlan;
   let actions=button('查看采购单','viewPurchase',p.id);
-  if(canEdit(p))actions+=button('编辑并重新送审','editPurchase',p.id);
+  if(canEdit(p))actions+=button('完善采购单','editPurchase',p.id);
   if(canApprove(p))actions+=button('审批通过','approve',p.id,'primary')+button('驳回','reject',p.id);
   const reason=plan?[plan.budgetUnset?'预算未配置':'',plan.overBudget?'超预算':'',plan.newSupplier?'新供应商':''].filter(Boolean).join(' · '):'';
   const receiptNote=n.receipts.length?`${n.receipts.length} 次到货记录`:'尚未到货';
@@ -187,12 +190,14 @@ function modal(title,contents,actions='',formType='',record=''){
 const field=(label,name,value,type='text')=>`<label class="proc-field"><span>${esc(label)}</span><input name="${esc(name)}" type="${type}" value="${esc(value)}" required ${type==='number'?'min="0.01" step="any"':''}></label>`;
 function error(message){const x=host().querySelector('.proc-error');if(x)x.textContent=message;else if(ctx)ctx.toast(message,'purchase');}
 function newPurchase(p){
- if(!p&&!requestChoices().length)return error('当前没有已由 PMC 主管确认且未下单的采购需求。');
- const choices=requestChoices(p?.id);
- if(!choices.length)return error('没有可关联的 PMC 采购需求');
- const options=choices.map(r=>`<option value="${esc(r.id)}" ${p?.requestId===r.id?'selected':''}>${esc(r.id)} · ${esc(r.material)} · ${money(r.qty)} · ${esc(r.sourceOrder||'日常补货')}</option>`).join('');
- const content=`<label class="proc-field"><span>已确认的 PMC 采购需求</span><select name="requestId" required ${p?'disabled':''}>${options}</select></label>${field('供应商','supplier',p?.supplier||'')}${field('采购单价（元）','unitPrice',p?.unitPrice||1,'number')}${field('供应商交期','deliveryDate',p?.deliveryDate||day(),'date')}<label class="proc-field"><span>额外风险说明（可选）</span><textarea name="riskNote" rows="2">${esc(p?.riskNote||'')}</textarea></label><label class="proc-field proc-inline-check"><span>紧急采购</span><input name="urgent" type="checkbox" value="yes" ${p?.urgent?'checked':''}></label><p class="proc-form-info">物料、数量由 PMC 需求锁定，采购总额自动按数量 × 单价计算。超预算、新供应商、紧急或高金额采购按配置追加跨部门审批。</p>`;
- modal(p?'编辑并重新提交采购单':'根据 PMC 需求创建采购单',content,'','purchase',p?.id||'');
+ if(!p||!canEdit(p))return error('请由 PMC 在缺料提示中生成采购单，采购员完善同一张单');
+ if(!p.pmcConfirmedAt)return error('PMC 尚未确认该采购单');
+ const body=`<div class="proc-po-source"><strong>采购单 ${esc(p.id)}</strong><span>${esc(p.material)} · ${money(p.qty)} · ${esc(p.sourceOrder||'补货')}</span></div>
+ ${field('供应商','supplier',p.supplier||'')}${field('采购单价（元）','unitPrice',p.unitPrice||1,'number')}${field('供应商交期','deliveryDate',p.deliveryDate||day(),'date')}
+ <label class="proc-field"><span>备注（可选）</span><textarea name="riskNote" rows="2">${esc(p.riskNote||'')}</textarea></label>
+ <label class="proc-field"><span>紧急采购</span><input type="checkbox" name="urgent" value="yes" ${p.urgent?'checked':''}></label>
+ <p class="proc-form-info">物料与数量已由 PMC 确认，只需填写供应商、单价和交期即可送审。</p>`;
+ modal('完善采购单 · '+p.id,body,'','purchase',p.id);
 }
 
 function newReceipt(po){
@@ -203,8 +208,8 @@ function newReceipt(po){
  modal('登记本次采购到货',`<label class="proc-field"><span>对应采购单</span><select name="purchase" required>${opts}</select></label><p class="proc-form-info" id="proc-remaining">采购物料 ${esc(p.material)}，最多可登记 ${money(numbers(p).remaining)}</p>${field('本次实收数量','qty',numbers(p).remaining,'number')}${field('供应商批次','supplierLot','')}${field('到货日期','received',day(),'date')}${field('有效期','expiry',new Date(Date.now()+365*864e5).toISOString().slice(0,10),'date')}`,'','receipt');
 }
 function detailsPurchase(idValue){const p=orders().find(x=>x.id===idValue);if(!p)return;
- const n=numbers(p),demand=demandOf(p);const related=shipments(p.id).map(x=>`<div class="journey-extra-line"><b>${esc(x.id)}</b><span>${money(x.actualQty??x.qty)} · ${esc(x.status)}</span></div>`).join('');
- window.FactoryFlowUI?.openDocument({kind:'purchase',ref:p.id,docType:'采购单',status:p.status,summary:`${p.material} · 采购 ${money(p.qty)} · ${p.supplier}`,history:[],nextOpen:{dept:['待补采购需求','待采购主管审批'].includes(p.status)?'purchase':p.status==='待财务审核'?'finance':p.status==='待总经办审批'?'leadership':'warehouse',feature:['待补采购需求','待采购主管审批'].includes(p.status)?'purchase':p.status==='待财务审核'?'finance':p.status==='待总经办审批'?'approvals':'warehouseIncoming',record:p.id},approvalPlan:p.approvalPlan,detailHtml:`<div class="journey-section-head"><strong>采购数量及到货记录</strong><small>需求：${esc(demand?.id||'未关联')}　PMC：${esc(demand?.reviewedBy||'未确认')}　采购审核：${esc(p.approvedBy||'未审批')}　财务：${esc(p.financeBy||'按规则免审')}　总经办：${esc(p.leadershipBy||'按规则免审')}</small></div><div class="journey-extra-line">采购 ${money(n.ordered)} · 单价 ¥${money(p.unitPrice)} · 合计 ¥${money(p.totalAmount)} · 交期 ${esc(p.deliveryDate||'—')}</div><div class="journey-extra-line">已登记 ${money(n.registered)} · 已入库 ${money(n.stored)} · 剩余可登记 ${money(n.remaining)}</div>${related||'<div class="journey-extra-line">暂无到货记录</div>'}`});
+ const n=numbers(p);const related=shipments(p.id).map(x=>`<div class="journey-extra-line"><b>${esc(x.id)}</b><span>${money(x.actualQty??x.qty)} · ${esc(x.status)}</span></div>`).join('');
+ window.FactoryFlowUI?.openDocument({kind:'purchase',ref:p.id,docType:'采购单',status:p.status,summary:`${p.material} · 采购 ${money(p.qty)} · ${p.supplier}`,history:[],nextOpen:{dept:p.status==='待PMC确认'?'pmc':['待补采购需求','待采购填写','待采购主管审批','已驳回'].includes(p.status)?'purchase':p.status==='待财务审核'?'finance':p.status==='待总经办审批'?'leadership':'warehouse',feature:p.status==='待PMC确认'?'kitting':['待补采购需求','待采购填写','待采购主管审批','已驳回'].includes(p.status)?'purchase':p.status==='待财务审核'?'finance':p.status==='待总经办审批'?'approvals':'warehouseIncoming',record:p.id},approvalPlan:p.approvalPlan,detailHtml:`<div class="journey-section-head"><strong>采购数量及到货记录</strong><small>销售订单：${esc(p.sourceOrder||'补货')}　PMC：${esc(p.pmcConfirmedBy||'待确认')}　采购审核：${esc(p.approvedBy||'未审批')}　财务：${esc(p.financeBy||'按规则免审')}　总经办：${esc(p.leadershipBy||'按规则免审')}</small></div><div class="journey-extra-line">采购 ${money(n.ordered)} · 单价 ¥${money(p.unitPrice)} · 合计 ¥${money(p.totalAmount)} · 交期 ${esc(p.deliveryDate||'—')}</div><div class="journey-extra-line">已登记 ${money(n.registered)} · 已入库 ${money(n.stored)} · 剩余可登记 ${money(n.remaining)}</div>${related||'<div class="journey-extra-line">暂无到货记录</div>'}`});
 }
 // 兼容 Modules.startPurchaseReceipt 的采购到货入口，必须复用收货权限校验。
 function openReceipt(po){
@@ -245,18 +250,17 @@ function saveForm(form){
   close();renderNow();ctx.toast('采购审批规则已更新，影响此后采购主管核准的订单。');return;
  }
  if(kind==='purchase'){
-  const old=orders().find(x=>x.id===idValue),req=requests().find(x=>x.id===(old?.requestId||values.requestId)),supplier=String(values.supplier||'').trim(),unitPrice=Number(values.unitPrice),deliveryDate=String(values.deliveryDate||'');
-  if(!req||req.status!=='已确认'||!validNumber(req.qty))return error('只能使用已由 PMC 主管确认的采购需求');
-  if(linkedPo(req.id)&&linkedPo(req.id)?.id!==old?.id)return error('此 PMC 需求已关联采购单，不能重复采购');
-  if(!supplier||!validNumber(unitPrice)||!/^\d{4}-\d{2}-\d{2}$/.test(deliveryDate))return error('请填写供应商、有效单价和交期');
-  if(old?!canEdit(old):!authorized(['purchase','purchase','create']))return error('仅采购单原创建人可修改被驳回的采购单');
-  const updates={material:req.material,qty:req.qty,requestId:req.id,sourceOrder:req.sourceOrder,supplier,unitPrice,totalAmount:Math.round(Number(req.qty)*unitPrice*100)/100,deliveryDate,urgent:values.urgent==='yes',riskNote:String(values.riskNote||'').trim(),status:'待采购主管审批',submittedAt:new Date().toISOString()};
-  if(!validNumber(updates.totalAmount))return error('采购金额无效');
-  let p=old;
-  if(p){Object.assign(p,updates);delete p.approvedBy;delete p.approvedId;delete p.financeBy;delete p.financeId;delete p.leadershipBy;delete p.leadershipId;audit(p,'采购员修改并重新送审','purchase')}
-  else{p={id:id('PO'),...updates,createdBy:user().id,createdName:user().name,history:[]};orders().unshift(p);audit(p,'采购员编制采购订单并送审','purchase')}
-  p.approvalPlan=approvalPlan(p);
-  close();renderNow();ctx.toast('采购单已提交采购主管审核；后续环节由审批规则决定。');return;
+  const p=orders().find(x=>x.id===idValue);
+  if(!p||!canEdit(p)||!p.pmcConfirmedAt)return error('只能由采购员完善已确认的采购单');
+  const supplier=String(values.supplier||'').trim(),unitPrice=Number(values.unitPrice),deliveryDate=String(values.deliveryDate||'');
+  if(!supplier||!validNumber(unitPrice)||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(deliveryDate))return error('请填写供应商、有效单价和交期');
+  Object.assign(p,{supplier,unitPrice,totalAmount:Math.round(Number(p.qty)*unitPrice*100)/100,deliveryDate,
+   urgent:values.urgent==='yes',riskNote:String(values.riskNote||'').trim(),status:'待采购主管审批',
+   purchaseId:user().id,purchaseBy:user().name,submittedAt:new Date().toISOString()});
+  if(!validNumber(p.totalAmount))return error('采购总金额无效');
+  delete p.approvedBy;delete p.approvedId;delete p.financeBy;delete p.financeId;delete p.leadershipBy;delete p.leadershipId;
+  p.approvalPlan=approvalPlan(p);audit(p,'采购员完善采购单并送审','purchase');
+  close();renderNow();detailsPurchase(p.id);return;
  }
  if(kind==='receipt'){
   if(!authorized(['warehouse','warehouseOps','create']))return error('需要仓库收货权限。');
@@ -324,7 +328,7 @@ function onAction(el){const action=el.dataset.procAction,ref=el.dataset.procId;
  if(action==='newPurchase'){return error('采购单由 PMC 直接生成，采购员完善同一张单据即可')}
  if(action==='createPurchaseFromShortage'){createFromShortage(ref);return}
  if(action==='viewShortagePurchase'){document.querySelector('#ops-modal-host')?.replaceChildren();detailsPurchase(ref);return}
- if(action==='editPurchase'){const p=orders().find(x=>x.id===ref);if(!canEdit(p))return error('只有原创建人且具有采购修改权限，才能修改草稿或被驳回的采购单。');newPurchase(p);return}
+ if(action==='editPurchase'){const p=orders().find(x=>x.id===ref);if(!canEdit(p))return error('只能由采购员完善待处理的原采购单');newPurchase(p);return}
  if(action==='newReceipt'){if(!authorized(['warehouse','warehouseOps','create']))return error('到货登记需要仓库收货权限，应由有权限的仓库员工办理。');newReceipt(ref);return}
  if(action==='viewPurchase'){detailsPurchase(ref);return}
  if(action==='viewReceipt'){detailsReceipt(ref);return}
