@@ -1250,3 +1250,175 @@
 @media(max-width:860px){
   .business-page-body{padding:8px;border-radius:13px!important}
 }
+
+/* Order-list workbench: one cockpit-style glass plane, with status facts collapsible.
+   Creation, search and status filtering always remain above the table. */
+.business-page-body .biz-order-panel {
+  width:100%;
+  min-width:0;
+  min-height:clamp(380px,calc(100dvh - 180px),760px);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.business-page-body .biz-order-panel[data-order-panel="tasks"],
+.business-page-body .biz-order-panel[data-order-panel="batch"],
+.business-page-body .biz-order-panel[data-order-panel="warehouseOutbound"] {
+  min-height:330px;
+}
+.business-page-body .biz-order-panel .biz-order-stats {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:0;
+  min-height:49px;
+  padding:4px 5px;
+  border-bottom:1px solid rgba(115,151,119,.17);
+  background:rgba(241,247,241,.30);
+}
+.business-page-body .biz-order-panel .biz-order-stats[hidden],
+.business-page-body .biz-order-panel .biz-order-row[hidden] {
+  display:none!important;
+}
+.business-page-body .biz-order-panel .biz-order-stat {
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  padding:5px 15px;
+  color:#607b68;
+  font-size:11px;
+  line-height:1.3;
+  white-space:nowrap;
+  border-right:1px solid rgba(115,151,119,.17);
+}
+.business-page-body .biz-order-panel .biz-order-stat:last-child {
+  border-right:0;
+}
+.business-page-body .biz-order-panel .biz-order-stat strong {
+  font-size:19px;
+  font-weight:780;
+  color:#345b42;
+  font-variant-numeric:tabular-nums;
+}
+.business-page-body .biz-order-panel .biz-order-toolbar {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+  min-height:48px;
+  padding:7px 10px;
+  background:rgba(225,237,227,.39);
+  border-bottom:1px solid rgba(115,151,119,.17);
+}
+.business-page-body .biz-order-panel .biz-order-create {
+  flex:0 0 auto;
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+.business-page-body .biz-order-panel .biz-order-create :is(button,[data-slot="button"]) {
+  height:31px!important;
+  min-height:31px!important;
+  padding:0 11px!important;
+}
+.business-page-body .biz-order-panel .biz-order-search,
+.business-page-body .biz-order-panel .biz-order-status {
+  height:31px!important;
+  min-height:31px!important;
+  padding:0 10px!important;
+  border:1px solid rgba(107,145,114,.27)!important;
+  border-radius:7px!important;
+  background:rgba(253,254,251,.86)!important;
+  color:#405c48;
+  font-size:11px!important;
+  outline:none;
+}
+.business-page-body .biz-order-panel .biz-order-search {
+  flex:0 1 250px;
+  width:250px;
+  min-width:140px;
+}
+.business-page-body .biz-order-panel .biz-order-status {
+  flex:0 0 135px;
+  max-width:180px;
+}
+.business-page-body .biz-order-panel .biz-order-search:focus,
+.business-page-body .biz-order-panel .biz-order-status:focus {
+  border-color:#78a285!important;
+  box-shadow:0 0 0 2px rgba(85,125,101,.09)!important;
+}
+.business-page-body .biz-order-panel .biz-order-fold {
+  margin-left:auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  height:31px!important;
+  min-height:31px!important;
+  padding:0 10px!important;
+  border-radius:7px!important;
+  border:1px solid rgba(103,142,111,.25)!important;
+  background:rgba(229,239,229,.85)!important;
+  color:#4d7459!important;
+  font-weight:690!important;
+  white-space:nowrap;
+  box-shadow:none!important;
+}
+.business-page-body .biz-order-panel .biz-order-fold:hover {
+  background:#dbeadd!important;
+}
+.business-page-body .biz-order-panel .biz-fold-arrow {
+  font-size:16px;
+  line-height:1;
+}
+.business-page-body .biz-order-panel .biz-order-table-area {
+  flex:1;
+  min-width:0;
+  min-height:0;
+  overflow:auto;
+}
+.business-page-body .biz-order-panel .biz-order-table-area > :is(.op-table-wrap,.mw-table-scroll) {
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  overflow:visible;
+  box-shadow:none!important;
+}
+.business-page-body .biz-order-panel .biz-order-table-area :is(.op-table,.mw-table) {
+  width:100%;
+  border-collapse:collapse;
+}
+.business-page-body .biz-order-panel .biz-order-footer {
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  min-height:36px;
+  padding:7px 11px;
+  border-top:1px solid rgba(115,151,119,.17);
+  background:rgba(237,245,237,.34);
+  color:#829385;
+  font-size:10.5px;
+}
+.business-page-body .biz-order-panel .biz-order-footer strong {
+  margin:0 3px;
+  color:#476e54;
+  font-weight:750;
+}
+.business-page-body .biz-order-panel + .mw-data-section,
+.business-page-body .biz-order-panel + .op-subsection {
+  margin-top:13px!important;
+  border-top:1px solid rgba(115,151,119,.16)!important;
+}
+@media(max-width:750px){
+ .business-page-body .biz-order-panel{min-height:390px}
+ .business-page-body .biz-order-panel .biz-order-toolbar{align-items:stretch}
+ .business-page-body .biz-order-panel .biz-order-search{flex:1 1 160px}
+ .business-page-body .biz-order-panel .biz-order-status{flex:0 1 130px}
+ .business-page-body .biz-order-panel .biz-order-fold{margin-left:0}
+ .business-page-body .biz-order-panel .biz-order-stat{padding:4px 9px}
+ .business-page-body .biz-order-panel .biz-order-stat strong{font-size:17px}
+}
