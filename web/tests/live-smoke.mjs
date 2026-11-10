@@ -56,6 +56,16 @@ try{
   assert.equal(await page.locator("iframe").count(),0,"Production business pages must not use iframe")
   assert.deepEqual(errors,[],"Published website must not throw uncaught JavaScript errors")
   await page.screenshot({path:"test-results/live-github-pages.png",fullPage:true})
+  await page.evaluate(()=>{window.location.hash="#/departments/pmc/kitting"})
+  await page.locator('.native-business [data-proc-action="newRequest"]').waitFor({state:"visible",timeout:18000})
+  await page.screenshot({path:"test-results/live-pmc-purchase-demand.png"})
+  await page.evaluate(()=>{window.location.hash="#/departments/purchase/purchase"})
+  await page.locator('.native-business [data-proc-action="newPurchase"]').waitFor({state:"visible",timeout:18000})
+  await page.screenshot({path:"test-results/live-purchase-approval-list.png"})
+  await page.evaluate(()=>{window.location.hash="#/departments/leadership/approvals"})
+  await page.locator('.native-business [data-proc-action="editPolicy"]').waitFor({state:"visible",timeout:18000})
+  await page.screenshot({path:"test-results/live-purchase-approval-policy.png"})
+
   // Real published-order modal check: a generic page screenshot cannot verify flow controls.
   await page.evaluate(()=>{window.location.hash="#/departments/sales/orders"})
   const orderButton=page.locator('.native-business [data-op-action="detailFlow"]').first()

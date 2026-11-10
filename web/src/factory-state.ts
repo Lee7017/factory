@@ -93,7 +93,7 @@ export function useFactoryState() {
     if(window.FactoryAccess)init()
     else {
       const script=document.createElement("script")
-      script.src=`${import.meta.env.BASE_URL}legacy/access.js`
+      script.src=`${import.meta.env.BASE_URL}legacy/access.js?v=20261110-purchase-approvals`
       script.onload=init
       script.onerror=()=>console.error("Failed to load factory access module")
       document.head.appendChild(script)
