@@ -117,7 +117,7 @@ function renderPurchases(){
   const receiptNote=n.receipts.length?`${n.receipts.length} 次到货记录`:'尚未到货';
   return `<tr class="biz-order-row proc-order-row" data-order-status="${esc(p.status)}">
    <td><strong>${esc(p.id)}</strong><small class="proc-sub">需求单 ${esc(r?.id||'未关联')}</small></td>
-   <td><strong>${esc(p.material)}</strong><small class="proc-sub">${esc(p.sourceOrder||'常规采购')}</small></td>
+   <td><strong>${esc(p.material)}</strong></td>
    <td>${money(p.qty)}</td>
    <td>${esc(p.supplier||'—')}</td>
    <td>¥${money(p.unitPrice)}<small class="proc-sub">采购总额 ¥${money(p.totalAmount)}</small></td>

@@ -52,10 +52,12 @@ try {
     "Purchase workbench cannot display sales order IDs as business rows")
   await page.screenshot({path:"test-results/purchase-toolbar-desktop.png",fullPage:false})
   // Sales has its own page and must not contain procurement fields or actions.
+  await asEmployee("E013")
   await navigate("sales","orders")
   assert.equal(await page.locator('.native-business .proc-purchase-board').count(),0)
   assert.equal(await page.locator('.native-business [data-proc-action="newPurchase"]').count(),0)
   await page.screenshot({path:"test-results/purchase-sales-are-separate.png"})
+  await asEmployee("E014")
   await navigate("purchase","purchase")
   // Old purchase records without independent demand authorization are blocked.
   let data=await getData()
