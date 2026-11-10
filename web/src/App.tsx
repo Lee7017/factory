@@ -77,7 +77,8 @@ function Topbar({route,onSelect,onOpenSidebar,employee,staff,onSwitch,messages,o
 }) {
   const dept=route.kind==="department"?getDepartment(route.dept):undefined
   const [infoOpen,setInfoOpen]=useState(false)
-  useEffect(()=>setInfoOpen(false),[dept?.id])
+  const [featureInfoOpen,setFeatureInfoOpen]=useState(false)
+  useEffect(()=>{setInfoOpen(false);setFeatureInfoOpen(false)},[dept?.id,route.kind==="department"?route.feature:undefined])
   const count=messages.filter(m=>m.unread).length
   return <header className="shell-topbar">
     <div className="flex min-w-0 items-center gap-2">
@@ -104,6 +105,19 @@ function Topbar({route,onSelect,onOpenSidebar,employee,staff,onSwitch,messages,o
           {route.kind==="department"&&route.feature&&<>
             <ChevronRight className="crumb-separator"/>
             <strong className="crumb-current">{FEATURE_NAMES[route.feature]??route.feature}</strong>
+            <Popover open={featureInfoOpen} onOpenChange={setFeatureInfoOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon-xs"
+                  aria-label={`查看${FEATURE_NAMES[route.feature]??route.feature}介绍`}
+                  onPointerEnter={event=>{if(event.pointerType==="mouse")setFeatureInfoOpen(true)}}>
+                  <Info size={14}/>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent side="bottom" align="start" sideOffset={9} className="glass-tooltip">
+                <strong className="block text-xs font-semibold">{FEATURE_NAMES[route.feature]??route.feature}</strong>
+                <span className="mt-1 block text-xs">{FEATURE_HINTS[route.feature]??dept.description}</span>
+              </PopoverContent>
+            </Popover>
           </>}
         </div>:<strong className="crumb-current">工厂运行总览</strong>}
       </nav>
@@ -390,11 +404,7 @@ export default function App() {
             currentDept&&(!currentFeature||!validFeature)?
               <DepartmentPage key={currentDept.id} dept={currentDept} staff={staff} employee={employee}
                 workspace={workspace} can={can} onSelect={navigate} onRefresh={refresh}/>
-              :currentDept&&currentFeature?<section className={`business-page-frame business-family-${businessFamily(currentFeature)}`} data-business-family={businessFamily(currentFeature)}>
-                <header className="business-page-heading">
-                  <h1 className="page-title">{FEATURE_NAMES[currentFeature]??currentFeature}</h1>
-                  <p className="page-subtitle">{FEATURE_HINTS[currentFeature]??currentDept.description}</p>
-                </header>
+              :currentDept&&currentFeature?<section className={`business-page-frame business-family-${businessFamily(currentFeature)}`} data-business-family={businessFamily(currentFeature)} aria-label={FEATURE_NAMES[currentFeature]??currentFeature}>
                 <div className="business-page-body">
                 {can(currentDept.id,currentFeature)?
                   currentFeature==="leave"||currentFeature==="leaveApproval"?
