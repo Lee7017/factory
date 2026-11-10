@@ -49,6 +49,9 @@ jobs:
       - name: Production cleaning and setup gate tracking
         working-directory: web
         run: npm run test:production-gates
+      - name: Sales order shipment auto-fill and split delivery
+        working-directory: web
+        run: npm run test:outbound-prefill
       - name: Current workspace only — do not import obsolete data
         working-directory: web
         run: npm run test:current

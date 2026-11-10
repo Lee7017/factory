@@ -14,6 +14,7 @@
     "test:full": "node tests/full-business.mjs",
     "test:purchase": "node tests/purchase-flow.mjs",
     "test:production-gates": "node tests/production-gates.mjs",
+    "test:outbound-prefill": "node tests/outbound-prefill.mjs",
     "test:current": "node tests/current-data.mjs",
     "test:live": "node tests/live-smoke.mjs",
     "test:unit": "tsx --test tests/*.test.ts"

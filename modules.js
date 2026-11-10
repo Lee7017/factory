@@ -27,7 +27,7 @@ function init(context){ctx=context;ctx.data.modules??={version:18,inspections:[]
   const sent=S.outbound.filter(r=>r.order===order.id&&r.status==='已出库').reduce((n,r)=>n+Number(r.qty),0);
   if(sent>0&&sent+0.00001>=finishedUnitsForOrder(order)){flow.stage='shipped';order.status='已发货';flow.audit??=[];flow.audit.push({at:stamp(),person:'系统',action:'修正历史发货进度',from:'warehouse',to:'sales',state:`累计已出库 ${sent} 箱，待客户收货确认`});}
  }
- ctx.save();}
+ ctx.save();installOutboundChange();}
 const me=()=>ctx.access.current();
 const ops=()=>ctx.ops.state;
 const permitted=(dept,feature,action='view')=>ctx.access.has(dept,feature,action);
@@ -63,6 +63,44 @@ const id=prefix=>`${prefix}-${Date.now().toString().slice(-7)}-${Math.floor(Math
 const orderOptions=()=>ctx.data.orders.filter(o=>ops().flows[o.id]?.stage!=='stored').map(o=>[o.id,`${o.id} · ${o.product}`]);
 const completedOrderOptions=()=>ctx.data.orders.filter(o=>['dispatch','shipping'].includes(ops().flows[o.id]?.stage)).map(o=>[o.id,`${o.id} · ${o.product}`]);
 function pendingOutboundQty(batchId){return S.outbound.filter(x=>x.status==='待出库').flatMap(x=>x.allocations||[]).filter(x=>x.id===batchId).reduce((n,x)=>n+Number(x.qty),0)}
+
+function outboundOrderStats(orderId){
+ const order=ctx.data.orders.find(o=>o.id===orderId);
+ if(!order)return null;
+ const expected=finishedUnitsForOrder(order);
+ const shipped=S.outbound.filter(r=>r.order===orderId&&r.status==='已出库').reduce((n,r)=>n+Number(r.qty||0),0);
+ const outstanding=S.outbound.filter(r=>r.order===orderId&&r.status==='待出库').reduce((n,r)=>n+Number(r.qty||0),0);
+ const remaining=Math.max(0,expected-shipped);
+ const unreserved=Math.max(0,remaining-outstanding);
+ const available=S.batches.filter(b=>b.order===orderId&&b.group==='成品'&&b.quality==='合格'&&!isExpired(b))
+  .reduce((n,b)=>n+Math.max(0,Number(b.qty||0)-pendingOutboundQty(b.id)),0);
+ const suggested=Math.min(unreserved,available);
+ return {order,expected,shipped,outstanding,remaining,unreserved,available,suggested};
+}
+function outboundSummaryHTML(stats){
+ if(!stats)return '<span>请选择有效的发货销售订单。</span>';
+ const {order,expected,shipped,outstanding,remaining,available,suggested}=stats;
+ const shortage=Math.max(0,remaining-available-outstanding);
+ return `<strong>按销售订单自动带入数量</strong>
+  <div class="mw-outbound-numbers">
+   <span>订单数量 <b>${esc(money(order.qty))} ${esc(order.unit||'L')}</b></span>
+   <span>订单应发 <b>${esc(money(expected))} 箱</b></span>
+   <span>已出库 <b>${esc(money(shipped))} 箱</b></span>
+   <span>剩余待发 <b>${esc(money(remaining))} 箱</b></span>
+   <span>合格可发 <b>${esc(money(available))} 箱</b></span>
+  </div>
+  <small>${outstanding?`已有待确认出库记录 ${esc(money(outstanding))} 箱；`:''}
+  ${shortage>0?`合格库存不足，当前最多可安排 ${esc(money(suggested))} 箱，仍缺 ${esc(money(shortage))} 箱。`:
+     suggested>0?`本次已预填 ${esc(money(suggested))} 箱；需要分批发货时可以直接修改。`:
+     '暂无可用合格批次，当前不能办理出库。'}</small>`;
+}
+function updateOutboundPrefill(orderId){
+ if(form?.kind!=='outbound')return;
+ const stats=outboundOrderStats(orderId),input=$('#module-form [name="qty"]'),summary=$('#module-form [data-outbound-summary]');
+ if(input)input.value=String(stats?.suggested||0);
+ if(summary)summary.innerHTML=outboundSummaryHTML(stats);
+}
+
 function confirmOutbound(r){
  if(!permitted('warehouse','warehouseOps','execute'))return fail('当前员工没有仓库出库执行权限。');
  if(r.status!=='待出库')return fail('该订单出库记录已完成或状态已变化，不能重复出库。');
@@ -83,7 +121,7 @@ function confirmOutbound(r){
  return done('已按销售订单确认出库，库存和订单发货进度同步更新。'),true;
 }
 function allocateFinished(orderId,qty){
- const sorted=S.batches.filter(b=>b.group==='成品'&&b.order===orderId&&b.quality==='合格'&&Number(b.qty)>0).sort((a,b)=>a.received.localeCompare(b.received)||a.id.localeCompare(b.id));
+ const sorted=S.batches.filter(b=>b.group==='成品'&&b.order===orderId&&b.quality==='合格'&&!isExpired(b)&&Number(b.qty)>0).sort((a,b)=>a.received.localeCompare(b.received)||a.id.localeCompare(b.id));
  let left=Number(qty),out=[];for(const b of sorted){const available=Math.max(0,Number(b.qty)-pendingOutboundQty(b.id)),used=Math.min(left,available);if(used>0){out.push({id:b.id,qty:used});left-=used}if(left<=0)break}return left>0?null:out;
 }
 const taskOptions=type=>ctx.data.tasks.filter(t=>!type||t.type===type).map(t=>[t.id,`${t.id} · ${t.type} · ${t.line}`]);
@@ -173,7 +211,7 @@ function warehousePage(){const t=currentTab.warehouseOps||'batches';let content=
   const pending=records.filter(x=>x.status==='待出库');
   const expected=finishedUnitsForOrder(o),due=Math.max(0,expected-sent);
   const lots=S.batches.filter(b=>b.order===o.id&&b.group==='成品');
-  const available=lots.filter(b=>b.quality==='合格').reduce((n,b)=>n+Math.max(0,Number(b.qty)-pendingOutboundQty(b.id)),0);
+  const available=lots.filter(b=>b.quality==='合格'&&!isExpired(b)).reduce((n,b)=>n+Math.max(0,Number(b.qty)-pendingOutboundQty(b.id)),0);
   const blocked=lots.filter(b=>b.quality!=='合格'&&Number(b.qty)>0);
   const blockedQty=blocked.reduce((n,b)=>n+Math.max(0,Number(b.qty)),0);
   const shortage=Math.max(0,due-available);
@@ -294,7 +332,14 @@ function showForm(kind,record=''){
  clean:()=>field('task','清洗工单','select',taskOptions('清洗')[0]?.[0]||'',taskOptions('清洗'))+field('remark','检查项目与记录','text','清场、设备表面和残留检查'),
  ncr:()=>field('source','来源','select','现场发现',['现场发现','抽检','报检','清洗报检'])+field('ref','关联单号','text','现场记录')+field('material','物料 / 批次','text','待确认')+field('reason','不合格原因','textarea','现场异常待核实'),
  batch:()=>field('material','物料编码','select','RM-001',materialOptions())+field('group','批次分类','select','原辅料',['原辅料','品牌包材','非品牌包材','半成品','成品'])+field('qty','入库数量','number',100)+field('unit','单位','select','kg',['kg','L','桶','箱','个'])+field('received','实际入库日期','date',today())+field('expiry','有效期截止日期','date',new Date(Date.now()+365*864e5).toISOString().slice(0,10))+field('quality','质量状态','select','待检',['待检','合格','冻结']),
- outbound:record=>field('order','销售订单','select',completedOrderOptions().find(x=>x[0]===record)?.[0]||completedOrderOptions()[0]?.[0]||'',completedOrderOptions())+field('qty','本次出库数量（箱）','number',1)+field('destination','客户 / 去向','text','客户收货'),
+ outbound:record=>{
+  const orderId=completedOrderOptions().find(x=>x[0]===record)?.[0]||completedOrderOptions()[0]?.[0]||'';
+  const stats=outboundOrderStats(orderId);
+  return field('order','销售订单','select',orderId,completedOrderOptions())+
+   `<section class="mw-outbound-summary" data-outbound-summary role="status" aria-live="polite">${outboundSummaryHTML(stats)}</section>`+
+   field('qty','本次出库数量（箱）','number',stats?.suggested??0)+
+   field('destination','客户 / 去向','text',stats?.order?.customer||stats?.order?.destination||'客户收货');
+ },
  issue:()=>field('material','领料物料','select','RM-001',materialOptions())+field('qty','领料数量','number',10)+field('order','对应订单','select',ctx.data.orders[0]?.id||'',orderOptions())+field('line','领用产线','select','L01 配制一线',['L01 配制一线','L02 配制二线','S03-4# 瓶装线','S04 包装二线']),
  return:()=>field('source','关联已接收领料单','select',S.materialRequests.find(r=>r.status==='已双签')?.id||'',S.materialRequests.filter(r=>r.status==='已双签').map(r=>[r.id,`${r.id} · ${r.material}`]))+field('batch','结余所在批次','select',S.batches[0]?.id||'',S.batches.map(b=>[b.id,b.id+' · '+b.material]))+field('qty','结余数量','number',1)+field('reason','退库原因','text','生产结余'),
  rework:()=>field('type','工单类型','select','返洗',['返洗','返工'])+field('source','关联异常单号','select',S.ncr[0]?.id||'现场异常',S.ncr.length?S.ncr.map(x=>[x.id,x.id+' · '+x.reason]):[['现场异常','现场异常']])+field('line','执行产线','select','L01 配制一线',['L01 配制一线','L02 配制二线','S03-4# 瓶装线','S04 包装二线']),
@@ -313,6 +358,16 @@ function showForm(kind,record=''){
  }
  if(kind==='inspection'&&!ctx.data.orders.length)return fail('尚无关联订单');
  modal(({inspection:'新建报检单',sample:'发起抽检',clean:'清洗报检',ncr:'登记不合格品',batch:'登记仓库批次',incoming:'采购到货与供应商批次',outbound:'按销售订单确认出库',reconcile:'修改实收数量与物料',issue:'车间发起领料',return:'结余退库申请',rework:'发起返洗 / 返工',roster:'产线岗位排班',hours:'新增本人工时',appeal:'工时申诉',sop:'创建受控操作标准卡',dictionary:'新增基础字典项'})[kind],fields[kind](record),{kind,record});return true;
+}
+// Orders can change inside the outbound dialog: keep the quantity and summary tied to the selected order.
+let outboundChangeAttached=false;
+function installOutboundChange(){
+ if(outboundChangeAttached)return;
+ document.addEventListener('change',event=>{
+  if(event.target?.matches?.('#module-form select[name="order"]')&&form?.kind==='outbound')
+   updateOutboundPrefill(event.target.value);
+ });
+ outboundChangeAttached=true;
 }
 function handleClick(node){const a=node.dataset.moduleAction||'',key=node.dataset.mid||'';
  if(a==='closeModal'){close();return true}
@@ -380,7 +435,7 @@ function submitForm(ev){if(ev.target.id!=='module-form')return false;ev.preventD
  if(kind==='ncr'){nonconform(values.source,values.ref,values.material,values.reason);return done('不合格品处置单已登记。'),true}
  if(kind==='batch'){if(values.quality==='合格')return fail('不能手动跳过报检将批次设为合格，请选择待检并完成 QC 判定。');let q=Number(values.qty);if(q<=0)return fail('批次数量必须大于 0');const b={id:id('LOT'),material:values.material,group:values.group,qty:q,unit:values.unit,received:values.received,expiry:values.expiry,quality:values.quality};S.batches.unshift(b);audit('手工批次登记',b.id,`${b.material} +${q}，质量待检`);return done('批次已登记但尚不能发料；需要 QC 放行。'),true}
 
- if(kind==='outbound'){if(!permitted('warehouse','warehouseOps','execute'))return fail('当前员工没有仓库出库执行权限。');const order=ctx.data.orders.find(o=>o.id===values.order);if(!order||!['dispatch','shipping'].includes(ops().flows?.[order.id]?.stage))return fail('销售订单尚未通知发货，不能办理仓库出库。');const qty=Number(values.qty);if(!Number.isFinite(qty)||qty<=0)return fail('出库数量必须大于 0。');const shipped=S.outbound.filter(x=>x.order===order.id&&x.status==='已出库').reduce((sum,x)=>sum+Number(x.qty),0);const due=Math.max(0,finishedUnitsForOrder(order)-shipped);if(qty>due+0.00001)return fail(`本次出库不能超过订单剩余待发数量 ${due} 箱。`);const allocations=allocateFinished(order.id,qty);if(!allocations)return fail('该销售订单的可用成品批次数量不足，请调整本次出库数量。');const r={id:id('OB'),order:order.id,material:productCodeForOrder(order),qty,destination:values.destination,allocations,status:'待出库',createdBy:me().name,createdAt:stamp()};S.outbound.unshift(r);return confirmOutbound(r)}
+ if(kind==='outbound'){if(!permitted('warehouse','warehouseOps','execute'))return fail('当前员工没有仓库出库执行权限。');const order=ctx.data.orders.find(o=>o.id===values.order);if(!order||!['dispatch','shipping'].includes(ops().flows?.[order.id]?.stage))return fail('销售订单尚未通知发货，不能办理仓库出库。');const qty=Number(values.qty);if(!Number.isFinite(qty)||qty<=0)return fail('出库数量必须大于 0。');const stats=outboundOrderStats(order.id);const due=stats?.unreserved||0;if(qty>due+0.00001)return fail(`本次出库不能超过订单尚未安排的待发数量 ${due} 箱。`);const allocations=allocateFinished(order.id,qty);if(!allocations)return fail('该销售订单的可用成品批次数量不足，请调整本次出库数量。');const r={id:id('OB'),order:order.id,material:productCodeForOrder(order),qty,destination:values.destination,allocations,status:'待出库',createdBy:me().name,createdAt:stamp()};S.outbound.unshift(r);return confirmOutbound(r)}
 
  if(kind==='issue'){const n=Number(values.qty);if(n<=0)return fail('数量必须大于零。');const r={id:id('MR'),type:'领料',material:values.material,qty:n,order:values.order,line:values.line,status:'待备料',requestBy:me().name,requestedAt:stamp()};S.materialRequests.unshift(r);audit('车间领料申请',r.id,`${r.material} ${n}`);return done('领料单已创建，等待仓库 FIFO 备料。'),true}
  if(kind==='return'){const orig=getRequest(values.source);if(!orig||orig.status!=='已双签')return fail('只能对已完成双签的领料单退库。');const amount=Number(values.qty),alloc=(orig.allocations||[{id:orig.batch,qty:orig.qty}]).find(x=>x.id===values.batch);if(!alloc)return fail('退库批次必须来自此领料单已经签收的实际批次。');const used=S.materialRequests.filter(r=>r.type==='退库'&&r.source===orig.id&&r.batch===values.batch&&!['已取消','已拒绝'].includes(r.status)).reduce((a,x)=>a+Number(x.qty),0);if(amount<=0||amount+used>alloc.qty)return fail('退库数量超过该物料批次的可退结余。');const r={id:id('RT'),type:'退库',source:orig.id,batch:values.batch,material:orig.material,qty:amount,order:orig.order,reason:values.reason,status:'待仓库接收'};S.materialRequests.unshift(r);audit('结余退库申请',r.id,`${r.material} ${r.qty}`);return done('退库申请已提交，等待仓库接收。'),true}
