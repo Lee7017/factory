@@ -224,7 +224,7 @@ function render(){
    <div class="gantt-legend">${legend}<span class="gantt-count">当天 ${n} 项任务${conflictCount?' · '+conflictCount+' 对冲突':''}</span></div>
    ${warning}
    <div class="gantt-scroll" tabindex="0" aria-label="可左右滚动的排产甘特图"><div class="gantt-canvas"><div class="gantt-head"><div class="gantt-lane gantt-lane-title">产线 / 工位</div><div class="gantt-hours">${times}</div></div>${rows}</div></div>
-   <div class="gantt-foot"><strong>排程规则：</strong>同一工位不能同时执行两项任务；自动试排依次考虑清洗、配制、检验、调机调线、包装与放行，优先寻找空闲工位。整理仅调整未发布订单，正式排程及已开工任务不会自动移动。</div>
+   <div class="gantt-foot"><strong>排程规则：</strong>同一工位不能同时执行两项任务；自动试排暂按 07:00–22:00 寻找空闲工位，依次安排清洗、配制、检验、调机调线、包装与放行（实际班次须由 PMC 确认）。整理仅调整未发布订单，正式排程及已开工任务不会自动移动。</div>
  </section>`;
 }
 function showError(msg){const el=$('#gantt-error');if(el){el.textContent=msg;el.hidden=false;}}
@@ -280,9 +280,29 @@ function save(ev){ev.preventDefault();if(!ctx.access.has('pmc','schedule','edit'
  try{ops.checkPrestartMaterials?.()}catch(error){console.error('排程物料复查失败',error)}
  close();rerender();
 }
+function optimizeDraft(){
+ if(!ctx.access.has('pmc','schedule','edit'))return;
+ const eligible=new Set(['draft','review','approved','trial']);
+ const ids=(ctx.data.orders||[]).filter(o=>eligible.has(state().flows?.[o.id]?.stage||'draft')&&
+  state().gantt.some(x=>x.orderId===o.id)).map(o=>o.id);
+ if(!ids.length){window.alert('没有可以自动整理的未发布排程。已发布或已进入生产的订单不会自动移动。');return}
+ let proposal;
+ try{proposal=optimizedPlan(state(),ids)}
+ catch(error){window.alert(error.message||'自动整理失败，请检查任务时长与工位配置。');return}
+ if(!proposal.changes.length){window.alert('检查完成：未发布排程没有需要调整的工位冲突或工序顺序问题。');return}
+ const countOrders=new Set(proposal.changes.map(x=>x.before.orderId)).size;
+ if(!window.confirm('将调整 '+countOrders+' 张未发布订单的 '+proposal.changes.length+' 项任务（时间或工位）。\n已发布、已锁库及进入生产的任务不变。\n确认执行自动整理？'))return;
+ const moved=new Set(proposal.changes.map(x=>x.before.id));
+ state().gantt=proposal.entries.map(x=>moved.has(x.id)?{...x,source:'自动整理排程'}:x);
+ (state().logs??=[]).unshift({
+  at:new Date().toLocaleString('zh-CN'),person:ctx.access.current().name,
+  action:'自动整理未发布排程',ref:'PMC',detail:countOrders+' 张订单、'+proposal.changes.length+' 项任务'
+ });
+ ctx.save();rerender();
+}
 function rerender(){restoreLeft=$('.gantt-scroll')?.scrollLeft??restoreLeft;ctx.render();requestAnimationFrame(()=>{const scroll=$('.gantt-scroll');if(scroll)scroll.scrollLeft=restoreLeft});}
 function onClick(ev){const el=ev.target.closest('[data-gantt]');if(!el)return;ev.stopPropagation();const a=el.dataset.gantt;
- if(a==='close'){close();return}if(a==='edit'){openEditor(el.dataset.ganttId);return}if(a==='add'){openEditor(null);return}
+ if(a==='close'){close();return}if(a==='edit'){openEditor(el.dataset.ganttId);return}if(a==='add'){openEditor(null);return}if(a==='optimize'){optimizeDraft();return}
  if(a==='today')state().ganttDay=dayString(new Date());
  if(a==='prev')state().ganttDay=dayShift(readDay(),-1);
  if(a==='next')state().ganttDay=dayShift(readDay(),1);
