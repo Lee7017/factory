@@ -274,6 +274,9 @@ try {
   await navigate("it","permissions")
   await page.locator("#perm-employee").selectOption("E012")
   assert.equal(await page.getByText("开发人员自动拥有所有部门的全部功能权限，无需逐项追加。").count(),1)
+  assert.equal(await page.locator(".access-table .permission-fixed").count()>0,true)
+  assert.equal(await page.locator(".access-developer-role").textContent(),"开发人员 · 全部权限")
+  assert.equal(await page.locator(".access-table").getByText("无需追加").count()>0,true)
   await page.screenshot({path:"test-results/purchase-07-developer-full-rights.png"})
 
   await navigate("pmc","kitting")
