@@ -177,37 +177,30 @@ try {
   activeFeature="sales/orders"
   await page.evaluate(()=>{location.hash="#/departments/sales/orders"})
   await page.locator(".native-business .legacy-root").waitFor({state:"visible"})
-  // Sales orders use one table surface: compact toolbar + table, no duplicate rules row.
-  const salesLayout=await page.evaluate(()=>{
-    const root=document.querySelector(".native-business .ops-workbench")
-    const wrap=root?.querySelector(":scope > .op-table-wrap")
-    const toolbar=wrap?.querySelector(":scope > .op-table-toolbar")
-    const button=toolbar?.querySelector('[data-op-action="newOrder"]')
-    const tableContainer=wrap?.querySelector(':scope > [data-slot="table-container"]')
-    const table=tableContainer?.querySelector('[data-slot="table"]')
-    if(!root||!wrap||!toolbar||!button||!tableContainer||!table)return null
-    const w=wrap.getBoundingClientRect(),a=toolbar.getBoundingClientRect()
-    const b=button.getBoundingClientRect(),t=tableContainer.getBoundingClientRect()
-    return {
-      toolbarHeight:Math.round(a.height),
-      toolbarTopGap:Math.round(a.top-w.top),
-      tableGap:Math.round(t.top-a.bottom),
-      buttonInside:b.top>=a.top-1&&b.bottom<=a.bottom+1,
-      detachedCommand:!!root.querySelector(":scope > .ops-command-row"),
-      detachedHelp:!!root.querySelector(":scope > .business-help"),
-      helpInside:!!wrap.querySelector(".business-help")
-    }
-  })
-  assert.ok(salesLayout,"Sales orders must render actions inside the table surface")
-  assert.ok(salesLayout.toolbarHeight<=50,`Sales table toolbar too tall: ${JSON.stringify(salesLayout)}`)
-  assert.ok(Math.abs(salesLayout.toolbarTopGap)<=2,`Toolbar must start at table surface top: ${JSON.stringify(salesLayout)}`)
-  assert.ok(Math.abs(salesLayout.tableGap)<=2,`Table must directly follow toolbar: ${JSON.stringify(salesLayout)}`)
-  assert.equal(salesLayout.buttonInside,true,"New order button must stay inside table toolbar")
-  assert.equal(salesLayout.detachedCommand,false,"No detached sales command row")
-  assert.equal(salesLayout.detachedHelp,false,"No detached sales help row")
-  assert.equal(salesLayout.helpInside,false,"Operation rules belong in topbar info, not table content")
+  // The order-status rail is collapsible; create/search/filter stay visible.
+  const salesPanel=page.locator('.native-business .biz-order-panel[data-order-panel="orders"]')
+  await salesPanel.waitFor({state:"visible"})
+  assert.equal(await salesPanel.locator(".biz-order-stat").count(),5,"Sales has five status counts")
+  assert.equal(await salesPanel.locator(".biz-order-stats").isVisible(),true,"Status counts initially visible")
+  assert.equal(await salesPanel.locator(".biz-order-toolbar [data-op-action='newOrder']").count(),1,"Create action stays in the filtering toolbar")
+  const salesFold=salesPanel.locator(".biz-order-fold")
+  await salesFold.click()
+  assert.equal(await salesPanel.locator(".biz-order-stats").isVisible(),false,"Folding hides only status counts")
+  assert.equal(await salesPanel.locator(".biz-order-search").isVisible(),true,"Search remains visible after folding")
+  assert.equal(await salesPanel.locator(".biz-order-status").isVisible(),true,"Status filter remains visible after folding")
+  assert.equal(await salesPanel.locator("[data-op-action='newOrder']").isVisible(),true,"Create stays visible after folding")
+  await salesPanel.locator(".biz-order-search").fill("INVALID-NO-MATCH")
+  assert.equal(await salesPanel.locator(".biz-order-row:visible").count(),0,"Search filters actual order rows")
+  await salesPanel.locator(".biz-order-search").fill("")
+  await salesPanel.locator(".biz-order-status").selectOption("正式排程")
+  const visibleSales=await salesPanel.locator(".biz-order-row:visible").count()
+  const expectedSales=await salesPanel.locator(".biz-order-row[data-order-status='正式排程']").count()
+  assert.equal(visibleSales,expectedSales,"Status dropdown filters by actual state")
+  await salesPanel.locator(".biz-order-status").selectOption("")
+  await salesFold.click()
+  assert.equal(await salesPanel.locator(".biz-order-stats").isVisible(),true,"Stats can be expanded again")
   await page.screenshot({path:"test-results/sales-orders-table-toolbar.png",fullPage:false})
-  console.log("SALES TABLE TOOLBAR VISUAL CHECK",JSON.stringify(salesLayout))
+  console.log("SALES ORDER FOLD & FILTER CHECK",JSON.stringify({visibleSales,expectedSales}))
   const create=page.locator('.native-business [data-op-action="newOrder"]')
   await create.first().waitFor({state:"visible",timeout:10000})
   assert.equal(await create.first().getAttribute("data-slot"),"button","MES action buttons should be rendered using shadcn Button")
