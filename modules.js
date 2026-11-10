@@ -248,7 +248,12 @@ function settingsPage(){const t=currentTab.settings||'org';let content='',tools=
  const rows=[['cleanQC','清洗必须报检合格才能复核完成'],['requireDoubleSign','车间领料必须仓库签发与车间签收'],['fifo','仓库发料按最早合格批次先出'],['requireSkill','排班须核对岗位技能等级'],['requireLeave','排班须核对已批准请假']];
  content=note('修改需流程与工艺设置权限；流程规则影响对应业务校验')+`<div class="mw-rule-list">${rows.map(([k,label])=>`<div class="mw-rule"><span>${esc(label)}</span>${btn(S.rules[k]?'已启用':'已停用','rule',k,S.rules[k]?'primary':'')}</div>`).join('')}</div>`+`<div class="mw-tiles">${navButton('工艺模板','it','templates')}${navButton('操作标准卡','it','sop')}${navButton('生产排程','pmc','schedule')}</div>`;
  }else if(t==='product'){
- content=note('产品、物料主数据，成品与半成品 BOM、产线关系')+`<div class="mw-tiles">${navButton('产品与产线','it','catalog')}${navButton('BOM 关系','it','bom')}${navButton('批次台账','warehouse','warehouseOps')}</div>`;
+ const productCount=ops().products?.length||0,bomCount=ops().bom?.length||0,batchCount=S.batches.length;
+ content=grid(['配置对象','管理范围','当前数据','操作'],[
+  row(['<strong>产品与产线</strong>','产品 / 物料主数据、规格、单位与产线关系',productCount+' 项',navButton('进入维护','it','catalog')]),
+  row(['<strong>BOM 关系</strong>','成品 / 半成品与原料、包材的单位用量关系',bomCount+' 条',navButton('进入维护','it','bom')]),
+  row(['<strong>批次台账</strong>','库存批次、数量、有效期与质量状态',batchCount+' 批',navButton('查看台账','warehouse','warehouseOps')])
+ ],'暂无配置入口');
  }else{
  tools=btn('新增字典项','form:dictionary','','primary');
  content=note('按类型管理启用与停用，保留历史记录')+grid(['编号','分类','字典项','取值','状态','操作'],S.dictionary.map(r=>row([esc(r.id),esc(r.group),esc(r.name),esc(r.value),status(r.active?'已启用':'已停用'),btn(r.active?'停用':'启用','dictionary:toggle',r.id)])));
