@@ -69,10 +69,22 @@ try{
   const flowPanel=dialog.locator('[data-journey-panel="flow"]')
   const orderPanel=dialog.locator('[data-journey-panel="order"]')
   assert.equal(await dialog.locator('[role="tablist"] [role="tab"]').count(),2)
+  assert.equal(await dialog.locator(".journey-toolbar,.journey-range").count(),0,"Redundant status and endpoint rows are removed")
+  assert.equal(await flowPanel.locator(".journey-section-head").count(),0,"Flow chart has no duplicate header and explanatory text")
+  const tabAppearance=await flowTab.evaluate(el=>{
+    const css=getComputedStyle(el),activeLine=getComputedStyle(el,"::after"),tablist=getComputedStyle(el.parentElement)
+    return {background:css.backgroundColor,borderWidth:css.borderTopWidth,underline:activeLine.backgroundColor,barBorder:tablist.borderBottomWidth}
+  })
+  assert.equal(tabAppearance.background,"rgba(0, 0, 0, 0)","Tabs have no pill background")
+  assert.equal(tabAppearance.borderWidth,"0px","Tabs have no button border")
+  assert.equal(tabAppearance.barBorder,"1px","Tab row has a subtle divider")
+  assert.notEqual(tabAppearance.underline,"rgba(0, 0, 0, 0)","Active tab has a thin underline")
+
   assert.equal(await flowTab.getAttribute("aria-selected"),"true")
   assert.equal(await orderTab.getAttribute("aria-selected"),"false")
   assert.ok(await flowPanel.isVisible(),"Flow tab is visible by default")
   assert.equal(await orderPanel.isVisible(),false,"Order content is hidden by default")
+  await dialog.evaluate(el=>{el.scrollTop=0})
   await page.screenshot({path:"test-results/live-flow-default-tab.png"})
   await orderTab.click()
   assert.equal(await flowPanel.isVisible(),false,"Flow chart hides on order tab")
