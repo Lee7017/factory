@@ -63,6 +63,13 @@ try{
   await page.evaluate(()=>{location.hash="#/overview"})
   await page.getByRole("heading",{name:"生产运营驾驶舱"}).waitFor()
   await page.setViewportSize({width:390,height:844})
+  // Wait for the sidebar's CSS transform transition: a mid-transition
+  // screenshot incorrectly makes the closed navigation cover half the phone.
+  await page.waitForFunction(()=>{
+    const sidebar=document.querySelector(".shell-sidebar")
+    return sidebar&&sidebar.getBoundingClientRect().right<=2
+  },null,{timeout:5000})
+  await page.evaluate(()=>window.scrollTo(0,0))
   assert.equal(await page.locator(".overview-kpi-card").count(),4)
   const overflow=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,viewport:innerWidth}))
   assert.ok(overflow.scroll<=overflow.viewport+4,`Mobile dashboard overflow: ${JSON.stringify(overflow)}`)
