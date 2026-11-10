@@ -37,6 +37,9 @@ jobs:
       - name: Browser smoke checks
         working-directory: web
         run: npm run test:smoke
+      - name: Cockpit Gantt, donut, Agent and mobile UI checks
+        working-directory: web
+        run: npm run test:overview
       - name: All business modules and record write checks
         working-directory: web
         run: npm run test:full
