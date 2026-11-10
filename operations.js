@@ -180,15 +180,15 @@ function flowActionsFor(feature){const names={orders:'销售订单',orderReview:
  const activeOrders=ctx.data.orders.filter(o=>stageOf(o)!=='delivered');
  const orderRows=(orders=activeOrders)=>orders.map(o=>{const stage=stageOf(o),r=requirements(o),available=Object.entries(r).map(([id,qty])=>`${id} 需 ${qty} / 可用 ${availableStock(id)}`).join('；');
   const actions=feature==='orders'?cmd('查看订单','detailFlow',o.id)+cmd('修改订单','editOrder',o.id)+rowActions(o,feature):feature==='kitting'?`${rowActions(o,feature)}<small class="op-inline-note">${esc(available)}</small>`:cmd('查看订单','detailFlow',o.id)+rowActions(o,feature);
-  return `<tr>${td(`<strong>${esc(o.id)}</strong>`)}${td(esc(o.product))}${td(`${esc(o.qty)} ${esc(o.unit||'L')}`)}${td(badge(stageForOrder(o)))}${td(`<div class="op-row-actions">${actions}</div>`)}</tr>`});
+  return `<tr class="biz-order-row" data-order-status="${esc(stageForOrder(o))}">${td(`<strong>${esc(o.id)}</strong>`)}${td(esc(o.product))}${td(`${esc(o.qty)} ${esc(o.unit||'L')}`)}${td(badge(stageForOrder(o)))}${td(`<div class="op-row-actions">${actions}</div>`)}</tr>`});
  const intro={orders:'订单必须有产品、规格和大于 0 的数量。创建保存后自动提交评审；评审通过后才能排程。',orderReview:'只有待评审订单可以通过或退回，评审结果决定 PMC 是否可以排程。',schedule:'只能对评审通过的订单试算；试算完成后发布正式排程，才能进行齐套和领料。',kitting:'根据 BOM 用量核对现存物料。库存不足时不能锁库，请先到采购页面完成采购到货。',issue:'仅正式排程并锁定库存后可以发料，确认发料时实际扣减原料和包材库存。',tasks:'配制前须先完成清洗任务的执行与复核；包装前须完成调机调线任务的执行与复核。',batch:'批次任务跟随订单的配制和包装阶段，填写、提交和报检会推动同一订单流程。',inspection:'检验判定统一在质量部 → 报检判定办理，不再提供第二套判定入口。',release:'成品检验合格后，QA 才能确认放行；放行后仓库方能入库。',inventory:'可调整库存数量；成品必须通过质量放行才能入库。'}[feature]||'';
- const orderToolbar=feature==='orders'?cmd('新建订单','newOrder','','primary'):'';
+ const orderToolbar=feature==='orders'?cmd('新建销售订单','newOrder','','primary'):'';
  const stockToolbar=feature==='inventory'?cmd('库存调整','adjustStock','','primary'):'';
  const taskToolbar=feature==='tasks'?cmd('新增非生产任务','newTask','','primary'):'';
  const stock=feature==='inventory'?recordTable(['物料编码','库存数量','单位','操作'],Object.keys(S.stock).map(id=>`<tr>${td(esc(id))}${td(`<strong>${esc(S.stock[id])}</strong>`)}${td(id==='FG-001'?'箱':id.startsWith('PK-')?'个':id.startsWith('SF-')?'L':'kg')}${td(cmd('调整','adjustStock',id))}</tr>`)):'';
  const flow=feature==='kitting'
-  ?recordTable(['订单号','产品','数量','流程状态','齐套核查','操作'],activeOrders.map(o=>{const r=requirements(o),available=Object.entries(r).map(([id,qty])=>`${id} 需 ${qty} / 可用 ${availableStock(id)}`).join('；');return `<tr>${td(`<strong>${esc(o.id)}</strong>`)}${td(esc(o.product))}${td(`${esc(o.qty)} ${esc(o.unit||'L')}`)}${td(badge(stageForOrder(o)))}${td(`<small class="op-inline-note">${esc(available)}</small>`)}${td(`<div class="op-row-actions">${rowActions(o,feature)||'<span class="op-muted">—</span>'}</div>`)}</tr>`}))
-  :recordTable(['订单号','产品','数量','流程状态','当前操作'],orderRows(),orderToolbar);
+  ?recordTable(['订单号','产品','数量','流程状态','齐套核查','操作'],activeOrders.map(o=>{const r=requirements(o),available=Object.entries(r).map(([id,qty])=>`${id} 需 ${qty} / 可用 ${availableStock(id)}`).join('；');return `<tr class="biz-order-row" data-order-status="${esc(stageForOrder(o))}">${td(`<strong>${esc(o.id)}</strong>`)}${td(esc(o.product))}${td(`${esc(o.qty)} ${esc(o.unit||'L')}`)}${td(badge(stageForOrder(o)))}${td(`<small class="op-inline-note">${esc(available)}</small>`)}${td(`<div class="op-row-actions">${rowActions(o,feature)||'<span class="op-muted">—</span>'}</div>`)}</tr>`}))
+  :recordTable(['订单号','产品','数量','流程状态','当前操作'],orderRows());
  const tasks=feature==='tasks'?taskRows(taskToolbar):'';
  if(feature==='inventory'){
   const pending=activeOrders.filter(o=>stageOf(o)==='released');
@@ -196,19 +196,19 @@ function flowActionsFor(feature){const names={orders:'销售订单',orderReview:
   return shell(names[feature],'',`<section class="op-subsection"><header><h3>当前库存</h3><div class="op-tools">${stockToolbar}</div></header>${stock}</section><section class="op-subsection"><header><h3>待入库生产订单</h3></header>${receipt}</section>`,intro);
  }
  if(feature==='tasks'){
-  return shell(names[feature],'',`<section class="op-subsection"><header><h3>生产订单执行</h3></header>${flow}</section>${tasks}`,intro);
+  return shell(names[feature],'',`${orderPanel({key:feature,table:flow,stats:salesOrderStats(),statuses:activeOrders.map(stageForOrder),item:'关联销售订单'})}${tasks}`,intro);
  }
  if(feature==='batch'){
   const productionStages=new Set(['issued','blending','semi_qc','semi_ok','packaging','final_qc','inspected','released','stored']);
   const rows=activeOrders.filter(o=>productionStages.has(stageOf(o))).map(o=>{const audit=S.flows[o.id]?.audit||[],last=audit[audit.length-1];
-   return `<tr>${td(`<strong>${esc(o.id)}</strong>`)}${td(esc(o.product))}${td(badge(stageForOrder(o)))}${td(esc(last?.action||'—'))}${td(esc(last?.at||'—'))}${td(`<div class="op-row-actions">${cmd('查看订单','detailFlow',o.id)}${rowActions(o,feature)}</div>`)}</tr>`});
-  return shell(names[feature],'',recordTable(['订单号','产品','当前阶段','最近记录','记录时间','操作'],rows),intro);
+   return `<tr class="biz-order-row" data-order-status="${esc(stageForOrder(o))}">${td(`<strong>${esc(o.id)}</strong>`)}${td(esc(o.product))}${td(badge(stageForOrder(o)))}${td(esc(last?.action||'—'))}${td(esc(last?.at||'—'))}${td(`<div class="op-row-actions">${cmd('查看订单','detailFlow',o.id)}${rowActions(o,feature)}</div>`)}</tr>`});
+  return shell(names[feature],'',orderPanel({key:feature,table:recordTable(['订单号','产品','当前阶段','最近记录','记录时间','操作'],rows),stats:salesOrderStats(),statuses:activeOrders.filter(o=>productionStages.has(stageOf(o))).map(stageForOrder),item:'关联销售订单'}),intro);
  }
- return shell(names[feature],'',flow,intro);
+ return shell(names[feature],'',orderPanel({key:feature,table:flow,stats:salesOrderStats(),toolbar:orderToolbar,statuses:activeOrders.map(stageForOrder),item:'销售订单'}),intro);
 }
 function taskRows(toolbar=''){const list=ctx.data.tasks.filter(t=>['清洗','调机调线','设备点检'].includes(t.type));return `<section class="op-subsection"><header><h3>非生产任务（独立工单）</h3>${toolbar?`<div class="op-tools">${toolbar}</div>`:''}</header>${recordTable(['任务号','分类','任务类型','执行产线','状态','操作'],list.map(t=>`<tr>${td(`<strong>${esc(t.id)}</strong>`)}${td(esc(t.category||'非生产任务'))}${td(esc(t.type))}${td(esc(t.line))}${td(badge(t.status))}${td(`<div class="op-row-actions">${taskButtons(t)}</div>`)}</tr>`))}</section>`}
 function taskButtons(t){const st=t.status;const op=st==='待开始'?'start':st==='执行中'?'finish':st==='待复核'?'verify':'';return op?cmd({start:'开始执行',finish:'提交复核',verify:'确认复核'}[op],`task:${op}`,t.id):'<span class="op-muted">已闭环</span>'}
-function historyOrderPage(){const rows=ctx.data.orders.filter(o=>stageOf(o)==='delivered').map(o=>{const audit=S.flows[o.id]?.audit||[],last=audit[audit.length-1];return `<tr>${td(`<strong>${esc(o.id)}</strong>`)}${td(esc(o.product))}${td(`${esc(o.qty)} ${esc(o.unit||'L')}`)}${td(esc(o.completedAt||last?.at||'—'))}${td(badge('已完成'))}${td(cmd('查看订单','detailFlow',o.id))}</tr>`});return shell('历史订单','',recordTable(['订单号','产品','数量','完成时间','状态','操作'],rows),'客户交付确认后的订单才会归档。成品入库不是订单完成，仍需销售发货通知、仓库出库和客户收货确认。')}
+function historyOrderPage(){const rows=ctx.data.orders.filter(o=>stageOf(o)==='delivered').map(o=>{const audit=S.flows[o.id]?.audit||[],last=audit[audit.length-1];return `<tr class="biz-order-row" data-order-status="已交付">${td(`<strong>${esc(o.id)}</strong>`)}${td(esc(o.product))}${td(`${esc(o.qty)} ${esc(o.unit||'L')}`)}${td(esc(o.completedAt||last?.at||'—'))}${td(badge('已完成'))}${td(cmd('查看订单','detailFlow',o.id))}</tr>`});return shell('历史订单','',orderPanel({key:'orderHistory',table:recordTable(['订单号','产品','数量','完成时间','状态','操作'],rows),stats:salesOrderStats(),statuses:['已交付'],item:'历史销售订单'}),'客户交付确认后的订单才会归档。成品入库不是订单完成，仍需销售发货通知、仓库出库和客户收货确认。')}
 function purchasePage(){return genericPage('purchase',S.purchases)}
 function genericPage(type,list){const cfg=catalogs[type], cols=['单号',...cfg.columns,'状态','操作'],toolbar=cmd('新建'+cfg.title,`new:${type}`,'','primary');return shell(cfg.title,'',recordTable(cols,list.map(r=>`<tr>${td(`<strong>${esc(r.id)}</strong>`)}${cfg.fields.map(([k])=>td(esc(r[k]))).join('')}${td(badge(r.status))}${td(`<div class="op-row-actions">${type==='purchase'&&r.status!=='草稿'?'':cmd('编辑',`edit:${type}`,r.id)}${cfg.actions.filter(a=>a[1]===r.status).map(a=>cmd(a[0],`next:${type}:${a[2]}`,r.id)).join('')}</div>`)}</tr>`),toolbar),type==='purchase'?'采购单由采购模块统一办理；仓库到货只在“采购到货”页面登记。':'单据状态及操作记录会被保留.')}
 function maintenancePage(){return shell('设备与调机调线','',taskRows(cmd('新增设备任务','newTask','','primary')))}
