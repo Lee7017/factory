@@ -49,6 +49,9 @@ jobs:
       - name: Production cleaning and setup gate tracking
         working-directory: web
         run: npm run test:production-gates
+      - name: Open real business documents from completed workflow cards
+        working-directory: web
+        run: npm run test:flow-documents
       - name: Signed cleaning QC inspection and re-cleaning
         working-directory: web
         run: npm run test:clean-inspection
