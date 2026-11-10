@@ -107,9 +107,11 @@ const flowConfig={
   ['pmc','发布正式排程',/发布正式排程/],
   ['pmc','确认物料齐套并锁库',/确认齐套并锁库/],
   ['warehouse','确认领料发料',/确认领料发料/],
+  ['production','清洗执行与复核',/清洗任务复核完成/],
   ['production','配制开工',/配制开工/],
   ['production','配制报检',/配制报检/],
   ['quality','半成品检验判定',/半成品检验合格|半成品不合格/],
+  ['engineering','调机调线执行与复核',/调机调线任务复核完成/],
   ['production','包装开工',/包装开工/],
   ['production','包装报检',/包装报检/],
   ['quality','成品检验判定并放行',/成品检验合格并放行|成品检验合格|质量放行|成品不合格/],
@@ -117,7 +119,7 @@ const flowConfig={
   ['sales','发起发货通知',/发起发货通知/],
   ['warehouse','按销售订单成品出库',/仓库按订单出库|仓库成品出库|成品销售出库/],
   ['sales','确认客户收货',/确认客户收货|交付确认/]
- ],loops:[['销售订单评审','退回修改后重新送审','sales'],['QC 判定','不合格 → 生产返工并重新报检','production']],progress:{draft:-1,review:0,approved:1,trial:2,formal:3,reserved:4,issued:5,blending:6,semi_qc:7,semi_ok:8,packaging:9,final_qc:10,inspected:11,released:11,stored:12,dispatch:13,shipping:13,shipped:14,delivered:15}},
+ ],loops:[['销售订单评审','退回修改后重新送审','sales'],['QC 判定','不合格 → 生产返工并重新报检','production']],progress:{draft:-1,review:0,approved:1,trial:2,formal:3,reserved:4,issued:5,blending:7,semi_qc:8,semi_ok:9,packaging:11,final_qc:12,inspected:13,released:13,stored:14,dispatch:15,shipping:15,shipped:16,delivered:17}},
  purchase:{title:'采购单',steps:[
   ['pmc','PMC 生成采购单',/PMC 依据销售订单缺料生成采购单|PMC 创建采购单|创建采购需求/],
   ['pmc','PMC 主管确认需求',/PMC主管确认采购单|PMC主管确认采购需求/],
@@ -157,7 +159,13 @@ function buildSteps(entry,kind){const config=flowConfig[kind];if(kind==='purchas
  }
  if(config)return config.steps;
  const source=entry.from||'sales',target=entry.to||source;return [[source,entry.action||'业务办理',new RegExp('.*')],[target,entry.next||'下一个业务动作',new RegExp('(?!)')]];}
-function stepState(i,kind,stage,steps){if(kind==='handoff')return i===0?'done':'current';
+function stepState(i,kind,stage,steps,ref){if(kind==='handoff')return i===0?'done':'current';
+ if(kind==='order'&&['issued','semi_ok'].includes(stage)){
+  const kindOfTask=stage==='issued'?'清洗':'调机调线';
+  const linked=window.FactoryOperations?.taskGateForOrder?.(ref,kindOfTask);
+  const score=stage==='issued'?(linked?.status==='已完成'?6:5):(linked?.status==='已完成'?10:9);
+  return i<=score?'done':i===score+1?'current':'waiting';
+ }
  if(kind==='purchase'){
   const index=label=>steps.findIndex(x=>x[1]===label),pmc=index('PMC 主管确认需求'),buyer=index('采购员完善采购单'),prior=index('采购主管审批'),finance=index('财务预算审核'),leader=index('总经办审批'),arrival=index('仓库登记到货'),qc=index('QC 来料检验');
   const waitingQC=stage==='到货处理中'||stage==='部分到货',approvedReceipt=waitingQC&&(window.FactoryModules?.state?.incoming||[]).some(r=>r.purchase===activeTrackRef&&r.status==='合格待入库');
@@ -170,11 +178,11 @@ function makeCard(step,i,state,history){const [dept,act]=step,record=lastStepRec
  <div class="journey-dept">${clean(label(dept))}</div><strong class="journey-task">${clean(act)}</strong><div class="journey-person"><time class="journey-time">${clean(time)}</time><span class="journey-operator" title="${clean(operator)}">${clean(operator)}</span></div>
  ${['current','complete'].includes(state)?'<svg class="journey-marquee" aria-hidden="true"><rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)" rx="12"/></svg>':''}</div>`}
 // 所有单据共用同一条顺时针闭合路线。只有历史上确实发生退回时才绘制回环。
-function snakeOfCards(steps,kind,stage,history){
+function snakeOfCards(steps,kind,stage,history,ref){
  const cols=4,cardW=176,cardH=122,gapX=36,gapY=72,padX=34,padY=34;
  const rows=Math.ceil(steps.length/cols),width=padX*2+cols*cardW+(cols-1)*gapX,height=padY*2+rows*cardH+Math.max(0,rows-1)*gapY;
  const pos=steps.map((_,i)=>{const row=Math.floor(i/cols),slot=i%cols,col=row%2===0?slot:cols-1-slot;return {row,col,x:padX+col*(cardW+gapX),y:padY+row*(cardH+gapY)}});
- const states=steps.map((_,i)=>stepState(i,kind,stage,steps)),currentIndex=states.indexOf('current'),arrivalConnector=currentIndex>0?currentIndex-1:-1;
+ const states=steps.map((_,i)=>stepState(i,kind,stage,steps,ref)),currentIndex=states.indexOf('current'),arrivalConnector=currentIndex>0?currentIndex-1:-1;
  const connector=(a,b)=>{
   const same=a.row===b.row;
   if(same){const dir=b.x>a.x?1:-1,x1=dir>0?a.x+cardW:a.x,x2=dir>0?b.x:b.x+cardW,y=a.y+cardH/2;return `M${x1} ${y} L${x2} ${y}`}
@@ -222,10 +230,12 @@ function extras(entry,kind){if(entry.detailHtml)return `<div class="journey-extr
  }return ''}
 function renderGraph(entry){const kind=inferKind(entry),history=getHistory(entry,kind),cfg=flowConfig[kind],stage=getStage(entry,kind),type=entry.docType||cfg?.title||docMeta(entry).type;
  const steps=buildSteps(entry,kind);const summary=entry.summary||'';
+ const blocker=entry.blockedTask;
+ const blockedInfo=blocker?`<div class="journey-blocker" role="status"><strong>当前卡点：${clean(blocker.type)}工单 ${clean(blocker.id)} · ${clean(blocker.status)}</strong><span>${clean(blocker.line)} · ${clean(blocker.note)}</span><small>点击流程图当前环节的“跟踪当前环节”，直接前往实际待办。</small></div>`:'';
  return `<div class="flow-veil" data-flow-close aria-hidden="true"></div><section class="flow-window journey-dialog" role="dialog" aria-modal="true" aria-labelledby="journey-title">
  <header class="journey-top"><div><span class="journey-eyebrow">跨部门单据流转</span><h2 id="journey-title">${clean(type)} <span>${clean(entry.ref||'业务记录')}</span></h2><p>${clean(summary)}</p></div></header>
  ${kind==='order'?"<div class=\"journey-tabs\" role=\"tablist\" aria-label=\"订单弹窗\">\n  <button type=\"button\" class=\"journey-tab is-active\" role=\"tab\" id=\"journey-tab-flow\" aria-controls=\"journey-panel-flow\" aria-selected=\"true\" tabindex=\"0\" data-journey-tab=\"flow\">流转图</button>\n  <button type=\"button\" class=\"journey-tab\" role=\"tab\" id=\"journey-tab-order\" aria-controls=\"journey-panel-order\" aria-selected=\"false\" tabindex=\"-1\" data-journey-tab=\"order\">订单内容</button>\n </div>\n <section class=\"journey-tab-panel is-active\" id=\"journey-panel-flow\" role=\"tabpanel\" aria-labelledby=\"journey-tab-flow\" data-journey-panel=\"flow\">":orderDetails(entry,kind)}
- <div class="journey-steps">${snakeOfCards(steps,kind,stage,history)}</div>
+ <div class="journey-steps">${snakeOfCards(steps,kind,stage,history,entry.ref)}</div>
  ${kind==='order'?"</section><section class=\"journey-tab-panel\" id=\"journey-panel-order\" role=\"tabpanel\" aria-labelledby=\"journey-tab-order\" data-journey-panel=\"order\" hidden>"+orderDetails(entry,kind)+extras(entry,kind)+'</section>':extras(entry,kind)}
  </section>`}
 function openDialog(entry){const host=document.querySelector('#flow-transition-host');if(!host||!entry)return;
