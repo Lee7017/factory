@@ -333,3 +333,69 @@
   .native-business .legacy-root :is(.op-table,.mw-table,.proc-table) th,
   .native-business .legacy-root :is(.op-table,.mw-table,.proc-table) td {padding:9px!important}
 }
+
+/* Purchase records: toolbar and table are one content surface. No independent header box. */
+.native-business .legacy-root .proc-purchase-page {
+  display:block!important;
+  margin:0!important;
+  padding:0!important;
+  background:transparent!important;
+}
+.native-business .legacy-root .proc-purchase-list {
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  background:rgba(250,253,249,.65)!important;
+  border:1px solid var(--biz-line)!important;
+  border-radius:10px!important;
+  box-shadow:none!important;
+  overflow-x:auto;
+}
+.native-business .legacy-root .proc-list-toolbar {
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  flex-wrap:nowrap!important;
+  gap:12px;
+  width:100%;
+  min-height:46px!important;
+  margin:0!important;
+  padding:7px 12px!important;
+  background:rgba(229,239,230,.38)!important;
+  border:0!important;
+  border-bottom:1px solid var(--biz-line)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root .proc-list-status {
+  min-width:0;flex:1 1 auto;
+  display:flex;align-items:center;
+}
+.native-business .legacy-root .proc-list-actions {
+  flex:0 0 auto;
+  display:flex;align-items:center;justify-content:flex-end;
+}
+.native-business .legacy-root .proc-list-toolbar .proc-approval-banner {
+  display:flex!important;
+  align-items:center!important;
+  gap:4px 10px!important;
+  margin:0!important;padding:0!important;
+  background:transparent!important;
+  border:0!important;box-shadow:none!important;
+}
+.native-business .legacy-root .proc-purchase-list > .op-table {
+  width:100%;margin:0!important;
+  border:0!important;border-radius:0!important;
+}
+@media(max-width:760px) {
+  .native-business .legacy-root .proc-list-toolbar {
+    align-items:flex-start!important;
+    flex-wrap:wrap!important;
+    padding:8px 10px!important;
+  }
+  .native-business .legacy-root .proc-list-status {flex-basis:100%}
+  .native-business .legacy-root .proc-list-actions {margin-left:0}
+}
