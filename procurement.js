@@ -289,7 +289,7 @@ function onAction(el){const action=el.dataset.procAction,ref=el.dataset.procId;
   if(dept==='finance'){p.financeBy=user().name;p.financeId=user().id}
   else{p.leadershipBy=user().name;p.leadershipId=user().id}
   p.status=!yes?'已驳回':dept==='finance'&&p.approvalPlan?.leadership?'待总经办审批':'待到货';
-  audit(p,(dept==='finance'?'财务':'总经办')+(yes?'审核通过':'驳回'),dept);
+  audit(p,dept==='finance'?(yes?'财务审核通过':'财务驳回'):(yes?'总经办审批通过':'总经办驳回'),dept);
   renderNow();
   if(yes)noticeFlow({ref:p.id,docType:'采购单',action:(dept==='finance'?'财务审核通过':'总经办审批通过'),from:dept,to:p.status==='待到货'?'warehouse':'leadership',status:p.status,next:p.status==='待到货'?'等待仓库到货登记':'等待总经办审批',nextOpen:p.status==='待到货'?{dept:'warehouse',feature:'warehouseIncoming',record:p.id}:{dept:'leadership',feature:'approvals',record:p.id}});
   else ctx.toast('采购单已驳回，退回原采购员修改。');return;

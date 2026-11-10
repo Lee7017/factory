@@ -153,6 +153,9 @@ try {
   assert.equal(await purchaseDialog.locator(".journey-task").filter({hasText:"PMC 提出采购需求"}).count(),1)
   assert.equal(await purchaseDialog.locator(".journey-task").filter({hasText:"财务预算审核"}).count(),1)
   assert.equal(await purchaseDialog.locator(".journey-task").filter({hasText:"总经办审批"}).count(),1)
+  const managerCard=purchaseDialog.locator(".journey-card").filter({hasText:"总经办审批"})
+  assert.equal((await managerCard.locator(".journey-operator").textContent())?.trim(),"郑华",
+    "Management approval must retain the actual approving employee")
   assert.ok((await purchaseDialog.locator(".journey-card.is-done .journey-task").allTextContents()).some(x=>x.includes("QC 来料检验")),"QC pass marks inspection completed in PO chart")
   assert.ok((await purchaseDialog.locator(".journey-card.is-current .journey-task").textContent()).includes("确认合格批次入库"),"PO chart moves to warehouse posting")
   await page.screenshot({path:"test-results/purchase-06-real-journal.png"})
