@@ -232,7 +232,7 @@ function makeCard(step,i,state,history,documents=[]){
  const [dept,act]=step,record=lastStepRecord(step,history),done=['done','complete'].includes(state);
  const operator=record?.person||record?.by||(done?'历史记录未注明':'待分配'),time=record?.at||record?.time||'—';
  const canTrack=Boolean(activeContinue)&&['current','complete'].includes(state);
- const title=documents.length===1?documents[0].title:
+ const title=!documents.length?'':documents.length===1?documents[0].title:
   documents.every(d=>d.title===documents[0]?.title)?`${documents[0].title}（${documents.length}）`:`相关单据（${documents.length}）`;
  const docButton=done&&documents.length?
   `<button type="button" class="journey-card-document" data-flow-document-step="${i}" title="${clean('查看'+title)}">查看${clean(title)}</button>`:'';
