@@ -23,6 +23,7 @@ try{
   await page.locator(".native-business .legacy-root").waitFor({state:"visible",timeout:15000})
   await page.locator('.native-business [data-module-page="warehouseOutbound"]').waitFor({state:"visible",timeout:15000})
  }
+ await route("warehouse","warehouseOutbound")
  const data=()=>page.evaluate(()=>({
   outbound:window.FactoryModules.state.outbound.map(r=>({order:r.order,qty:r.qty,status:r.status})),
   first:window.FactoryOperations.state.flows["SO-2026-1023-018"].stage,
@@ -43,6 +44,8 @@ try{
    {id:"TEST-FG-02",group:"成品",material:"FG-002",order:second,qty:65,unit:"箱",received:"2026-11-01",quality:"合格",source:"生产入库"}
   )
  },{first,second})
+ await page.evaluate(()=>{location.hash="#/departments/sales/orders"})
+ await page.locator('.native-business .biz-order-panel[data-order-panel="orders"]').waitFor({state:"visible",timeout:15000})
  await route("warehouse","warehouseOutbound")
  assert.equal(await page.locator(`[data-module-action="form:outbound"][data-mid="${first}"]`).count(),1)
  await page.locator(`[data-module-action="form:outbound"][data-mid="${first}"]`).click()
