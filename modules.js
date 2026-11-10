@@ -159,41 +159,28 @@ function pendingForDept(dept){const out=[];const push=(arr,feature,k,filter,titl
  if(dept==='pmc')push(S.roster,'shift','roster',r=>r.gate!=='已通过','开工前检查待完成');
  return out;}
 
-const cleaningItems=[
- ['接触面与设备','设备内壁、外表面及产品接触部位的可见残留'],
- ['管路与清洗工具','管路、容器和清洗工具无可见残液、残料'],
- ['现场清场与标识','本任务遗留物料、包装及废弃物已清理，现场标识明确'],
- ['清洗执行记录','执行日期、经办人员与清洗任务能够对应并追溯']
-];
+
 function cleanTaskFor(report){return ctx.data.tasks.find(t=>t.id===report?.task&&t.type==='清洗')}
 function cleanInspectionModal(report,readOnly=false){
- const task=cleanTaskFor(report),order=report.order||task?.orderId||'—';
- const phase=task?.cleanPhase||report.phase||(task?.line?.includes('配制')?'配制':'包装');
- const completed=report.status!=='待判定',locked=readOnly||completed;
- const info=`<section class="mw-clean-info"><div><span>报检单</span><strong>${esc(report.id)}</strong></div>
-  <div><span>清洗工单</span><strong>${esc(report.task)}</strong></div>
-  <div><span>关联订单</span><strong>${esc(order)}</strong></div>
-  <div><span>清洗阶段 / 产线</span><strong>${esc(phase)}线 · ${esc(report.line||task?.line||'—')}</strong></div>
-  <div><span>清洗完工经办 / 时间</span><strong>${esc(task?.finishedBy||report.taskFinishedBy||'历史记录未登记')} · ${esc(task?.finishedAt||report.taskFinishedAt||'历史记录未登记')}</strong></div>
-  <div><span>报检提交</span><strong>${esc(report.submittedBy||'生产任务')} · ${esc(report.submittedAt||'—')}</strong></div></section>`;
- const rows=cleaningItems.map(([label,detail],i)=>{
-  const result=report.items?.[i]?.result||'';
-  const input=locked?`<strong class="mw-clean-result ${result==='符合'?'ok':result==='不符合'?'fail':''}">${esc(result||'历史记录未逐项填写')}</strong>`:
-   `<select name="check${i}" aria-label="${esc(label)}检查结果" required>
-     <option value="" selected disabled>请选择结果</option><option value="符合">符合</option><option value="不符合">不符合</option></select>`;
-  return `<div class="mw-clean-check-row"><div><strong>${esc(label)}</strong><small>${esc(detail)}</small></div>${input}</div>`;
- }).join('');
- const readField=(label,value)=>`<div class="mw-clean-read"><span>${esc(label)}</span><strong>${esc(value||'未填写')}</strong></div>`;
- const notes=locked?`<div class="mw-clean-record">${readField('检查依据 / 方法',report.basis)}${readField('检查记录',report.observations)}
-  ${report.failureReason?readField('不合格说明',report.failureReason):''}${readField('QC 检验人 / 时间',report.checkedBy+' · '+report.checkedAt)}</div>`:
-  `<label class="mw-field mw-clean-field"><span>检查依据 / 方法 <b>*</b></span><input name="basis" placeholder="填写实际采用的清洗 SOP、目检或检测依据" maxlength="150" required></label>
-   <label class="mw-field mw-clean-field"><span>现场检查记录 <b>*</b></span><textarea name="observations" rows="3" placeholder="填写实际观察结果或检测记录，不可只写‘已检查’" required></textarea></label>
-   <label class="mw-field mw-clean-field"><span>不合格说明（出现不符合时必填）</span><textarea name="failureReason" rows="2" placeholder="写明不合格部位、残留或异常情况"></textarea></label>`;
- const extra=locked?`<div class="mw-clean-final">最终结论：<strong>${esc(report.status)}</strong></div>`:
-  '<p class="mw-clean-guide">四项逐项检查，全部“符合”才能判定合格；任一项“不符合”将退回生产重新清洗。</p>';
- modal((locked?'清洗报检记录':'清洗报检 · QC 逐项检验')+' · '+report.id,
-  info+`<section class="mw-clean-checks"><h3>实际检查项目</h3>${rows}</section>`+notes+extra,
-  {kind:locked?'cleanView':'cleanDecision',record:report.id});
+ const task=cleanTaskFor(report),locked=readOnly||report.status!=='待判定';
+ const order=report.order||task?.orderId||'—';
+ const detail=`${report.task} · ${task?.cleanPhase||report.phase||'清洗'}线 · ${report.line||task?.line||'—'}`;
+ const summary=`<div class="mw-simple-clean-context"><strong>${esc(detail)}</strong><span>关联订单：${esc(order)}</span></div>`;
+ const record=locked?
+  `<div class="mw-simple-clean-history">
+    <div><span>检验结果</span><strong>${esc(report.status)}</strong></div>
+    <div><span>备注</span><strong>${esc(report.remark||report.failureReason||report.observations||'无')}</strong></div>
+    <div><span>检验人 / 时间</span><strong>${esc(report.checkedBy||'未登记')} · ${esc(report.checkedAt||'未登记')}</strong></div>
+  </div>`:
+  `<label class="mw-field"><span>检验结果</span>
+    <select name="result" required><option value="" selected disabled>请选择结果</option>
+      <option value="合格">合格</option><option value="不合格">不合格</option></select>
+   </label>
+   <label class="mw-field"><span>备注（选填）</span>
+    <textarea name="remark" rows="2" placeholder="需要说明时再填写"></textarea></label>`;
+ modal((locked?'清洗报检记录':'清洗报检')+' · '+report.id,
+   `<div class="mw-simple-clean">${summary}${record}</div>`,
+   {kind:locked?'cleanView':'cleanDecision',record:report.id});
 }
 function qualityPage(){const t=currentTab.qaQc||'decision';let content='',toolbar='';
  if(t==='decision'){
@@ -210,7 +197,7 @@ function qualityPage(){const t=currentTab.qaQc||'decision';let content='',toolba
   const records=[...S.cleanReports].sort((a,b)=>(a.status==='待判定'?0:1)-(b.status==='待判定'?0:1));
   content=`<section class="mw-clean-page"><div class="mw-clean-head"><div>
     <strong>清洗报检 · QC 检验待办</strong>
-    <p>清洗任务完工后由生产部自动提交报检，质量部逐项检查并判定。不能在质量部跳过生产执行直接新建报检单。</p></div>
+    <p>清洗任务完工后由生产部自动提交报检，质量部选择合格或不合格，备注可选填。报检单由生产任务自动关联。</p></div>
     <div class="mw-clean-counts"><span>待检 <b>${pending.length}</b></span><span>已判定 <b>${doneCount}</b></span></div></div>
     ${grid(['报检单','清洗工单','执行阶段 / 产线','关联订单','报检人 / 时间','QC 判定','办理'],
      records.map(r=>{const t=cleanTaskFor(r);
@@ -218,7 +205,7 @@ function qualityPage(){const t=currentTab.qaQc||'decision';let content='',toolba
       return row([`<strong>${esc(r.id)}</strong>`,`<strong>${esc(r.task)}</strong>`,
        `${esc(phase)}线 · ${esc(line)}`,esc(r.order||t?.orderId||'—'),
        `${esc(r.submittedBy||'生产任务')}<small class="mw-clean-timestamp">${esc(r.submittedAt||'—')}</small>`,
-       status(r.status),r.status==='待判定'?btn('逐项检验','clean:inspect',r.id,'primary'):btn('查看检验记录','clean:detail',r.id)
+       status(r.status),r.status==='待判定'?btn('填写结果','clean:inspect',r.id,'primary'):btn('查看检验记录','clean:detail',r.id)
       ])}), '暂无清洗报检。请先在生产任务完成清洗执行并提交报检。')}
    </section>`;
  }else if(t==='ncr'){
@@ -446,7 +433,7 @@ function handleClick(node){const a=node.dataset.moduleAction||'',key=node.datase
   }
   cleanInspectionModal(r,a==='clean:detail');return true;
  }
- if(a==='clean:pass'||a==='clean:fail')return fail('清洗检验必须逐项记录，请点击“逐项检验”办理。');
+ if(a==='clean:pass'||a==='clean:fail')return fail('请打开清洗报检，选择检验结果后提交。');
  if(a==='dispose'){const r=S.ncr.find(x=>x.id===key);if(!r)return false;modal('不合格品处置 · '+key,field('disposal','处置方式','select','隔离',['隔离','返洗','返工','报废'])+field('reason','处置依据','textarea',r.reason),{kind:'dispose',record:key});return true}
  if(a==='toggleFreeze'){const b=getBatch(key);if(!b)return false;b.quality=b.quality==='冻结'?'待检':'冻结';audit('质量库存状态调整',b.id,b.quality);save('批次质量状态已更新；解冻后仍需检验放行。');return true}
  if(a==='prepare'){const r=getRequest(key);if(!r||r.status!=='待备料')return false;const allocations=allocateFIFO(r.material,r.qty);if(!allocations)return fail('合格、未冻结、未过期批次合计数量不足，请先报检入库。');r.allocations=allocations;r.batch=allocations[0].id;r.status='待仓库签发';audit('按 FIFO 完成备料',r.id,allocations.map(x=>x.id+' × '+x.qty).join('、'));save(`已依入库先后分配 ${allocations.length} 个批次，等待仓库签发。`);return true}
@@ -482,20 +469,20 @@ function submitForm(ev){if(ev.target.id!=='module-form')return false;ev.preventD
   if(!permitted('quality','qaQc','approve'))return fail('当前员工没有质量判定权限。');
   const r=S.cleanReports.find(x=>x.id===ref),task=cleanTaskFor(r);
   if(!r||r.status!=='待判定'||!task||task.status!=='待复核')return fail('清洗工单或报检单状态已变化，请重新打开办理。');
-  const results=cleaningItems.map((item,i)=>({name:item[0],detail:item[1],result:String(values['check'+i]||'')}));
-  if(results.some(item=>!['符合','不符合'].includes(item.result)))return fail('四项检查必须全部选择“符合”或“不符合”，不能跳过。');
-  const basis=String(values.basis||'').trim(),observations=String(values.observations||'').trim(),
-   failureReason=String(values.failureReason||'').trim(),passed=results.every(item=>item.result==='符合');
-  if(!basis||observations.length<6)return fail('请填写实际采用的检查依据和现场检查记录（至少 6 个字）。');
-  if(!passed&&!failureReason)return fail('检查存在“不符合”项目，必须说明不合格部位或原因。');
-  Object.assign(r,{items:results,basis,observations,failureReason,status:passed?'合格':'不合格',
-   checkedBy:me().name,checkedId:me().id,checkedAt:stamp()});
-  if(!passed){task.status='待开始';task.rejectReason=failureReason;nonconform('清洗报检',r.id,'',`${task.id}：${failureReason}`)}
-  audit(passed?'清洗检验合格':'清洗检验不合格',r.id,`${task.id} · ${r.status} · ${results.map(x=>x.name+':'+x.result).join('、')}`);
+  const result=String(values.result||''),remark=String(values.remark||'').trim();
+  if(!['合格','不合格'].includes(result))return fail('请选择合格或不合格。');
+  const passed=result==='合格';
+  Object.assign(r,{status:result,remark,checkedBy:me().name,checkedId:me().id,checkedAt:stamp()});
+  if(!passed){
+   task.status='待开始';
+   task.rejectReason=remark||'清洗检验不合格，请重新清洗';
+   nonconform('清洗报检',r.id,'',`${task.id}：${task.rejectReason}`);
+  }
+  audit(passed?'清洗检验合格':'清洗检验不合格',r.id,`${task.id} · ${result}${remark?' · '+remark:''}`);
   done(passed?'QC 检验合格，返回生产任务复核。':'QC 检验不合格，清洗工单已退回重新执行。');
   window.FactoryFlowUI?.show({ref:r.id,docType:'清洗报检单',summary:`${task.cleanPhase||'生产'}线 · ${task.line} · 工单 ${task.id}`,
    action:passed?'清洗检验合格':'清洗检验不合格',from:'quality',to:'production',
-   status:r.status,operator:me().name,at:r.checkedAt,
+   status:result,operator:me().name,at:r.checkedAt,
    next:passed?'生产任务确认完工复核':'生产任务重新清洗并再次报检',
    nextOpen:{dept:'production',feature:'tasks',record:task.id}});
   return true;
