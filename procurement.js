@@ -99,26 +99,66 @@ function migrate(){
  }
  ctx.save();
 }
+// 采购单是独立于销售订单的主单，收货作为同一采购单下的执行明细。
 function renderPurchases(){
- const rows=orders().map(p=>{
-  const n=numbers(p),isAwaiting=p.status==='待采购主管审批',r=demandOf(p),plan=p.approvalPlan;
+ const all=orders(), statuses=[
+  ['待补需求',all.filter(p=>p.status==='待补采购需求').length],
+  ['审批中',all.filter(p=>['待采购主管审批','待财务审核','待总经办审批'].includes(p.status)).length],
+  ['待到货',all.filter(p=>p.status==='待到货').length],
+  ['到货处理中',all.filter(p=>['到货处理中','部分到货'].includes(p.status)).length],
+  ['已入库',all.filter(p=>p.status==='已入库').length]
+ ];
+ const rows=all.map(p=>{
+  const n=numbers(p),r=demandOf(p),plan=p.approvalPlan;
   let actions=button('查看采购单','viewPurchase',p.id);
   if(canEdit(p))actions+=button('编辑并重新送审','editPurchase',p.id);
-  if(isAwaiting&&canApprove(p))actions+=button('审批通过','approve',p.id,'primary')+button('驳回','reject',p.id);
-  const progress=p.status==='待补采购需求'?'缺少已确认的 PMC 采购需求，不能审批':
-   p.status==='待采购主管审批'?'等待采购主管核对供应商、价格及交期':
-   ['待财务审核','待总经办审批'].includes(p.status)?'等待跨部门审批':
-   '已入库 '+money(n.stored)+' / 已登记 '+money(n.registered)+' / 采购 '+money(n.ordered);
+  if(canApprove(p))actions+=button('审批通过','approve',p.id,'primary')+button('驳回','reject',p.id);
   const reason=plan?[plan.budgetUnset?'预算未配置':'',plan.overBudget?'超预算':'',plan.newSupplier?'新供应商':''].filter(Boolean).join(' · '):'';
-  return `<tr class="biz-order-row" data-order-status="${esc(p.status)}"><td><strong>${esc(p.id)}</strong><small class="proc-sub">创建人：${esc(p.createdName||'历史单据')} · 需求：${esc(r?.id||'缺失')}</small></td><td>${esc(p.material)}</td><td>${money(p.qty)}</td><td>${esc(p.supplier||'—')}</td><td>¥${money(p.unitPrice)}<small class="proc-sub">合计 ¥${money(p.totalAmount)}</small></td><td>${tag(p.status)}<small class="proc-sub">${esc(progress)}${reason?' · '+esc(reason):''}</small></td><td><div class="proc-actions">${actions}</div></td></tr>`;
+  const receiptNote=n.receipts.length?`${n.receipts.length} 次到货记录`:'尚未到货';
+  return `<tr class="biz-order-row proc-order-row" data-order-status="${esc(p.status)}">
+   <td><strong>${esc(p.id)}</strong><small class="proc-sub">需求单 ${esc(r?.id||'未关联')}</small></td>
+   <td><strong>${esc(p.material)}</strong><small class="proc-sub">${esc(p.sourceOrder||'常规采购')}</small></td>
+   <td>${money(p.qty)}</td>
+   <td>${esc(p.supplier||'—')}</td>
+   <td>¥${money(p.unitPrice)}<small class="proc-sub">采购总额 ¥${money(p.totalAmount)}</small></td>
+   <td>${tag(p.status)}${reason?`<small class="proc-sub">${esc(reason)}</small>`:''}</td>
+   <td><strong>${money(n.stored)} / ${money(n.ordered)}</strong><small class="proc-sub">${esc(receiptNote)}</small></td>
+   <td><div class="proc-actions">${actions}</div></td>
+  </tr>`;
  }).join('');
- const states=['待补采购需求','待采购主管审批','待财务审核','待总经办审批','待到货','到货处理中','部分到货','已入库','已驳回'];
- const stats=states.map(name=>[name,orders().filter(p=>p.status===name).length]);
- const table=`<div class="op-table-wrap proc-purchase-list"><table class="op-table"><thead><tr><th>采购单</th><th>物料</th><th>数量</th><th>供应商</th><th>单价 / 总额</th><th>审批 / 到货</th><th>操作</th></tr></thead><tbody>${rows||'<tr><td colspan="7">暂无采购单</td></tr>'}</tbody></table></div>`;
- const ready=requestChoices();
- const toolbar=authorized(['purchase','purchase','create'])?button('根据 PMC 需求下单','newPurchase','','primary'):'';
- const summary='<p class="proc-form-info">采购单必须关联已经确认的 PMC 采购需求；审批链按采购金额、预算和供应商风险决定，最终核准后才能进入仓库到货。</p>';
- return `<div class="ops-workbench proc-page proc-purchase-page">${window.FactoryOrderListUI.panel({key:'purchase',item:'采购单',table,toolbar,stats,statuses:orders().map(p=>p.status),placeholder:'搜索采购单 / 需求单 / 供应商'})}${summary}${ready.length?'':'<p class="proc-form-info">当前暂无可用的已确认 PMC 采购需求，请先到 PMC → 物料齐套核查办理。</p>'}</div>`;
+ const options=[...new Set(all.map(p=>p.status).filter(Boolean))].map(status=>`<option value="${esc(status)}">${esc(status)}</option>`).join('');
+ const create=authorized(['purchase','purchase','create'])?button('根据 PMC 需求下单','newPurchase','','primary'):'';
+ const guidance=requestChoices().length?'':'<p class="proc-order-notice">暂无可下单的 PMC 已确认需求，请先由 PMC 提交并完成需求确认。</p>';
+ return `<section class="proc-page proc-purchase-board" aria-label="采购单独立工作台" data-proc-purchase-board>
+   <header class="proc-board-heading">
+    <div><small>采购 / 供应链部</small><h2>采购单</h2><p>根据 PMC 确认的需求采购；采购审批、到货、质检和入库记录均关联原采购单。</p></div>
+    ${create}
+   </header>
+   <div class="proc-board-metrics" aria-label="采购业务状态统计">${statuses.map(([label,value])=>`<div class="proc-board-metric"><span>${esc(label)}</span><strong>${value}</strong></div>`).join('')}</div>
+   <div class="proc-board-content">
+    <div class="proc-board-title"><h3>采购单列表</h3><span>采购单为主单，到货记录为明细；不混入销售订单</span></div>
+    <div class="proc-board-filters">
+      <input type="search" class="proc-order-search" placeholder="搜索采购单号 / 需求单 / 物料 / 供应商" aria-label="搜索采购单">
+      <select class="proc-order-status" aria-label="采购单状态筛选"><option value="">全部状态</option>${options}</select>
+    </div>
+    <div class="proc-order-grid"><table class="proc-order-table">
+     <thead><tr><th>采购单号 / 需求</th><th>采购物料</th><th>数量</th><th>供应商</th><th>单价 / 总额</th><th>审批状态</th><th>已入库 / 采购量</th><th>操作</th></tr></thead>
+     <tbody>${rows||'<tr><td colspan="8" class="proc-board-empty">暂无采购单，请先完成 PMC 采购需求确认。</td></tr>'}</tbody>
+    </table></div>
+    <footer class="proc-board-footer">共 <strong class="proc-order-count">${all.length}</strong> 条采购单</footer>
+   </div>${guidance}
+  </section>`;
+}
+function filterPurchases(){
+ const board=document.querySelector('.proc-purchase-board');if(!board)return;
+ const q=(board.querySelector('.proc-order-search')?.value||'').trim().toLocaleLowerCase(),
+ status=board.querySelector('.proc-order-status')?.value||'';
+ let count=0;
+ for(const row of board.querySelectorAll('.proc-order-row')){
+  const show=(!q||row.textContent.toLocaleLowerCase().includes(q))&&(!status||row.dataset.orderStatus===status);
+  row.hidden=!show;if(show)count++;
+ }
+ const tally=board.querySelector('.proc-order-count');if(tally)tally.textContent=String(count);
 }
 
 function renderIncoming(){
@@ -300,6 +340,8 @@ const nativeInit=M.init,nativeRender=O.render;
 M.init=function(context){const result=nativeInit(context);ctx=context;migrate();return result};
 O.render=function(feature){const base=feature==='purchase'?renderPurchases():nativeRender(feature);return feature==='kitting'?renderRequests()+base:feature==='finance'?base+renderApprovals('finance'):feature==='approvals'?base+renderApprovals('leadership'):base};
 M.startPurchaseReceipt=function(po){ctx.openFeature('warehouseIncoming','warehouse');setTimeout(()=>openReceipt(po),40)};
+document.addEventListener('input',e=>{if(e.target.matches?.('.proc-order-search'))filterPurchases()});
+document.addEventListener('change',e=>{if(e.target.matches?.('.proc-order-status'))filterPurchases()});
 document.addEventListener('click',e=>{const el=e.target.closest('[data-proc-action]');if(el){e.preventDefault();onAction(el)}});
 document.addEventListener('submit',e=>{if(e.target.id==='proc-form'){e.preventDefault();saveForm(e.target)} });
 document.addEventListener('change',e=>{if(e.target.matches('#proc-form [name="purchase"]')){const p=orders().find(x=>x.id===e.target.value);if(p){const n=numbers(p);e.target.form.querySelector('[name="qty"]').value=n.remaining;e.target.form.querySelector('#proc-remaining').textContent=`采购物料 ${p.material}，最多可登记 ${money(n.remaining)}`}}});

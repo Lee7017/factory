@@ -62,6 +62,13 @@ try{
   await page.evaluate(()=>{window.location.hash="#/departments/purchase/purchase"})
   await page.locator('.native-business [data-proc-action="newPurchase"]').waitFor({state:"visible",timeout:18000})
   await page.screenshot({path:"test-results/live-purchase-approval-list.png"})
+  assert.equal(await page.locator('.native-business .proc-purchase-board').count(),1,"Purchase screen has independent workbench")
+  assert.equal(await page.locator('.native-business .biz-order-panel[data-order-panel="purchase"]').count(),0)
+  await page.evaluate(()=>{window.location.hash="#/departments/sales/orders"})
+  await page.locator('.native-business .biz-order-panel[data-order-panel="orders"]').waitFor({state:"visible",timeout:15000})
+  assert.equal(await page.locator('.native-business .proc-purchase-board').count(),0,"Sales cannot contain procurement workbench")
+  await page.screenshot({path:"test-results/live-sales-separated-from-purchasing.png"})
+
   await page.evaluate(()=>{window.location.hash="#/departments/leadership/approvals"})
   await page.locator('.native-business [data-proc-action="editPolicy"]').waitFor({state:"visible",timeout:18000})
   await page.screenshot({path:"test-results/live-purchase-approval-policy.png"})
