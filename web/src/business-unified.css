@@ -862,3 +862,25 @@
     flex-basis:100%;
   }
 }
+
+/* Metric strips fill the available width according to the actual metric count. */
+.native-business .legacy-root .mw-metrics {
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important;
+}
+.native-business .legacy-root .mw-stock-snapshot {
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+}
+.native-business .legacy-root .op-subsection > header .op-tools {
+  flex:0 0 auto;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:7px!important;
+  margin:0!important;
+  padding:0!important;
+}
+@media(max-width:900px){
+  .native-business .legacy-root .mw-stock-snapshot {
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
