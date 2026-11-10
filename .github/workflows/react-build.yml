@@ -49,6 +49,9 @@ jobs:
       - name: Production cleaning and setup gate tracking
         working-directory: web
         run: npm run test:production-gates
+      - name: Signed cleaning QC inspection and re-cleaning
+        working-directory: web
+        run: npm run test:clean-inspection
       - name: Sales order shipment auto-fill and split delivery
         working-directory: web
         run: npm run test:outbound-prefill
