@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react"
+import { createPortal } from "react-dom"
 import { AlertCircle, LoaderCircle, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { FactoryAccessAPI } from "@/factory-state"
@@ -42,6 +43,31 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     })
     return ()=>{disposed=true}
   },[dept,feature,access,onRoute,onRefresh,render,reload])
+  // Track the exact document after React has committed the destination route's DOM.
+  useEffect(()=>{
+    if(status!=="ready")return
+    let disposed=false
+    void getBusinessRuntime().then(runtime=>{
+      if(disposed)return
+      const ref=runtime.consumeTracking(dept,feature)
+      if(!ref)return
+      const root=rootRef.current
+      if(!root)return
+      const needle=ref.trim()
+      if(!needle)return
+      const nodes=Array.from(root.querySelectorAll<HTMLElement>(
+        "tbody tr,.dept-todo-card,.op-quality-link"
+      ))
+      const row=nodes.find(node=>node.textContent?.includes(needle))
+      if(!row)return
+      row.classList.remove("bottleneck-track-highlight")
+      void row.offsetWidth
+      row.classList.add("bottleneck-track-highlight")
+      row.scrollIntoView({block:"center",behavior:"smooth"})
+      window.setTimeout(()=>row.classList.remove("bottleneck-track-highlight"),3200)
+    })
+    return ()=>{disposed=true}
+  },[dept,feature,status,markup])
   function handleClick(event:MouseEvent<HTMLDivElement>){
     const target=event.target
     if(!(target instanceof HTMLElement))return
@@ -83,11 +109,19 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
       <div id="ops-modal-host"/>
       <div id="modules-modal-host"/>
       <div id="proc-modal-host"/>
-      <div id="flow-transition-host" aria-live="polite"/>
       <div id="toast-host" aria-live="polite"/>
     </div>
     {toast&&<div className="fixed bottom-5 right-5 z-100 max-w-sm rounded-xl border border-green-200 bg-white/95 p-3 text-xs shadow-xl" role="status">
       {toast}<Button size="icon-xs" variant="ghost" onClick={()=>setToast("")} aria-label="关闭消息" className="ml-3">×</Button>
     </div>}
+    {/* A fixed flow window cannot live below .business-page-body (overflow and backdrop-filter
+        make that ancestor clip/rebase the old animated journey). Keep the legacy CSS scope,
+        but portal the one imperative host to the document body. */}
+    {createPortal(
+      <div className="legacy-root legacy-flow-portal-root">
+        <div id="flow-transition-host" aria-live="polite"/>
+      </div>,
+      document.body
+    )}
   </section>
 }
