@@ -671,3 +671,106 @@
   border-color:rgba(78,119,91,.26)!important;
   color:#3f694c!important;
 }
+
+/* Inventory batches: one compact overview + one ledger surface.
+   No note row, no detached section heading, no toolbar strip between title and table. */
+.native-business .legacy-root [data-module-page="warehouseOps"] .mw-content {
+  gap:12px!important;
+}
+.native-business .legacy-root .mw-stock-overview,
+.native-business .legacy-root .mw-ledger-panel {
+  width:100%;
+  min-width:0;
+  margin:0;
+  padding:0;
+  background:rgba(250,252,249,.72);
+  border:1px solid var(--biz-line);
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:none;
+}
+.native-business .legacy-root .mw-stock-overview-head,
+.native-business .legacy-root .mw-ledger-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:42px;
+  padding:8px 12px;
+  margin:0;
+  background:rgba(222,234,223,.42);
+  border-bottom:1px solid var(--biz-line);
+}
+.native-business .legacy-root .mw-stock-overview-head strong,
+.native-business .legacy-root .mw-ledger-head strong {
+  color:#344f3c;
+  font-size:12.5px;
+  font-weight:740;
+}
+.native-business .legacy-root .mw-stock-overview-head span,
+.native-business .legacy-root .mw-ledger-head span {
+  color:var(--biz-muted);
+  font-size:10.5px;
+}
+.native-business .legacy-root .mw-ledger-head > div:first-child {
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+  min-width:0;
+}
+.native-business .legacy-root .mw-ledger-head .mw-actions {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  flex:0 0 auto;
+  margin:0!important;
+  padding:0!important;
+  gap:7px!important;
+}
+.native-business .legacy-root .mw-stock-overview .mw-stock-snapshot {
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+}
+.native-business .legacy-root .mw-stock-overview .mw-snapshot {
+  min-height:58px!important;
+  padding:7px 12px!important;
+}
+.native-business .legacy-root .mw-stock-overview .mw-snapshot strong {
+  font-size:18px!important;
+}
+.native-business .legacy-root .mw-stock-overview .mw-snapshot > div {
+  color:#4c6253;
+  font-size:11px;
+}
+.native-business .legacy-root .mw-ledger-panel > .mw-table-scroll {
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root .mw-ledger-panel > .mw-table-scroll [data-slot="table"] {
+  border:0!important;
+  border-radius:0!important;
+}
+.native-business .legacy-root .mw-ledger-panel > .mw-table-scroll [data-slot="table-header"] {
+  background:rgba(222,234,223,.56)!important;
+}
+.native-business .legacy-root .mw-ledger-panel .mw-empty,
+.native-business .legacy-root .mw-ledger-panel td[colspan] {
+  color:var(--biz-muted)!important;
+  padding:14px 12px!important;
+}
+@media(max-width:760px){
+  .native-business .legacy-root .mw-stock-overview-head,
+  .native-business .legacy-root .mw-ledger-head {
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  .native-business .legacy-root .mw-stock-overview-head span,
+  .native-business .legacy-root .mw-ledger-head span {
+    flex-basis:100%;
+  }
+}
