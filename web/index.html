@@ -5,6 +5,8 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%231b4530' stroke-width='2' d='M3 21V10l6 4v-4l6 4V5h5v16z'/%3E%3C/svg%3E" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#f7faf8" />
+  <!-- Legacy business styles load first; the shared React design system must win the cascade. -->
+  <link rel="stylesheet" href="%BASE_URL%legacy-business.css" />
   <title>工厂管理系统 · React / shadcn/ui</title>
 </head>
 <body>
