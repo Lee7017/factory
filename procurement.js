@@ -38,7 +38,6 @@ function migrate(){
 function renderPurchases(){
  const pending=orders().filter(p=>p.status==='待审批');
  const mine=pending.filter(canApprove);
- const pendingInfo=pending.length?`<div class="proc-approval-banner"><strong>${mine.length?`待我审批 ${mine.length} 张采购单`:`待审批 ${pending.length} 张采购单`}</strong><span>${mine.length?'你具有这些采购单的审批权限，请在下方办理。':'当前员工没有可审批的采购单。须由拥有采购审批权限、且不是创建人的员工办理。'}</span></div>`:'';
  const rows=orders().map(p=>{
   const n=numbers(p),isAwaiting=p.status==='待审批';
   let actions=button('查看采购单','viewPurchase',p.id);
@@ -46,9 +45,13 @@ function renderPurchases(){
   if(isAwaiting&&canApprove(p))actions+=button('审批通过','approve',p.id,'primary')+button('驳回','reject',p.id);
   const actor=p.createdName||'历史单据';
   const progress=p.status==='待审批'?(p.createdBy?'等待其他有审批权限的员工办理':'缺少创建人记录，需先核实单据来源'): `已入库 ${money(n.stored)} / 已登记 ${money(n.registered)} / 采购 ${money(n.ordered)}`;
-  return `<tr><td><strong>${esc(p.id)}</strong><small class="proc-sub">创建人：${esc(actor)}</small></td><td>${esc(p.material)}</td><td>${money(p.qty)}</td><td>${esc(p.supplier||'—')}</td><td>${tag(p.status)}<small class="proc-sub">${progress}</small></td><td><div class="proc-actions">${actions}</div></td></tr>`;
+  return `<tr class="biz-order-row" data-order-status="${esc(p.status)}"><td><strong>${esc(p.id)}</strong><small class="proc-sub">创建人：${esc(actor)}</small></td><td>${esc(p.material)}</td><td>${money(p.qty)}</td><td>${esc(p.supplier||'—')}</td><td>${tag(p.status)}<small class="proc-sub">${progress}</small></td><td><div class="proc-actions">${actions}</div></td></tr>`;
  }).join('');
- return `<div class="ops-workbench proc-page proc-purchase-page"><div class="op-table-wrap proc-purchase-list"><div class="op-table-toolbar proc-purchase-toolbar"><div class="proc-list-status">${pendingInfo}</div><div class="proc-list-actions">${authorized(['purchase','purchase','create'])?button('新建采购单','newPurchase','','primary'):''}</div></div><table class="op-table"><thead><tr><th>采购单</th><th>物料</th><th>采购数量</th><th>供应商</th><th>到货进度 / 状态</th><th>操作</th></tr></thead><tbody>${rows||'<tr><td colspan="6">暂无采购单</td></tr>'}</tbody></table></div></div>`;
+ const states=['待审批','待到货','到货处理中','部分到货','已入库','已驳回'];
+ const stats=states.map(name=>[name,orders().filter(p=>p.status===name).length]);
+ const table=`<div class="op-table-wrap proc-purchase-list"><table class="op-table"><thead><tr><th>采购单</th><th>物料</th><th>采购数量</th><th>供应商</th><th>到货进度 / 状态</th><th>操作</th></tr></thead><tbody>${rows||'<tr><td colspan="6">暂无采购单</td></tr>'}</tbody></table></div>`;
+ const toolbar=authorized(['purchase','purchase','create'])?button('新建采购单','newPurchase','','primary'):'';
+ return `<div class="ops-workbench proc-page proc-purchase-page">${window.FactoryOrderListUI.panel({key:'purchase',item:'采购单',table,toolbar,stats,statuses:orders().map(p=>p.status),placeholder:'搜索采购单号 / 物料 / 供应商'})}</div>`;
 }
 function renderIncoming(){
  const canReceive=authorized(['warehouse','warehouseOps','create']);
