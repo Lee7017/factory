@@ -68,6 +68,7 @@ try{
  assert.equal(await stage(),"blending","Blending must start without any pre-start cleaning")
  assert.equal(await currentStep(),"配制任务完成")
  assert.equal(await page.evaluate(id=>window.FactoryOperations.state.flows[id].stage,orderId),"blending")
+ const beforeClean=await page.evaluate(()=>window.FactoryOperations.state.logs.length)
  assert.equal(await page.evaluate(id=>window.FactoryOperations.taskGateForOrder(id,"清洗")?.id||null,orderId),null,
   "No cleaning should be attached to the blending order before task completion")
  await page.screenshot({path:"test-results/production-01-blending-starts-without-cleaning.png"})
@@ -78,6 +79,7 @@ try{
  assert.equal(await currentStep(),"配制线清洗执行与复核")
  const blendTask=await page.evaluate(id=>window.FactoryOperations.taskGateForOrder(id,"清洗"),orderId)
  assert.ok(blendTask&&blendTask.orderId===orderId)
+ assert.ok(blendTask.id.startsWith("CLN-"),"Each cleanup is a new job only after the completed production run")
  assert.equal(blendTask.cleanPhase,"配制")
  assert.ok(blendTask.line.includes("配制"))
  assert.equal(await page.evaluate(id=>window.FactoryModules.state.inspections.some(r=>r.order===id&&r.phase==="半成品"),orderId),false,
