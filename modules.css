@@ -33,3 +33,39 @@
 .mw-outbound-numbers b{font-size:14px;color:#2d4f3b;font-weight:700;font-variant-numeric:tabular-nums}
 .mw-outbound-summary>small{font-size:11px;color:#586e5d;line-height:1.65}
 @media(max-width:480px){.mw-outbound-numbers{grid-template-columns:repeat(2,minmax(0,1fr))}.mw-outbound-summary{padding:12px}}
+
+/* QC 清洗报检：源工单、检查项目、观察记录和签名构成完整检验单 */
+.mw-clean-page{border:1px solid #e3e9e5;border-radius:10px;overflow:hidden}
+.mw-clean-head{display:flex;align-items:center;justify-content:space-between;gap:18px;background:#f3f7f4;padding:17px 19px}
+.mw-clean-head strong{font-size:14px;color:#2d4f3d}
+.mw-clean-head p{font-size:11.5px;color:#687c70;margin:5px 0 0;line-height:1.65;max-width:620px}
+.mw-clean-counts{display:flex;gap:8px;flex-shrink:0}
+.mw-clean-counts span{font-size:11px;border:1px solid #dbe6de;background:#fff;border-radius:7px;padding:8px 11px;color:#687b6e;white-space:nowrap}
+.mw-clean-counts b{font-size:16px;color:#335944;margin-left:5px}
+.mw-clean-timestamp{display:block;color:#8a9690;font-size:10px;padding-top:3px}
+.mw-clean-page .mw-table-scroll{border:0;border-top:1px solid #e6ece8;border-radius:0}
+.mw-modal:has(.mw-clean-info){width:min(820px,calc(100vw - 28px))}
+.mw-modal:has(.mw-clean-info) .mw-modal-fields{display:flex;flex-direction:column;gap:16px}
+.mw-clean-info{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.mw-clean-info>div{background:#f5f8f6;border:1px solid #e1e9e3;border-radius:7px;padding:9px 11px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.mw-clean-info span{font-size:10.5px;color:#718277}
+.mw-clean-info strong{font-size:12px;color:#355342;overflow-wrap:anywhere}
+.mw-clean-checks{border:1px solid #e1e8e3;border-radius:8px;overflow:hidden}
+.mw-clean-checks h3{font-size:12.5px;color:#365342;margin:0;padding:12px 14px;background:#f2f6f3}
+.mw-clean-check-row{display:grid;grid-template-columns:minmax(0,1fr) 135px;align-items:center;gap:12px;padding:11px 14px;border-top:1px solid #ecf0ed}
+.mw-clean-check-row>div{display:flex;flex-direction:column;gap:5px;min-width:0}
+.mw-clean-check-row strong{font-size:12px;color:#394c40}
+.mw-clean-check-row small{font-size:11px;line-height:1.6;color:#839187}
+.mw-clean-check-row select{width:100%;border:1px solid #cedbd1;background:#fff;border-radius:6px;padding:9px;font-size:12px;color:#395540}
+.mw-clean-check-row select:focus-visible{outline:2px solid #a4c1ac}
+.mw-clean-field b{color:#b24a44}
+.mw-clean-guide{font-size:11.5px;color:#647c6b;background:#f5f8f5;padding:11px 13px;border-left:3px solid #60876c;border-radius:4px;line-height:1.65;margin:0}
+.mw-clean-record{display:grid;gap:10px}
+.mw-clean-read{display:flex;flex-direction:column;gap:6px;font-size:12px}
+.mw-clean-read span{color:#75877a;font-size:11px}
+.mw-clean-read strong{font-weight:550;color:#334b3b;white-space:pre-wrap}
+.mw-clean-result{font-size:11px;padding:5px 9px;border-radius:5px;background:#f0f2f0}
+.mw-clean-result.ok{color:#28603c;background:#eaf4ed}.mw-clean-result.fail{color:#a34034;background:#fff0ed}
+.mw-clean-final{font-size:12px;color:#516959}
+.mw-clean-final strong{font-size:14px;color:#2c5136}
+@media(max-width:620px){.mw-clean-head{align-items:flex-start;flex-direction:column}.mw-clean-info{grid-template-columns:repeat(2,minmax(0,1fr))}.mw-clean-check-row{grid-template-columns:1fr}.mw-clean-check-row select{max-width:220px}}

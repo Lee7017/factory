@@ -345,7 +345,11 @@ function applyFlow(key,id,button){const o=orderBy(id),step=orderActions[key];if(
 }
 function applyTask(mode,id,button){let task=ctx.data.tasks.find(t=>t.id===id);if(!task)return;const dept=task.type==='调机调线'?'engineering':'production',feat=dept==='engineering'?'engineering':'tasks';if(!can(dept,feat,'execute'))return flash(button);const map={start:['待开始','执行中','任务开工'],finish:['执行中','待复核','提交完工复核'],verify:['待复核','已完成','复核完成']};const [from,to,label]=map[mode]||[];if(task.status!==from)return warn(`任务 ${id} 当前状态为${task.status}，不能${label}`);
  if(mode==='verify'&&task.type==='清洗'&&window.FactoryModules?.state?.rules?.cleanQC&&!window.FactoryModules.hasCleaningPass(id))return trackCleanQc(id);
- task.status=to;log(label,id,task.type);
+ task.status=to;
+ if(mode==='start'){task.startedBy=current();task.startedAt=now();}
+ if(mode==='finish'){task.finishedBy=current();task.finishedAt=now();}
+ if(mode==='verify'){task.verifiedBy=current();task.verifiedAt=now();}
+ log(label,id,task.type);
  let progressed=false;
  if(mode==='verify'&&task.orderId&&S.flows[task.orderId]){
   const flow=S.flows[task.orderId],stage=flow.stage,phase=task.cleanPhase||(stage==='pack_clean'?'包装':'配制');
