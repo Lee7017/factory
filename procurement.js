@@ -332,11 +332,6 @@ function onAction(el){const action=el.dataset.procAction,ref=el.dataset.procId;
  if(action==='viewReceipt'){detailsReceipt(ref);return}
  if(action==='showInspection'){const rec=arrivals().find(r=>r.id===ref),qc=M.state.inspections.find(x=>x.incoming===rec?.id);if(qc){close();M.openQualityRecord(qc.id)}return}
  if(action==='editPolicy'){newPolicy();return}
- if(action==='approveRequest'||action==='rejectRequest'){
-  const r=requests().find(x=>x.id===ref);if(!canPmcReview(r))return error('需求须由有权的 PMC 主管确认，提交人不得自行确认。');
-  const yes=action==='approveRequest';r.status=yes?'已确认':'已驳回';r.reviewedBy=user().name;r.reviewedId=user().id;audit(r,yes?'PMC主管确认采购需求':'PMC主管退回采购需求','pmc');
-  renderNow();ctx.toast(yes?'采购需求已确认，采购员现在可以据此下单。':'采购需求已退回原申请人。');return;
- }
  if(action==='approve'||action==='reject'){
   const p=orders().find(x=>x.id===ref);
   if(!canPurchaseApprove(p))return error('采购主管须为另一位有权员工，且采购单必须关联已确认的 PMC 需求、有效金额。');
