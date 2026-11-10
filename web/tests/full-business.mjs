@@ -29,6 +29,7 @@ try {
   assert.ok(await page.locator(".kpi-value").nth(0).textContent(),"Active orders show in the dashboard")
   assert.equal(await page.locator("iframe").count(),0,"No iframe in dashboard")
   const missing=[]
+  const visualAudit=[]
   for(const [dept,feature,name] of features){
     activeFeature=`${dept}/${feature}`
     await page.evaluate(hash=>{location.hash=hash},`#/departments/${dept}/${feature}`)
@@ -45,12 +46,37 @@ try {
       const heading=await page.locator(".page-title").textContent()
       if(!heading?.trim())missing.push(`${name}: ${feature} title missing`)
       if(await page.locator("iframe").count())missing.push(`${name}: ${feature} still uses iframe`)
+      const appearance=await page.evaluate(()=>{
+        const frame=document.querySelector(".business-page-frame")
+        if(!frame)return null
+        const rect=frame.getBoundingClientRect()
+        const style=getComputedStyle(frame)
+        return {
+          family:frame.getAttribute("data-business-family"),
+          frames:document.querySelectorAll(".business-page-frame").length,
+          title:frame.querySelector(".business-page-heading .page-title")?.textContent?.trim(),
+          borderRadius:style.borderRadius,
+          width:Math.round(rect.width),
+          viewport:window.innerWidth,
+          horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth+4
+        }
+      })
+      if(!appearance||appearance.frames!==1||!appearance.family||!appearance.title)
+        missing.push(`${name}: ${feature} missing shared business frame`)
+      if(appearance?.horizontalOverflow)missing.push(`${name}: ${feature} causes horizontal page overflow`)
+      visualAudit.push({department:dept,feature,...appearance})
+      await page.screenshot({
+        path:`test-results/business-${dept}-${feature}.jpg`,
+        type:"jpeg",quality:55,fullPage:false
+      })
     }catch(error){
       missing.push(`${name} / ${feature}: ${error.message.split("\n")[0]}`)
       if(missing.length>=3)break
     }
   }
-  assert.deepEqual(missing,[],"Every department feature must render without iframe")
+  await writeFile("test-results/business-visual-audit.json",JSON.stringify(visualAudit,null,2))
+  assert.equal(visualAudit.length,features.length,"Each business feature has a captured browser screenshot")
+  assert.deepEqual(missing,[],"Every department feature must render inside its shared page family")
   assert.deepEqual(errors,[],"No uncaught errors in business modules")
   // Exercise an actual write through the original MES engine and shared workspace.
   activeFeature="sales/orders"
