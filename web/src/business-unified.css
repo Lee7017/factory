@@ -430,3 +430,93 @@
   color:var(--biz-muted)!important;
   font-size:10.5px!important;
 }
+
+/* React-native business lists use the same foundation as legacy record/module pages. */
+.business-native-page {
+  width:100%;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.business-native-notice {
+  margin:0;
+  padding:7px 10px;
+  border:1px solid rgba(105,145,112,.22);
+  border-radius:8px;
+  background:rgba(229,239,230,.58);
+  color:#3f664b;
+  font-size:11px;
+  line-height:1.5;
+}
+.business-native-list {
+  width:100%;
+  min-width:0;
+  overflow:hidden;
+  border:1px solid var(--biz-line);
+  border-radius:10px;
+  background:rgba(250,252,249,.72);
+}
+.business-native-list-toolbar {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  min-height:44px;
+  padding:5px 10px;
+  background:rgba(222,234,223,.56);
+  border-bottom:1px solid var(--biz-line);
+}
+.business-native-list-actions {
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:7px;
+}
+.business-native-list-table {
+  overflow-x:auto;
+  background:transparent;
+}
+.business-native-list-table > div {
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+}
+.business-native-list-footer {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:7px 10px;
+  border-top:1px solid rgba(111,145,117,.16);
+  color:var(--biz-muted);
+  font-size:11px;
+}
+.business-native-list [data-slot="table-header"] {
+  background:rgba(222,234,223,.56)!important;
+}
+.business-native-list [data-slot="table-head"] {
+  color:#506b56!important;
+  font-size:11px!important;
+  font-weight:700!important;
+}
+.business-native-list [data-slot="table-cell"] {
+  color:#354b3b!important;
+  font-size:12px!important;
+}
+@media(max-width:700px){
+  .business-native-list-toolbar {
+    align-items:stretch;
+    flex-wrap:wrap;
+    padding:7px 8px;
+  }
+  .business-native-list-toolbar > .relative {
+    max-width:none;
+    flex:1 1 100%;
+  }
+  .business-native-list-actions {
+    width:100%;
+    justify-content:flex-end;
+  }
+}
