@@ -325,7 +325,7 @@ function handleClick(node){const a=node.dataset.moduleAction||'',key=node.datase
  if(a==='confirmHours'){const h=S.hours.find(x=>x.id===key);if(!h||h.person!==me().id||h.status!=='待确认')return fail('仅能确认本人的待确认工时。');h.status='已确认';h.confirmedAt=stamp();audit('本人确认工时',h.id,`${h.hours} 小时`);save('工时已确认，现可进入订单产品统计。');return true}
  if(a==='appeal'||a==='appealLatest'){const h=S.hours.find(x=>x.id===key&&x.person===me().id)||S.hours.find(x=>x.person===me().id);if(!h)return fail('请先生成或新增本人工时。');showForm('appeal',h.id);return true}
  if(a.startsWith('qc:')){const r=S.inspections.find(x=>x.id===key);if(!r||r.status!=='待判定')return false;r.status=a.endsWith(':pass')?'合格':'不合格';r.result=me().name+' · '+stamp();const checkedLot=getBatch(r.batch);if(checkedLot&&r.status==='合格'){checkedLot.quality='合格';if(!checkedLot.counted){ops().stock[checkedLot.material]=(ops().stock[checkedLot.material]||0)+Number(checkedLot.qty);checkedLot.counted=true;audit('批次质量放行入账',checkedLot.id,`${checkedLot.material} +${checkedLot.qty}`)}}if(r.incoming){const rec=getReceipt(r.incoming);if(rec)rec.status=r.status==='合格'?'合格待入库':'不合格'}if(r.status==='不合格')nonconform('报检',r.id,r.batch,r.material);audit(r.incoming?(r.status==='合格'?'来料 QC 合格':'来料 QC 不合格'):'报检判定',r.incoming||r.id,r.status);
-  // 保持此前订单流程同步：QC 合格进入后续质量放行环节。
+  // 成品 QC 判定合格后立即放行；不合格按原流程退回包装返工。
   const st=ops().flows[r.order]?.stage;const flow=r.status==='合格'?(st==='semi_qc'?'semiPass':st==='final_qc'?'finalPass':''):(st==='semi_qc'?'semiFail':st==='final_qc'?'finalFail':'');
   if(flow&&r.phase!=='来料'){ctx.ops.handleClick({dataset:{opAction:'flow:'+flow,opId:r.order}})}else save('报检判定已保存。');return true;
  }

@@ -71,6 +71,11 @@ try{
   assert.equal(await dialog.locator('[role="tablist"] [role="tab"]').count(),2)
   assert.equal(await dialog.locator(".journey-toolbar,.journey-range").count(),0,"Redundant status and endpoint rows are removed")
   assert.equal(await flowPanel.locator(".journey-section-head").count(),0,"Flow chart has no duplicate header and explanatory text")
+  const orderSteps=await flowPanel.locator(".journey-task").allTextContents()
+  assert.equal(orderSteps.length,16,"Combined order workflow contains 16 steps")
+  assert.equal(orderSteps[0],"接收订单并提交评审","Receiving the order and submitting for review are one step")
+  assert.ok(orderSteps.includes("成品检验判定并放行"),"QC decision and QA release share a card")
+  assert.ok(!orderSteps.includes("QA 质量放行"),"No standalone QA release card")
   const tabAppearance=await flowTab.evaluate(el=>{
     const css=getComputedStyle(el),activeLine=getComputedStyle(el,"::after"),tablist=getComputedStyle(el.parentElement)
     return {background:css.backgroundColor,borderWidth:css.borderTopWidth,underline:activeLine.backgroundColor,barBorder:tablist.borderBottomWidth}
@@ -138,7 +143,33 @@ try{
   await dialog.waitFor({state:"detached",timeout:10000})
   assert.match(new URL(page.url()).hash,new RegExp("^#/departments/[a-z]+(?:/[a-zA-Z]+)?$"),
     "Tracking action navigates to a department route")
-  console.log("PASS: live current-step button visible on desktop/mobile, no duplicate badge, and click navigates.")
+  // Validate both paths against real operations/modules in this isolated browser.
+  const qcResult=await page.evaluate(()=>{
+    const ops=window.FactoryOperations,modules=window.FactoryModules;
+    const ids=["SO-2026-1023-018","SO-2026-1106-003"];
+    for(const id of ids){
+      if(!ops.getOrder(id)||!ops.state.flows[id])throw new Error("Missing order "+id);
+      ops.state.flows[id].stage="final_qc";ops.getOrder(id).status="成品待检";
+    }
+    const pass=modules.ensureFlowInspection(ids[0],"成品");
+    modules.handleClick({dataset:{moduleAction:"qc:pass",mid:pass.id}});
+    const passedStage=ops.state.flows[ids[0]].stage;
+    const passActions=ops.state.flows[ids[0]].audit.map(x=>x.action);
+    window.FactoryFlowUI?.dismiss?.();
+    const fail=modules.ensureFlowInspection(ids[1],"成品");
+    modules.handleClick({dataset:{moduleAction:"qc:fail",mid:fail.id}});
+    const failedStage=ops.state.flows[ids[1]].stage;
+    const failActions=ops.state.flows[ids[1]].audit.map(x=>x.action);
+    window.FactoryFlowUI?.dismiss?.();
+    return {passedStage,failedStage,passActions,failActions,passStatus:pass.status,failStatus:fail.status}
+  })
+  assert.equal(qcResult.passStatus,"合格")
+  assert.equal(qcResult.passedStage,"released","Passing final QC releases without another click")
+  assert.ok(qcResult.passActions.includes("成品检验合格并放行"))
+  assert.equal(qcResult.failStatus,"不合格")
+  assert.equal(qcResult.failedStage,"packaging","Failing final QC goes back to packaging")
+  assert.ok(qcResult.failActions.some(x=>x.includes("成品不合格")))
+  console.log("PASS: current-step tracking, combined order cards, and QC pass/fail transitions.")
 
   console.log("PASS: published GitHub Pages, Vite assets, React nav, Lucide, shadcn roster and native MES business.")
 }catch(error){failed=true;console.error(error)}

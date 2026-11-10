@@ -101,8 +101,7 @@ const arrowRight='<svg class="journey-arrow" viewBox="0 0 48 26" aria-hidden="tr
 const arrowReturn='<svg class="journey-return-arrow" viewBox="0 0 80 39" aria-hidden="true"><path d="M73 5 H27 Q9 5 9 20 V32 M2 24 L9 32 L16 24"/></svg>';
 const flowConfig={
  order:{title:'销售订单',steps:[
-  ['sales','接收销售订单',/订单记录导入|保存销售订单/],
-  ['sales','提交订单评审',/提交评审/],
+  ['sales','接收订单并提交评审',/订单记录导入|保存销售订单|接收订单并提交评审|提交评审/],
   ['sales','订单评审通过',/评审通过/],
   ['pmc','排程试算',/排程试算/],
   ['pmc','发布正式排程',/发布正式排程/],
@@ -113,13 +112,12 @@ const flowConfig={
   ['quality','半成品检验判定',/半成品检验合格|半成品不合格/],
   ['production','包装开工',/包装开工/],
   ['production','包装报检',/包装报检/],
-  ['quality','成品检验判定',/成品检验合格|成品不合格/],
-  ['quality','QA 质量放行',/质量放行/],
+  ['quality','成品检验判定并放行',/成品检验合格并放行|成品检验合格|质量放行|成品不合格/],
   ['warehouse','成品入库',/成品入库/],
   ['sales','发起发货通知',/发起发货通知/],
   ['warehouse','按销售订单成品出库',/仓库按订单出库|仓库成品出库|成品销售出库/],
   ['sales','确认客户收货',/确认客户收货|交付确认/]
- ],loops:[['销售订单评审','退回修改后重新送审','sales'],['QC 判定','不合格 → 生产返工并重新报检','production'],['QA 复核','退回复检 → QC 重新判定','quality']],progress:{draft:-1,review:1,approved:2,trial:3,formal:4,reserved:5,issued:6,blending:7,semi_qc:8,semi_ok:9,packaging:10,final_qc:11,inspected:12,released:13,stored:14,dispatch:15,shipping:15,shipped:16,delivered:17}},
+ ],loops:[['销售订单评审','退回修改后重新送审','sales'],['QC 判定','不合格 → 生产返工并重新报检','production']],progress:{draft:-1,review:0,approved:1,trial:2,formal:3,reserved:4,issued:5,blending:6,semi_qc:7,semi_ok:8,packaging:9,final_qc:10,inspected:11,released:11,stored:12,dispatch:13,shipping:13,shipped:14,delivered:15}},
  purchase:{title:'采购单',steps:[
   ['purchase','创建采购单',/采购员创建并送审|创建.*采购/],
   ['purchase','提交采购审批',/采购员创建并送审|提交.*采购|重新送审/],
@@ -176,8 +174,8 @@ function snakeOfCards(steps,kind,stage,history){
  return `<div class="journey-snake-scroll" role="region" aria-label="连续折返流程图" tabindex="0" data-arrival-index="${currentIndex}"><div class="journey-snake" style="width:${width}px;height:${height}px"><svg viewBox="0 0 ${width} ${height}" class="journey-snake-paths" aria-hidden="true"><defs><marker id="journey-arrow-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#62758a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="journey-return-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#b76b44" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>${arrows}${returnLines}</svg>${cards}</div></div>`;
 }
 
-function stepForReturn(action,kind,n){if(kind==='order'&&/物料不齐套|退回排程/.test(action))return 5;if(/审批|评审/.test(action))return 1;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?9:12):kind==='purchase'?3:1;return Math.max(1,n-3)}
-function returnTarget(action,kind,n){if(kind==='order'&&/物料不齐套|退回排程/.test(action))return 3;if(/审批|评审/.test(action))return 0;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?7:10):kind==='purchase'?2:0;return Math.max(0,n-4)}
+function stepForReturn(action,kind,n){if(kind==='order'&&/物料不齐套|退回排程/.test(action))return 4;if(/审批|评审/.test(action))return 1;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?8:11):kind==='purchase'?3:1;return Math.max(1,n-3)}
+function returnTarget(action,kind,n){if(kind==='order'&&/物料不齐套|退回排程/.test(action))return 2;if(/审批|评审/.test(action))return 0;if(/QC|检验|复检/.test(action))return kind==='order'?(/半成品/.test(action)?6:9):kind==='purchase'?2:0;return Math.max(0,n-4)}
 function orderDetails(entry,kind){
  if(kind!=='order')return '';
  const o=window.FactoryOperations?.getOrder?.(entry.ref);
