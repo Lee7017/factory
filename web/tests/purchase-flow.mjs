@@ -63,6 +63,12 @@ try {
   let data=await getData()
   assert.equal(data.ops.purchases.find(p=>p.id==="PO-001")?.status,"待补采购需求")
   await asEmployee("E007")
+  await navigate("pmc","schedule")
+  const orderId="SO-2026-1023-018"
+  await page.locator(`[data-op-action="flow:trial"][data-op-id="${orderId}"]`).click()
+  await page.evaluate(()=>window.FactoryFlowUI?.dismiss?.())
+  await page.locator(`[data-op-action="flow:formal"][data-op-id="${orderId}"]`).click()
+  await page.evaluate(()=>window.FactoryFlowUI?.dismiss?.())
   await navigate("pmc","kitting")
   assert.equal(await page.locator('.native-business .proc-linked-panel').count(),0,
     "No separate requisition table should cover PMC page")
