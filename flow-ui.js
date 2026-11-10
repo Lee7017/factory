@@ -149,8 +149,8 @@ function personFor(step,history,done){const h=[...history].reverse().find(x=>ste
 function buildSteps(entry,kind){const config=flowConfig[kind];if(config)return config.steps;
  const source=entry.from||'sales',target=entry.to||source;return [[source,entry.action||'业务办理',new RegExp('.*')],[target,entry.next||'下一个业务动作',new RegExp('(?!)')]];}
 function stepState(i,kind,stage){if(kind==='handoff')return i===0?'done':'current';const score=flowConfig[kind]?.progress?.[stage]??-1,last=(flowConfig[kind]?.steps?.length||0)-1;if(score>=last&&i===last)return 'complete';return i<=score?'done':i===score+1?'current':'waiting'}
-function makeCard(step,i,state,history){const [dept,act]=step,operator=personFor(step,history,['done','complete'].includes(state));return `<div class="journey-card is-${state}" data-journey-step="${i}">
- <div class="journey-card-head"><span class="journey-seq">${String(i+1).padStart(2,'0')}</span><span class="journey-state">${state==='done'?'已办理':state==='current'?'当前环节':state==='complete'?'已办结':'待办理'}</span></div>
+function makeCard(step,i,state,history){const [dept,act]=step,operator=personFor(step,history,['done','complete'].includes(state)),canTrack=Boolean(activeContinue)&&['current','complete'].includes(state);return `<div class="journey-card is-${state}" data-journey-step="${i}">
+ <div class="journey-card-head"><span class="journey-seq">${String(i+1).padStart(2,'0')}</span><div class="journey-card-head-actions"><span class="journey-state">${state==='done'?'已办理':state==='current'?'当前环节':state==='complete'?'已办结':'待办理'}</span>${canTrack?"<button type=\"button\" class=\"journey-card-track\" data-flow-track>跟踪卡点 →</button>":""}</div></div>
  <div class="journey-dept">${clean(label(dept))}</div><strong class="journey-task">${clean(act)}</strong><div class="journey-person"><span class="journey-person-label">${['done','complete'].includes(state)?'经办员工':'负责员工'}</span><span>${clean(operator)}</span></div>
  ${['current','complete'].includes(state)?'<svg class="journey-marquee" aria-hidden="true"><rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)" rx="12"/></svg>':''}</div>`}
 // 所有单据共用同一条顺时针闭合路线。只有历史上确实发生退回时才绘制回环。
@@ -216,7 +216,7 @@ function renderGraph(entry){const kind=inferKind(entry),history=getHistory(entry
  <div class="journey-steps">${snakeOfCards(steps,kind,stage,history)}</div>
  ${extras(entry,kind)}
  <div class="journey-section-head journey-history-title"><strong>操作记录</strong><small>${history.length} 条</small></div><div class="journey-history">${historyRows||'<div class="journey-history-empty">当前没有已记录的操作</div>'}</div>
- <footer class="journey-footer"><span>退回、审批、出库均记录实际经办员工</span><div><button type="button" class="journey-button" data-flow-close>关闭</button>${activeContinue?'<button type="button" class="journey-button primary" data-flow-track>跟踪卡点 →</button>':''}</div></footer>
+ <footer class="journey-footer"><span>退回、审批、出库均记录实际经办员工</span><div><button type="button" class="journey-button" data-flow-close>关闭</button></div></footer>
  </section>`}
 function openDialog(entry){const host=document.querySelector('#flow-transition-host');if(!host||!entry)return;
  clearTimeout(dismissTimer);
