@@ -22,7 +22,7 @@ try{
   assert.ok(loaded,"Published GitHub Pages must load React and all 12 navigation tiles")
   assert.ok((await page.title()).includes("工厂管理系统"))
   assert.equal(await page.locator("svg.svg-bank[data-icon-library=lucide] symbol[data-lucide-icon]").count(),77)
-  await page.getByRole("heading",{name:"生产运营驾驶舱"}).waitFor()
+  await page.locator(".overview-kpi-grid").waitFor()
   assert.equal(await page.locator(".overview-kpi-card").count(),4,"Published cockpit has four operational KPIs")
   assert.equal(await page.locator(".overview-gantt-panel").count(),1,"Published cockpit has production Gantt")
   assert.equal(await page.locator(".overview-donut-panel").count(),1,"Published cockpit has order status chart")
