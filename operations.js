@@ -266,7 +266,7 @@ function applyTask(mode,id,button){let task=ctx.data.tasks.find(t=>t.id===id);if
  const sourceDept=dept,target=task.type==='清洗'&&mode==='finish'?'quality':dept;
  window.FactoryFlowUI?.show({ref:id,docType:`${task.type}任务单`,summary:`${task.line} · ${task.category||'任务'}`,action:`${task.type} · ${label}`,from:sourceDept,to:target,status:to,next:task.type==='清洗'&&mode==='finish'?'QA/QC 清洗报检':to==='待复核'?'任务复核确认':to==='已完成'?'继续后续生产任务':'按任务标准执行',operator:current(),at:now(),open:{dept:dept,feature:feat},nextOpen:task.type==='清洗'&&mode==='finish'?{dept:'quality',feature:'qaCleanInspection'}:to==='已完成'?{dept:'production',feature:'tasks'}:{dept,feature:feat},history:(S.logs||[]).filter(x=>x.ref===id).slice(0,5).reverse().map(x=>({at:x.at,from:x.dept||dept,action:x.action}))});
 } 
-function applyGeneric(type,next,id,button){const cfg=catalogs[type],r=bucketFor(type)?.find(x=>x.id===id);if(!cfg||!r)return;const match=cfg.actions.find(a=>a[2]===next&&a[1]===r.status);if(!match)return warn('单据状态已变化，不能重复执行此操作');if(!can(cfg.dept,cfg.feature,match[3]))return flash(button);r.status=next;log(match[0],id);success(`${id} 已更新为 ${next}`);
+function applyGeneric(type,next,id,button){if(type==='purchase')return warn('采购单必须按 PMC 需求、采购主管、财务及总经办的规则审批。');const cfg=catalogs[type],r=bucketFor(type)?.find(x=>x.id===id);if(!cfg||!r)return;const match=cfg.actions.find(a=>a[2]===next&&a[1]===r.status);if(!match)return warn('单据状态已变化，不能重复执行此操作');if(!can(cfg.dept,cfg.feature,match[3]))return flash(button);r.status=next;log(match[0],id);success(`${id} 已更新为 ${next}`);
  window.FactoryFlowUI?.show({ref:id,docType:type==='purchase'?'采购单':cfg.title||'业务单据',summary:type==='purchase'?`${r.material} · ${r.qty} · ${r.supplier||''}`:'',action:match[0],from:cfg.dept,to:type==='purchase'&&next==='待到货'?'warehouse':cfg.dept,status:next,next:type==='purchase'&&next==='待到货'?'采购到货登记、来料报检':'继续办理单据',operator:current(),at:now(),open:{dept:cfg.dept,feature:cfg.feature},nextOpen:type==='purchase'&&next==='待到货'?{dept:'warehouse',feature:'warehouseIncoming',action:'purchaseReceipt',record:id}:{dept:cfg.dept,feature:cfg.feature},history:(S.logs||[]).filter(x=>x.ref===id).slice(0,5).reverse().map(x=>({at:x.at,from:x.dept,action:x.action}))});
 } 
 function openEdit(type,id){currentRecord=id||'';let cfg=catalogs[type];if(type==='product')cfg={title:'物料',fields:[['name','物料名称','text'],['category','物料类别','select',['成品','半成品','原料','辅料','包材','耗材','备件','其他']],['spec','规格','text'],['unit','单位','text']]};
@@ -282,7 +282,7 @@ function openEdit(type,id){currentRecord=id||'';let cfg=catalogs[type];if(type==
  const inputs=cfg.fields.map(([k,label,kind,choices])=>field(k,label,kind||'text',rec[k]??(k==='qty'?1:k==='phone'?'':k==='level'?'L2':k==='person'?'E002':choices?.[0]||''),choices||[])).join('');
  modal(`${id?'编辑':'新建'}${cfg.title}${id?' · '+id:''}`,inputs,{type,id,kind:'save'},'保存记录');
 }
-function commitForm(values){const state=openForm;if(!state)return;let {type,id}=state, obj={...values};
+function commitForm(values){const state=openForm;if(!state)return;let {type,id}=state, obj={...values};if(type==='purchase')return warn('采购单只能在采购业务页面按 PMC 需求创建。');
  if(type==='order'){
   const product=String(values.product||'').trim(),spec=String(values.spec||'').trim(),qty=Number(values.qty);
   if(!product||!spec||!(qty>0))return warn('订单产品、规格、数量必须填写，且数量要大于 0。');
@@ -398,7 +398,10 @@ function submitForm(ev){if(ev.target.id!=='ops-form')return false;ev.preventDefa
 function pendingForDept(dept){const out=[];const push=(o,feature,title,desc)=>out.push({kind:'ops',feature,id:o.id,title,detail:desc,status:stageForOrder(o)});
  const match={sales:['review','orderReview','待评审订单'],pmc:['approved','schedule','等待排程'],warehouse:['reserved','issue','待发料'],quality:['semi_qc','qaQc','半成品报检待判定'],production:['issued','tasks','待生产']};
  for(const o of ctx.data.orders){const stage=stageOf(o);if(dept==='pmc'&&stage==='formal')push(o,'kitting','待齐套锁库',o.product);else if(dept==='quality'&&stage==='final_qc')push(o,'qaQc','成品报检待判定',o.product);else if(dept==='warehouse'&&stage==='released')push(o,'inventory','待成品入库',o.product);else if(dept==='warehouse'&&['dispatch','shipping'].includes(stage))push(o,'warehouseOutbound','待成品出库',o.product);else if(dept==='sales'&&stage==='stored')push(o,'orders','待发货通知',o.product);else if(dept==='sales'&&stage==='shipped')push(o,'orders','待客户收货确认',o.product);else if(dept==='production'&&['blending','semi_ok','packaging'].includes(stage))push(o,'tasks','生产任务待执行',o.product);else if(match[dept]?.[0]===stage)push(o,match[dept][1],match[dept][2],o.product);}
- if(dept==='purchase')for(const p of S.purchases.filter(p=>p.status!=='已入库'))out.push({kind:'ops',feature:'purchase',id:p.id,title:'采购单待处理',detail:p.material,status:p.status});
+ if(dept==='purchase'){for(const p of S.purchases.filter(p=>!['已入库'].includes(p.status)))out.push({kind:'ops',feature:'purchase',id:p.id,title:'采购单待处理',detail:p.material,status:p.status});for(const r of (S.purchaseRequests||[]).filter(r=>r.status==='已确认'&&!S.purchases.some(p=>p.requestId===r.id)))out.push({kind:'ops',feature:'purchase',id:r.id,title:'已确认采购需求待下单',detail:r.material,status:r.status})}
+ if(dept==='pmc')for(const r of (S.purchaseRequests||[]).filter(r=>r.status==='待PMC确认'))out.push({kind:'ops',feature:'kitting',id:r.id,title:'PMC 采购需求待确认',detail:r.material,status:r.status});
+ if(dept==='finance')for(const p of S.purchases.filter(p=>p.status==='待财务审核'))out.push({kind:'ops',feature:'finance',id:p.id,title:'采购预算待审核',detail:p.supplier,status:p.status});
+ if(dept==='leadership')for(const p of S.purchases.filter(p=>p.status==='待总经办审批'))out.push({kind:'ops',feature:'approvals',id:p.id,title:'采购单待总经办审批',detail:p.supplier,status:p.status});
  if(dept==='leadership')for(const p of S.approvals.filter(p=>p.status==='待复核'))out.push({kind:'ops',feature:'approvals',id:p.id,title:'审批事项待处理',detail:p.subject,status:p.status});
  return out;
 }

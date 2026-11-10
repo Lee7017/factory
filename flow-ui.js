@@ -119,13 +119,16 @@ const flowConfig={
   ['sales','确认客户收货',/确认客户收货|交付确认/]
  ],loops:[['销售订单评审','退回修改后重新送审','sales'],['QC 判定','不合格 → 生产返工并重新报检','production']],progress:{draft:-1,review:0,approved:1,trial:2,formal:3,reserved:4,issued:5,blending:6,semi_qc:7,semi_ok:8,packaging:9,final_qc:10,inspected:11,released:11,stored:12,dispatch:13,shipping:13,shipped:14,delivered:15}},
  purchase:{title:'采购单',steps:[
-  ['purchase','创建采购单',/采购员创建并送审|创建.*采购/],
-  ['purchase','提交采购审批',/采购员创建并送审|提交.*采购|重新送审/],
-  ['purchase','采购主管审批',/采购主管审批|审批通过|审批驳回/],
-  ['warehouse','登记采购到货',/仓库到货登记|采购到货登记/],
+  ['pmc','PMC 提出采购需求',/创建采购需求/],
+  ['pmc','PMC 主管确认需求',/PMC主管确认采购需求/],
+  ['purchase','采购员编制采购订单',/采购员编制采购订单并送审|采购员创建并送审/],
+  ['purchase','采购主管审批',/采购主管审批通过|采购主管驳回/],
+  ['finance','财务预算审核',/财务审核通过|财务驳回/],
+  ['leadership','总经办审批',/总经办审批通过|总经办驳回/],
+  ['warehouse','仓库登记到货',/仓库到货登记|采购到货登记/],
   ['quality','QC 来料检验',/QC|来料检验/],
   ['warehouse','确认合格批次入库',/仓库确认入库|来料入库/]
- ],loops:[['采购主管','审批驳回 → 采购员修改后重新送审','purchase'],['QC 来料检验','不合格 → 隔离 / 供应商补货','warehouse']],progress:{草稿:0,待审批:1,已驳回:1,待到货:2,部分到货:3,到货处理中:3,已入库:5}},
+ ],loops:[['采购审批','驳回 → 采购员修改并重新送审','purchase'],['QC 来料检验','不合格 → 隔离或供应商补货','warehouse']],progress:{}},
  receipt:{title:'到货单',steps:[['warehouse','仓库登记实收与供应商批次',/仓库到货登记|采购到货登记/],['quality','QC 检验并判定',/QC|检验/],['warehouse','确认合格批次入库',/仓库确认入库|入库确认/]],progress:{待QC:0,合格待入库:1,不合格:0,已入库:2}},
  outbound:{title:'成品出库单',steps:[['sales','销售发货通知',/发货通知/],['warehouse','仓库按成品批次拣货',/成品出库单创建/],['warehouse','核对并确认出库',/成品销售出库/],['sales','跟踪客户收货',/客户收货|交付确认/]],loops:[['仓库复核','批次或数量不符 → 返回重新拣货','warehouse']],progress:{待出库:1,已出库:2}}
 };
@@ -138,14 +141,25 @@ function getStage(entry,kind){if(entry.stage!==undefined)return entry.stage;cons
 function getHistory(entry,kind){if(entry.history?.length)return entry.history;
  const ops=window.FactoryOperations?.state,modules=window.FactoryModules?.state,ref=entry.ref;
  if(kind==='order')return ops?.flows?.[ref]?.audit||[];
+ if(kind==='purchase'){const p=ops?.purchases?.find(x=>x.id===ref),r=ops?.purchaseRequests?.find(x=>x.id===p?.requestId);return [...(r?.history||[]),...(p?.history||[])]}
  if(kind==='receipt')return (modules?.ledger||[]).filter(x=>x.ref===ref).map(x=>({action:x.type,person:x.by,at:x.time,from:x.dept}));
  if(kind==='outbound')return (modules?.ledger||[]).filter(x=>x.ref===ref).map(x=>({action:x.type,person:x.by,at:x.time,from:x.dept}));
  return entry.action?[{action:entry.action,at:entry.at||'',person:entry.operator||'',from:entry.from}]:[];
 }
 function lastStepRecord(step,history){return [...history].reverse().find(row=>step[2]?.test(String(row.action||'')))}
-function buildSteps(entry,kind){const config=flowConfig[kind];if(config)return config.steps;
+function buildSteps(entry,kind){const config=flowConfig[kind];if(kind==='purchase'){
+  const p=window.FactoryOperations?.state?.purchases?.find(x=>x.id===entry.ref),plan=p?.approvalPlan;
+  return config.steps.filter((x,i)=>i!==4&&i!==5||(i===4?plan?.finance!==false:plan?.leadership!==false))
+ }
+ if(config)return config.steps;
  const source=entry.from||'sales',target=entry.to||source;return [[source,entry.action||'业务办理',new RegExp('.*')],[target,entry.next||'下一个业务动作',new RegExp('(?!)')]];}
-function stepState(i,kind,stage){if(kind==='handoff')return i===0?'done':'current';const score=flowConfig[kind]?.progress?.[stage]??-1,last=(flowConfig[kind]?.steps?.length||0)-1;if(score>=last&&i===last)return 'complete';return i<=score?'done':i===score+1?'current':'waiting'}
+function stepState(i,kind,stage,steps){if(kind==='handoff')return i===0?'done':'current';
+ if(kind==='purchase'){
+  const index=label=>steps.findIndex(x=>x[1]===label),prior=index('采购主管审批'),finance=index('财务预算审核'),leader=index('总经办审批'),arrival=index('仓库登记到货'),qc=index('QC 来料检验');
+  const score=stage==='待补采购需求'?-1:stage==='待采购主管审批'?2:stage==='待财务审核'?prior:stage==='待总经办审批'?Math.max(prior,finance):stage==='待到货'?Math.max(prior,finance,leader):stage==='到货处理中'||stage==='部分到货'?arrival:stage==='已入库'?steps.length-1:stage==='已驳回'?2:-1;
+  return score>=steps.length-1&&i===steps.length-1?'complete':i<=score?'done':i===score+1?'current':'waiting';
+ }
+ const score=flowConfig[kind]?.progress?.[stage]??-1,last=(flowConfig[kind]?.steps?.length||0)-1;if(score>=last&&i===last)return 'complete';return i<=score?'done':i===score+1?'current':'waiting'}
 function makeCard(step,i,state,history){const [dept,act]=step,record=lastStepRecord(step,history),done=['done','complete'].includes(state),operator=record?.person||record?.by||(done?'历史记录未注明':'待分配'),time=record?.at||record?.time||'—',canTrack=Boolean(activeContinue)&&['current','complete'].includes(state);return `<div class="journey-card is-${state}" data-journey-step="${i}">
  <div class="journey-card-head"><span class="journey-seq">${String(i+1).padStart(2,'0')}</span><div class="journey-card-head-actions">${canTrack?'<button type="button" class="journey-card-track" data-flow-track>'+(state==='complete'?'查看已办结环节':'跟踪当前环节')+' →</button>':`<span class="journey-state">${state==='done'?'已办理':state==='current'?'当前环节':state==='complete'?'已办结':'待办理'}</span>`}</div></div>
  <div class="journey-dept">${clean(label(dept))}</div><strong class="journey-task">${clean(act)}</strong><div class="journey-person"><time class="journey-time">${clean(time)}</time><span class="journey-operator" title="${clean(operator)}">${clean(operator)}</span></div>
@@ -155,7 +169,7 @@ function snakeOfCards(steps,kind,stage,history){
  const cols=4,cardW=176,cardH=122,gapX=36,gapY=72,padX=34,padY=34;
  const rows=Math.ceil(steps.length/cols),width=padX*2+cols*cardW+(cols-1)*gapX,height=padY*2+rows*cardH+Math.max(0,rows-1)*gapY;
  const pos=steps.map((_,i)=>{const row=Math.floor(i/cols),slot=i%cols,col=row%2===0?slot:cols-1-slot;return {row,col,x:padX+col*(cardW+gapX),y:padY+row*(cardH+gapY)}});
- const states=steps.map((_,i)=>stepState(i,kind,stage)),currentIndex=states.indexOf('current'),arrivalConnector=currentIndex>0?currentIndex-1:-1;
+ const states=steps.map((_,i)=>stepState(i,kind,stage,steps)),currentIndex=states.indexOf('current'),arrivalConnector=currentIndex>0?currentIndex-1:-1;
  const connector=(a,b)=>{
   const same=a.row===b.row;
   if(same){const dir=b.x>a.x?1:-1,x1=dir>0?a.x+cardW:a.x,x2=dir>0?b.x:b.x+cardW,y=a.y+cardH/2;return `M${x1} ${y} L${x2} ${y}`}

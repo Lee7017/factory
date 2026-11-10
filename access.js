@@ -2,7 +2,7 @@
 (()=>{'use strict';
 const actionNames={view:'查看',create:'创建',edit:'修改',approve:'审批',execute:'执行',config:'配置'};
 const capabilities={
- overview:['view'],hours:['view','create'],sop:['view','create','edit','approve','execute'],qaQc:['view','create','approve'],workshop:['view','create','execute','approve'],warehouseOps:['view','create','execute','approve'],settings:['view','config'],leave:['view','create'],leaveApproval:['view','approve'],employees:['view','edit'],skills:['view','edit'],payroll:['view','create','approve'],orders:['view','create','edit'],orderReview:['view','approve'],orderHistory:['view'],schedule:['view','edit','approve'],kitting:['view','execute'],shift:['view','edit','approve'],purchase:['view','create','edit','approve'],inventory:['view','edit'],issue:['view','execute'],inspection:['view','execute'],release:['view','approve'],tasks:['view','execute'],batch:['view','execute'],incentive:['view','create','approve'],templates:['view','edit','approve'],bom:['view','edit'],catalog:['view','edit'],engineering:['view','execute','approve'],finance:['view','approve'],permissions:['view','config'],approvals:['view','approve'],hoursAppeal:['view'],qaSampling:['view'],qaCleanInspection:['view'],qaNcr:['view'],qaQualityStock:['view'],workshopReceive:['view'],workshopDispute:['view'],workshopRework:['view'],warehouseIncoming:['view'],warehousePick:['view'],warehouseOutbound:['view'],warehouseReturns:['view'],warehouseLedger:['view'],shiftPeople:['view'],shiftStats:['view'],orderProductStats:['view'],orderDailyReport:['view'],sopExecutions:['view'],productSettings:['view'],dictionarySettings:['view']
+ overview:['view'],hours:['view','create'],sop:['view','create','edit','approve','execute'],qaQc:['view','create','approve'],workshop:['view','create','execute','approve'],warehouseOps:['view','create','execute','approve'],settings:['view','config'],leave:['view','create'],leaveApproval:['view','approve'],employees:['view','edit'],skills:['view','edit'],payroll:['view','create','approve'],orders:['view','create','edit'],orderReview:['view','approve'],orderHistory:['view'],schedule:['view','edit','approve'],kitting:['view','execute','approve'],shift:['view','edit','approve'],purchase:['view','create','edit','approve'],inventory:['view','edit'],issue:['view','execute'],inspection:['view','execute'],release:['view','approve'],tasks:['view','execute'],batch:['view','execute'],incentive:['view','create','approve'],templates:['view','edit','approve'],bom:['view','edit'],catalog:['view','edit'],engineering:['view','execute','approve'],finance:['view','approve'],permissions:['view','config'],approvals:['view','approve'],hoursAppeal:['view'],qaSampling:['view'],qaCleanInspection:['view'],qaNcr:['view'],qaQualityStock:['view'],workshopReceive:['view'],workshopDispute:['view'],workshopRework:['view'],warehouseIncoming:['view'],warehousePick:['view'],warehouseOutbound:['view'],warehouseReturns:['view'],warehouseLedger:['view'],shiftPeople:['view'],shiftStats:['view'],orderProductStats:['view'],orderDailyReport:['view'],sopExecutions:['view'],productSettings:['view'],dictionarySettings:['view']
 };
 const positions=[
  {id:'employee',name:'普通员工',dept:'hr',features:['hr.leave']},
@@ -10,6 +10,7 @@ const positions=[
  {id:'hr_manager',name:'人事主管',dept:'hr',features:['hr.hours','hr.hoursAppeal','hr.leave','hr.leaveApproval','hr.employees','hr.skills','hr.payroll']},
  {id:'sales',name:'销售专员',dept:'sales',features:['sales.orders','sales.orderReview','sales.orderHistory','hr.leave']},
  {id:'pmc',name:'PMC 计划员',dept:'pmc',features:['pmc.schedule','pmc.kitting','pmc.shift','pmc.shiftPeople','pmc.shiftStats','pmc.orderProductStats','pmc.orderDailyReport','production.skills','hr.leave']},
+ {id:'pmc_manager',name:'PMC 主管',dept:'pmc',features:['pmc.schedule','pmc.kitting','pmc.shift','pmc.shiftPeople','pmc.shiftStats','pmc.orderProductStats','pmc.orderDailyReport','hr.leave']},
  {id:'purchase',name:'采购专员',dept:'purchase',features:['purchase.purchase','hr.leave']},
  {id:'purchase_manager',name:'采购主管',dept:'purchase',features:['purchase.purchase','hr.leave']},
  {id:'warehouse',name:'仓库管理员',dept:'warehouse',features:['warehouse.warehouseOps','warehouse.warehouseIncoming','warehouse.warehousePick','warehouse.warehouseOutbound','warehouse.warehouseReturns','warehouse.warehouseLedger','warehouse.inventory','warehouse.issue','hr.leave']},
@@ -33,6 +34,7 @@ const staff=[
  {id:'E005',name:'赵凯',dept:'生产车间',title:'配料工',positions:['production']},
  {id:'E006',name:'刘洋',dept:'质量部',title:'QA 检验员',positions:['quality']},
  {id:'E007',name:'周琳',dept:'生产计划与物料控制部（PMC）',title:'计划员',positions:['pmc']},
+ {id:'E022',name:'高宁',dept:'生产计划与物料控制部（PMC）',title:'PMC 主管',positions:['pmc_manager']},
  {id:'E008',name:'吴建',dept:'设备工程部',title:'设备工程师',positions:['engineering']},
  {id:'E009',name:'孙浩',dept:'仓库 / 物流部',title:'仓管员',positions:['warehouse']},
  {id:'E010',name:'林静',dept:'信息化部',title:'信息化管理员',positions:['it']},
@@ -49,7 +51,7 @@ const staff=[
  {id:'E020',name:'马飞',dept:'生产车间',title:'生产 / 仓库兼岗',positions:['production','warehouse']}
 ];
 const storage='factory-permissions-v2';
-const defaultRights=()=>Object.fromEntries(positions.filter(p=>p.id!=='developer').map(p=>[p.id,p.features.flatMap(x=>{const f=x.split('.')[1];return (capabilities[f]||['view']).filter(a=>!((p.id==='production'&&x==='production.workshop'&&a==='approve')||(p.id==='purchase'&&x==='purchase.purchase'&&a==='approve'))).map(a=>`${x}.${a}`)})]));
+const defaultRights=()=>Object.fromEntries(positions.filter(p=>p.id!=='developer').map(p=>[p.id,p.features.flatMap(x=>{const f=x.split('.')[1];return (capabilities[f]||['view']).filter(a=>!((p.id==='production'&&x==='production.workshop'&&a==='approve')||(p.id==='purchase'&&x==='purchase.purchase'&&a==='approve')||(p.id==='pmc'&&x==='pmc.kitting'&&a==='approve'))).map(a=>`${x}.${a}`)})]));
 const fresh=()=>({current:'E012',assigned:Object.fromEntries(staff.map(p=>[p.id,[...p.positions]])),extra:{},positionRights:defaultRights()});
 let state=fresh();
 try{const read=JSON.parse(localStorage.getItem(storage)||'null');if(read&&typeof read==='object'){
