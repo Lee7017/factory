@@ -284,7 +284,15 @@ function render(feature){activeFeature=feature;switch(feature){case 'orders':cas
 function modal(title,fields,submit,confirmLabel='保存'){const host=document.querySelector('#ops-modal-host');host.innerHTML=`<div class="op-modal-shade" data-op-action="close"></div><div class="op-modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="op-modal-head"><h2>${esc(title)}</h2>${cmd('关闭','close')}</div><form id="ops-form"><div class="op-form-grid">${fields}</div><div class="op-modal-actions">${cmd('取消','close')}<button type="submit" class="op-button primary">${esc(confirmLabel)}</button></div></form></div>`;openForm=submit;}
 function field(name,label,type='text',value='',choices=[]){const id='of-'+name;const content=type==='select'?`<select name="${esc(name)}" id="${id}" required>${choices.map(v=>`<option value="${esc(v)}" ${String(v)===String(value)?'selected':''}>${esc(v)}</option>`).join('')}</select>`:`<input name="${esc(name)}" id="${id}" type="${esc(type)}" value="${esc(value)}" ${type==='number'?(name==='delta'?'step="any"':'min="0.000001" step="any"'):''} ${name==='phone'?'':'required'}>`;return `<label class="op-field"><span>${esc(label)}</span>${content}</label>`}
 function close(){const host=document.querySelector('#ops-modal-host');host.innerHTML='';openForm=null;currentRecord=''}
-function inspectFlow(id){const o=orderBy(id);if(!o)return;window.FactoryFlowUI?.openDocument({kind:'order',ref:o.id,docType:'销售订单',summary:`${o.product} · ${o.spec} · ${o.qty} ${o.unit||'L'}`,stage:stageOf(o),status:stageForOrder(o),history:S.flows[o.id]?.audit||[],nextOpen:nextWorkForStage[stageOf(o)]});}
+function inspectFlow(id){
+ const o=orderBy(id);if(!o)return;
+ const stage=stageOf(o),type=stage==='issued'?'清洗':stage==='semi_ok'?'调机调线':null;
+ const task=type?taskForOrder(o,type,true):null;
+ const target=task&&task.status!=='已完成'?{dept:type==='清洗'?'production':'engineering',feature:type==='清洗'?'tasks':'engineering',record:task.id}:nextWorkForStage[stage];
+ window.FactoryFlowUI?.openDocument({kind:'order',ref:o.id,docType:'销售订单',
+  summary:`${o.product} · ${o.spec} · ${o.qty} ${o.unit||'L'}`,
+  stage,status:stageForOrder(o),history:S.flows[o.id]?.audit||[],nextOpen:target});
+}
 function applyFlow(key,id,button){const o=orderBy(id),step=orderActions[key];if(!o||!step)return;const [label,dept,feature,permission,expected,next]=step;
  if(!can(dept,feature,permission))return flash(button);
  if(stageOf(o)!==expected)return warn(`${id} 当前是「${stageForOrder(o)}」，不满足「${label}」的前置状态。`);
@@ -310,13 +318,15 @@ function applyFlow(key,id,button){const o=orderBy(id),step=orderActions[key];if(
   S.flows[id].planPublishedAt=now();
 }
  S.flows[id].stage=next;
+ const prerequisite=next==='issued'?taskForOrder(o,'清洗',true):next==='semi_ok'?taskForOrder(o,'调机调线',true):null;
  let generatedInspection=null;
  if(next==='semi_qc'||next==='final_qc')generatedInspection=window.FactoryModules?.ensureFlowInspection?.(id,next==='semi_qc'?'半成品':'成品')||null;
  o.status=({draft:'草稿',review:'待评审',approved:'待排产',trial:'试算完成',formal:'已排程',reserved:'已锁库',issued:'已发料'})[next]||stages[next];if(next==='delivered'&&!o.completedAt)o.completedAt=now();
  const route={draft:'sales',review:'sales',approved:'pmc',trial:'pmc',formal:'pmc',reserved:'warehouse',issued:'production',blending:'production',semi_qc:'quality',semi_ok:'production',packaging:'production',final_qc:'quality',released:'warehouse',stored:'sales',dispatch:'warehouse',shipping:'warehouse',shipped:'sales',delivered:'sales'};
  const from=route[expected]||dept,to=route[next]||dept;
  S.flows[id].audit.push({at:now(),person:current(),action:label,from,to,state:stages[next]});log(label,id,`${expected} → ${next}`);success(`${id}：${label}，当前状态 ${stages[next]}`);
- window.FactoryFlowUI?.show({ref:id,docType:'销售订单',summary:`${o.product} · ${o.spec} · ${o.qty} ${o.unit||'L'}`,action:label,from,to,status:stages[next],next:(generatedInspection?`质量部 QA/QC → 报检判定 · ${generatedInspection.id}`:({'approved':'排程试算','trial':'发布正式排程','formal':'物料齐套 / 锁库','reserved':'仓库发料','issued':'清洗复核及配制开工','blending':'配制报检','semi_qc':'质量部 QA/QC → 报检判定','semi_ok':'调机调线复核及包装','packaging':'包装报检','final_qc':'质量部 QA/QC → 报检判定','released':'成品入库','stored':'由销售部发起发货通知','dispatch':'仓库按订单批次出库','shipping':'仓库继续出库剩余数量','shipped':'销售确认客户实际收货','delivered':'客户交付完成，订单归档','review':'销售订单评审'})[next]||'查看单据当前状态'),operator:current(),at:now(),open:{dept:'sales',feature:'orders'},nextOpen:generatedInspection?{dept:'quality',feature:'qaQc',action:'qualityRecord',record:generatedInspection.id}:nextWorkForStage[next],history:S.flows[id].audit.map(h=>({...h,from:h.from||(h.action==='订单记录导入'?'sales':undefined)}))});
+ window.FactoryFlowUI?.show({ref:id,docType:'销售订单',summary:`${o.product} · ${o.spec} · ${o.qty} ${o.unit||'L'}`,action:label,from,to,status:stages[next],next:(generatedInspection?`质量部 QA/QC → 报检判定 · ${generatedInspection.id}`:({'approved':'排程试算','trial':'发布正式排程','formal':'物料齐套 / 锁库','reserved':'仓库发料','issued':'清洗复核及配制开工','blending':'配制报检','semi_qc':'质量部 QA/QC → 报检判定','semi_ok':'调机调线复核及包装','packaging':'包装报检','final_qc':'质量部 QA/QC → 报检判定','released':'成品入库','stored':'由销售部发起发货通知','dispatch':'仓库按订单批次出库','shipping':'仓库继续出库剩余数量','shipped':'销售确认客户实际收货','delivered':'客户交付完成，订单归档','review':'销售订单评审'})[next]||'查看单据当前状态'),operator:current(),at:now(),open:{dept:'sales',feature:'orders'},nextOpen:generatedInspection?{dept:'quality',feature:'qaQc',action:'qualityRecord',record:generatedInspection.id}:
+   prerequisite?{dept:prerequisite.type==='清洗'?'production':'engineering',feature:prerequisite.type==='清洗'?'tasks':'engineering',record:prerequisite.id}:nextWorkForStage[next],history:S.flows[id].audit.map(h=>({...h,from:h.from||(h.action==='订单记录导入'?'sales':undefined)}))});
 }
 function applyTask(mode,id,button){let task=ctx.data.tasks.find(t=>t.id===id);if(!task)return;const dept=task.type==='调机调线'?'engineering':'production',feat=dept==='engineering'?'engineering':'tasks';if(!can(dept,feat,'execute'))return flash(button);const map={start:['待开始','执行中','任务开工'],finish:['执行中','待复核','提交完工复核'],verify:['待复核','已完成','复核完成']};const [from,to,label]=map[mode]||[];if(task.status!==from)return warn(`任务 ${id} 当前状态为${task.status}，不能${label}`);
  if(mode==='verify'&&task.type==='清洗'&&window.FactoryModules?.state?.rules?.cleanQC&&!window.FactoryModules.hasCleaningPass(id))return trackCleanQc(id);
@@ -326,6 +336,7 @@ function applyTask(mode,id,button){let task=ctx.data.tasks.find(t=>t.id===id);if
   S.flows[task.orderId].audit.push({at:now(),person:current(),action:task.type+'任务复核完成',from:dept,to:'production',state:id+' · 已完成'});
  }
  success(`任务 ${id} ${to}`);
+ if(mode==='verify'&&task.orderId){inspectFlow(task.orderId);return}
  const sourceDept=dept,target=task.type==='清洗'&&mode==='finish'?'quality':dept;
  window.FactoryFlowUI?.show({ref:id,docType:`${task.type}任务单`,summary:`${task.line} · ${task.category||'任务'}`,action:`${task.type} · ${label}`,from:sourceDept,to:target,status:to,next:task.type==='清洗'&&mode==='finish'?'QA/QC 清洗报检':to==='待复核'?'任务复核确认':to==='已完成'?'继续后续生产任务':'按任务标准执行',operator:current(),at:now(),open:{dept:dept,feature:feat},nextOpen:task.type==='清洗'&&mode==='finish'?{dept:'quality',feature:'qaCleanInspection'}:to==='已完成'?{dept:'production',feature:'tasks'}:{dept,feature:feat},history:(S.logs||[]).filter(x=>x.ref===id).slice(0,5).reverse().map(x=>({at:x.at,from:x.dept||dept,action:x.action}))});
 } 
