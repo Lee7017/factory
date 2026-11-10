@@ -22,6 +22,13 @@ try{
   assert.ok(loaded,"Published GitHub Pages must load React and all 12 navigation tiles")
   assert.ok((await page.title()).includes("工厂管理系统"))
   assert.equal(await page.locator("svg.svg-bank[data-icon-library=lucide] symbol[data-lucide-icon]").count(),77)
+  await page.getByRole("heading",{name:"生产运营驾驶舱"}).waitFor()
+  assert.equal(await page.locator(".overview-kpi-card").count(),4,"Published cockpit has four operational KPIs")
+  assert.equal(await page.locator(".overview-gantt-panel").count(),1,"Published cockpit has production Gantt")
+  assert.equal(await page.locator(".overview-donut-panel").count(),1,"Published cockpit has order status chart")
+  assert.equal(await page.locator(".overview-alerts-panel").count(),1,"Published cockpit has real warnings")
+  assert.equal(await page.locator(".overview-agent-card").count(),5,"Published cockpit includes five animal Agent roles")
+  await page.screenshot({path:"test-results/live-overview-cockpit.png",fullPage:true})
   await page.locator(".department-tile").filter({hasText:"仓库 / 物流部"}).click()
   assert.equal(await page.locator(".feature-tile").count(),8,"Published warehouse department has 8 functions")
   // Move off the clicked tile and allow its CSS background transition to finish.
