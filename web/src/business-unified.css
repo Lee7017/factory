@@ -1,0 +1,213 @@
+/* Business pages: one visual language across all 11 departments.
+   The original MES workflows, click targets, forms and access checks are unchanged.
+   This sheet is intentionally scoped to the React business host. */
+.native-business {
+  --biz-surface:rgba(244,248,243,.86);
+  --biz-inner:rgba(250,252,249,.83);
+  --biz-line:rgba(105,140,111,.22);
+  --biz-text:#2c4232;
+  --biz-muted:#728477;
+  --biz-primary:#557d65;
+  --biz-radius:12px;
+  min-width:0;
+  color:var(--biz-text);
+}
+.native-business .legacy-root,
+.native-business .legacy-workbench {min-width:0;width:100%}
+.native-business .legacy-root .ops-workbench,
+.native-business .legacy-root .mw-page,
+.native-business .legacy-root .proc-page {gap:12px;color:var(--biz-text);min-width:0}
+
+/* Shared surfaces match the native LeavePage Card rather than opaque legacy sheets. */
+.native-business .legacy-root :is(
+  .ops-heading,.op-subsection,.op-history,.op-table-wrap,
+  .mw-head,.mw-content,.mw-metric,.mw-snapshot,.mw-rule-list,
+  .proc-section,.proc-approval-banner,.op-quality-link
+) {
+  background:var(--biz-surface)!important;
+  border:1px solid var(--biz-line)!important;
+  border-radius:var(--biz-radius)!important;
+  box-shadow:0 7px 23px rgba(47,78,56,.055),inset 0 1px 0 rgba(255,255,255,.56)!important;
+  color:var(--biz-text);
+}
+.native-business .legacy-root :is(.ops-heading,.mw-head,.proc-top) {
+  min-height:0;
+  padding:15px 18px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;
+}
+.native-business .legacy-root .proc-top {
+  background:var(--biz-surface);border:1px solid var(--biz-line);
+  border-radius:var(--biz-radius);margin-bottom:12px;
+}
+.native-business .legacy-root :is(.ops-heading strong,.mw-head-info strong,.proc-top strong) {
+  color:var(--biz-text)!important;font-size:14px;font-weight:750;line-height:1.45;
+}
+.native-business .legacy-root :is(.ops-heading small,.mw-head-info>span,.proc-top p,.proc-help) {
+  color:var(--biz-muted)!important;font-size:11px;line-height:1.5;
+}
+.native-business .legacy-root .mw-content {padding:16px;min-height:160px}
+.native-business .legacy-root :is(.op-subsection header,.mw-section-head) {padding:0;margin:0 0 12px}
+.native-business .legacy-root .op-subsection header {padding:13px 16px;margin:0}
+.native-business .legacy-root :is(.op-subsection h3,.mw-section-head h3,.proc-section-title) {
+  font-size:13px;color:var(--biz-text);font-weight:730;
+}
+.native-business .legacy-root .mw-section-head:not(:first-child) {margin-top:16px}
+.native-business .legacy-root .op-rule,
+.native-business .legacy-root .mw-tab-note {
+  background:rgba(228,237,229,.62)!important;
+  border:1px solid var(--biz-line)!important;
+  border-left:3px solid #8aa894!important;
+  color:#5b7060!important;
+  border-radius:9px!important;
+  padding:10px 13px;
+  font-size:11.5px;line-height:1.6;
+}
+.native-business .legacy-root .op-rule strong {color:#3c5845}
+
+/* One table vocabulary: same header, row rhythm and borders as DataTable. */
+.native-business .legacy-root :is(.op-table-wrap,.mw-table-scroll,.proc-scroll) {
+  max-width:100%;overflow-x:auto;overflow-y:hidden;
+  border:1px solid var(--biz-line)!important;border-radius:10px!important;
+  background:rgba(250,252,249,.65)!important;box-shadow:none!important;
+}
+.native-business .legacy-root :is(.op-table,.mw-table,.proc-table) {
+  border-collapse:collapse;color:var(--biz-text);font-size:12px;
+}
+.native-business .legacy-root :is(.op-table,.mw-table,.proc-table) th {
+  background:rgba(220,233,222,.53)!important;
+  border-bottom:1px solid var(--biz-line)!important;
+  color:#496350!important;font-size:11px;font-weight:700;
+  text-align:left;white-space:nowrap;padding:11px 13px;
+}
+.native-business .legacy-root :is(.op-table,.mw-table,.proc-table) td {
+  background:transparent;color:#354b3b;
+  padding:11px 13px;border-bottom:1px solid rgba(116,149,122,.16)!important;
+  line-height:1.5;vertical-align:middle;
+}
+.native-business .legacy-root :is(.op-table,.mw-table,.proc-table) tbody tr:hover td {
+  background:rgba(226,239,229,.49)!important;
+}
+.native-business .legacy-root :is(.op-table,.mw-table,.proc-table) tbody tr:last-child td {border-bottom:0!important}
+.native-business .legacy-root :is(.op-table,.mw-table,.proc-table) strong {color:#2e4535;font-weight:710}
+
+/* Buttons: retain legacy action selectors, but give all departments the same hierarchy.
+   Do not override disabled styles or detach data-action attributes. */
+.native-business .legacy-root :is(.op-button,.mw-btn,.proc-btn,[data-slot="button"]) {
+  border-radius:8px!important;min-height:32px;
+  font-size:11.5px;font-weight:650;
+  transition:background .14s,border-color .14s,box-shadow .14s;
+}
+.native-business .legacy-root :is(.op-button,.mw-btn,.proc-btn):not(.primary):not(.active) {
+  background:rgba(248,251,247,.9)!important;
+  color:#3d644b!important;border:1px solid rgba(107,146,115,.28)!important;
+}
+.native-business .legacy-root :is(.op-button,.mw-btn,.proc-btn):not(.primary):not(.active):hover:not(:disabled) {
+  background:#e4eee5!important;border-color:#89a994!important;
+}
+.native-business .legacy-root :is(.op-button,.mw-btn,.proc-btn).primary,
+.native-business .legacy-root :is(.op-button,.mw-btn,.proc-btn).active:not(.mw-tabs .mw-btn) {
+  background:var(--biz-primary)!important;color:#fff!important;border-color:var(--biz-primary)!important;
+}
+.native-business .legacy-root :is(.op-button,.mw-btn,.proc-btn):disabled {
+  opacity:.48;cursor:not-allowed;
+}
+.native-business .legacy-root :is(.op-row-actions,.mw-actions,.proc-actions,.op-tools) {
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+}
+.native-business .legacy-root :is(.op-badge,.mw-status,.proc-status) {
+  background:rgba(230,237,230,.83)!important;
+  color:#5b7160!important;
+  border:1px solid rgba(117,148,120,.25)!important;
+  border-radius:6px!important;
+  font-size:10.5px;padding:3px 8px;
+}
+.native-business .legacy-root :is(.op-badge.complete,.mw-status.mw-ok,.proc-status.is-done) {
+  background:#e0ede1!important;color:#3b7650!important;
+}
+.native-business .legacy-root :is(.mw-status.mw-alert,.op-alert) {
+  background:#fbefec!important;color:#a05a50!important;border-color:#e8c7c0!important;
+}
+
+/* Native-looking tabs, summary figures, forms and modal surfaces. */
+.native-business .legacy-root .mw-tabs {
+  background:rgba(220,232,221,.68)!important;border:1px solid var(--biz-line)!important;
+  border-radius:10px;padding:4px;gap:3px;
+}
+.native-business .legacy-root .mw-tabs .mw-btn {background:transparent!important;border:0!important;color:#647b6a!important}
+.native-business .legacy-root .mw-tabs .mw-btn.active {
+  background:rgba(247,250,246,.97)!important;color:#31543f!important;
+  border:1px solid rgba(110,149,118,.15)!important;
+  box-shadow:0 2px 7px rgba(60,98,65,.08);
+}
+.native-business .legacy-root :is(.mw-metrics,.mw-stock-snapshot) {gap:9px}
+.native-business .legacy-root :is(.mw-metric,.mw-snapshot) {padding:12px;min-height:78px}
+.native-business .legacy-root :is(.mw-metric,.mw-snapshot) strong {color:#2d4c35}
+.native-business .legacy-root :is(.op-modal,.mw-modal,.proc-modal) {
+  background:#f3f8f2!important;
+  border:1px solid rgba(93,132,102,.25)!important;
+  border-radius:14px!important;
+  box-shadow:0 24px 70px rgba(34,62,42,.22)!important;
+  color:var(--biz-text);
+}
+.native-business .legacy-root :is(.op-modal-head,.mw-modal>header,.proc-modal header) {
+  border-bottom-color:var(--biz-line)!important;
+}
+.native-business .legacy-root :is(.op-modal h2,.mw-modal h2,.proc-modal h2) {
+  color:#2b4534;font-size:16px;font-weight:750;
+}
+.native-business .legacy-root :is(
+  .op-field input,.op-field select,.mw-field input,.mw-field select,.mw-field textarea,
+  .proc-field input,.proc-field select,.legacy-shadcn-select
+) {
+  background:rgba(251,253,250,.95)!important;
+  border:1px solid #c9d7cb!important;border-radius:8px!important;
+  color:#304533;font-size:12px;min-height:36px;
+  max-width:100%;
+}
+.native-business .legacy-root :is(
+  .op-field input,.op-field select,.mw-field input,.mw-field select,.mw-field textarea,
+  .proc-field input,.proc-field select,.legacy-shadcn-select
+):focus-visible {outline:2px solid #82a68a;outline-offset:1px}
+.native-business .legacy-root :is(.op-field,.mw-field,.proc-field) {
+  font-size:11.5px;color:#556c5b;font-weight:620;
+}
+.native-business .legacy-root :is(.op-modal-actions,.mw-modal form>footer,.proc-modal footer) {
+  border-top-color:var(--biz-line)!important;
+}
+.native-business .legacy-root :is(.op-empty,.mw-empty) {color:#839387!important}
+
+/* Legacy domain subviews and floaters should not reintroduce a different palette. */
+.native-business .legacy-root :is(.op-quality-link,.op-flow-step,.mw-rule) {
+  border-color:var(--biz-line)!important;border-radius:9px;
+}
+.native-business .legacy-root .op-history {padding:11px 14px}
+.native-business .legacy-root .op-history summary {color:#496350}
+.native-business .legacy-root .op-shortage-modal {background:#f3f8f2!important}
+.native-business .legacy-root :is(.flow-window,.dept-members,.dept-feature-panel,.dept-todo-lane) {
+  border-color:var(--biz-line)!important;background:var(--biz-surface)!important;
+  color:var(--biz-text);
+}
+.native-business .legacy-root :is(.flow-node,.flow-state,.dept-todo-card,.dept-member-card) {
+  border-color:var(--biz-line)!important;background:var(--biz-inner)!important;color:var(--biz-text);
+}
+.native-business .legacy-root .flow-window h2 {color:var(--biz-text)}
+.native-business .legacy-root :is(.dept-hub-tabs,.dept-hub-tab[aria-selected="true"]) {
+  border-color:var(--biz-line)!important;
+}
+
+@media(max-width:760px){
+  .native-business .legacy-root :is(.ops-heading,.mw-head,.proc-top) {
+    align-items:flex-start;flex-direction:column;padding:12px;
+  }
+  .native-business .legacy-root .mw-content {padding:12px}
+  .native-business .legacy-root :is(.op-table,.mw-table,.proc-table) td,
+  .native-business .legacy-root :is(.op-table,.mw-table,.proc-table) th {padding:9px 10px}
+  .native-business .legacy-root :is(.op-form-grid,.mw-modal-fields,.proc-fields) {grid-template-columns:1fr}
+}
+
+/* The three React-native records pages use the same content density and controls. */
+.shell-content .glass-panel:has(> .flex > div > h2) {border-radius:12px}
+.shell-content [data-slot="table-header"] {background:rgba(220,233,222,.53)}
+.shell-content [data-slot="table-head"] {color:#496350;font-size:11px;font-weight:700}
+.shell-content [data-slot="table-cell"] {font-size:12px;color:#354b3b}
