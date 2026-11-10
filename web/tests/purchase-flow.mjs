@@ -34,6 +34,37 @@ try {
   }
   await asEmployee("E014")
   await navigate("purchase","purchase")
+  // Visual layout regression: status and action share one row, table follows it.
+  const toolbarLayout=await page.evaluate(()=>{
+    const toolbar=document.querySelector(".proc-purchase-toolbar")
+    const status=toolbar?.querySelector(".proc-approval-banner")
+    const action=toolbar?.querySelector('[data-proc-action="newPurchase"]')
+    const table=document.querySelector(".proc-page > .op-table-wrap")
+    if(!toolbar||!table)return null
+    const a=toolbar.getBoundingClientRect()
+    const t=table.getBoundingClientRect()
+    const b=status?.getBoundingClientRect()
+    const c=action?.getBoundingClientRect()
+    return {
+      height:Math.round(a.height),
+      tableGap:Math.round(t.top-a.bottom),
+      statusCenter:b?Math.round((b.top+b.bottom)/2):null,
+      actionCenter:c?Math.round((c.top+c.bottom)/2):null,
+      statusVisible:!!b,
+      actionVisible:!!c,
+      toolbarTop:Math.round(a.top),
+      tableTop:Math.round(t.top)
+    }
+  })
+  assert.ok(toolbarLayout,"Purchase toolbar and table must render")
+  assert.ok(toolbarLayout.height<=65,`Purchase toolbar must not grow into a blank panel: ${JSON.stringify(toolbarLayout)}`)
+  assert.ok(toolbarLayout.tableGap>=0&&toolbarLayout.tableGap<=18,`Table must follow toolbar directly: ${JSON.stringify(toolbarLayout)}`)
+  if(toolbarLayout.statusVisible&&toolbarLayout.actionVisible){
+    assert.ok(Math.abs(toolbarLayout.statusCenter-toolbarLayout.actionCenter)<=22,
+      `Approval summary and create button must share a visual row: ${JSON.stringify(toolbarLayout)}`)
+  }
+  await page.screenshot({path:"test-results/purchase-toolbar-desktop.png",fullPage:false})
+  console.log("PURCHASE TOOLBAR VISUAL CHECK",JSON.stringify(toolbarLayout))
   // Original engine initializes the seeded purchase PO-001 only after this mount.
   const previous=(await getData()).ops?.purchases?.length??0
   const create=page.locator('[data-proc-action="newPurchase"]')
