@@ -884,3 +884,95 @@
     grid-template-columns:repeat(2,minmax(0,1fr))!important;
   }
 }
+
+/* QC decision: one flat working surface, no stacked metric cards / toolbar band / table band. */
+.native-business .legacy-root .mw-quality-surface {
+  width:100%;
+  min-width:0;
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  border:1px solid var(--biz-line);
+  border-radius:10px;
+  background:rgba(250,252,249,.72);
+  box-shadow:none;
+}
+.native-business .legacy-root .mw-quality-command {
+  display:flex;
+  align-items:stretch;
+  justify-content:space-between;
+  gap:10px;
+  min-height:46px;
+  margin:0;
+  padding:0 10px 0 0;
+  border-bottom:1px solid var(--biz-line);
+  background:rgba(222,234,223,.42);
+}
+.native-business .legacy-root .mw-quality-status {
+  flex:1 1 auto;
+  min-width:0;
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+}
+.native-business .legacy-root .mw-quality-status-item {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-width:0;
+  padding:0 11px;
+  border-right:1px solid rgba(111,145,117,.16);
+}
+.native-business .legacy-root .mw-quality-status-item span {
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#66786b;
+  font-size:10.5px;
+}
+.native-business .legacy-root .mw-quality-status-item strong {
+  flex:0 0 auto;
+  color:#31523b;
+  font-size:16px;
+  font-weight:760;
+}
+.native-business .legacy-root .mw-quality-command > .mw-actions {
+  flex:0 0 auto;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:7px!important;
+  margin:0!important;
+  padding:0!important;
+}
+.native-business .legacy-root .mw-quality-surface > .mw-table-scroll {
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.native-business .legacy-root .mw-quality-surface > .mw-table-scroll [data-slot="table"],
+.native-business .legacy-root .mw-quality-surface > .mw-table-scroll .mw-table {
+  border:0!important;
+  border-radius:0!important;
+}
+@media(max-width:900px){
+  .native-business .legacy-root .mw-quality-command {
+    align-items:stretch;
+    flex-wrap:wrap;
+    padding:0;
+  }
+  .native-business .legacy-root .mw-quality-status {
+    flex-basis:100%;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .native-business .legacy-root .mw-quality-status-item {
+    min-height:40px;
+    border-bottom:1px solid rgba(111,145,117,.12);
+  }
+  .native-business .legacy-root .mw-quality-command > .mw-actions {
+    width:100%;
+    padding:6px 8px!important;
+  }
+}
