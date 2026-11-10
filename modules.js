@@ -109,7 +109,7 @@ function receiveFinishedGoods(order,qty=finishedUnitsForOrder(order)){
 }
 function qualityFlag(code,kind,record){let lot=getBatch(code);if(lot){lot.quality=kind;lot.note=record||'';}}
 function nonconform(source,ref,material,reason,qty=0){if(S.ncr.some(n=>n.source===source&&n.ref===ref))return;S.ncr.unshift({id:id('NCR'),source,ref,material,reason,qty,status:'待处置',disposal:'',createdAt:stamp()});if(material)qualityFlag(material,'冻结','检验不合格')}
-function ensureFlowInspection(orderId,phase){const existing=S.inspections.find(x=>x.order===orderId&&x.phase===phase&&!['已作废'].includes(x.status));if(existing)return existing;const o=ctx.data.orders.find(x=>x.id===orderId);if(!o)return null;const rec={id:id('QC'),order:o.id,phase,material:o.product,batch:'',status:'待判定',source:'生产报检',date:today()};S.inspections.unshift(rec);ctx.save();return rec}
+function ensureFlowInspection(orderId,phase){const existing=S.inspections.find(x=>x.order===orderId&&x.phase===phase&&x.status==='待判定');if(existing)return existing;/* 返工后需要新报检单 */const o=ctx.data.orders.find(x=>x.id===orderId);if(!o)return null;const rec={id:id('QC'),order:o.id,phase,material:o.product,batch:'',status:'待判定',source:'生产报检',date:today()};S.inspections.unshift(rec);ctx.save();return rec}
 function syncFlowInspections(){for(const o of ctx.data.orders){const stage=ops().flows[o.id]?.stage;if(!['semi_qc','final_qc'].includes(stage))continue;ensureFlowInspection(o.id,stage==='semi_qc'?'半成品':'成品')}}
 function supports(feature){return Object.prototype.hasOwnProperty.call(labels,feature)}
 function render(feature){syncFlowInspections();activeFeatureRoute=feature;const route=featureRoutes[feature]||[feature,''];const [page,tab]=route;if(tab)currentTab[page]=tab;const f={overview:overviewPage,qaQc:qualityPage,workshop:workshopPage,warehouseOps:warehousePage,shift:shiftPage,hours:hoursPage,sop:standardsPage,settings:settingsPage}[page];return f?f():''}
@@ -406,7 +406,7 @@ function ensureCleaningReport(taskId){
  S.cleanReports.unshift(report);audit('清洗报检提交',task.id,task.line);ctx.save();return report;
 }
 function hasCleaningPass(task){return S.cleanReports.some(r=>r.task===task&&r.status==='合格')}
-function hasFlowInspection(orderId,phase){return S.inspections.some(r=>r.order===orderId&&r.phase===phase&&r.status==='合格')}
+function hasFlowInspection(orderId,phase){return S.inspections.find(r=>r.order===orderId&&r.phase===phase&&r.status!=='已作废')?.status==='合格'}
 function blockedFromFlow(material){return S.batches.filter(x=>x.material===material&&x.counted&&x.quality!=='合格').reduce((a,x)=>a+Number(x.qty),0)}
 function onPurchaseReceipt(idValue){return S.incoming.some(r=>r.purchase===idValue&&r.status==='已入库')}
 function startPurchaseReceipt(purchaseId){ctx.openFeature('warehouseIncoming','warehouse');setTimeout(()=>window.FactoryProcurement?.openReceipt?.(purchaseId),40)}
