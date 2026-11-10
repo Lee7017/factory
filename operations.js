@@ -127,7 +127,7 @@ function shell(title,toolbar,content,tipText=''){
  return `<div class="ops-workbench">${toolbar?`<div class="op-inline-toolbar"><div class="op-tools">${toolbar}</div></div>`:''}${content}</div>`
 }
 function historyView(){const rows=S.logs.slice(0,5);return `<details class="op-history"><summary>最近操作记录 <span>${S.logs.length} 条</span></summary>${rows.length?rows.map(x=>`<div><time>${esc(x.at)}</time><strong>${esc(x.action)}</strong><span>${esc(x.ref)} · ${esc(x.person)}</span></div>`).join(''):'<p>尚无操作</p>'}</details>`}
-function rowActions(o,which=''){const stage=stageOf(o);let list=Object.entries(orderActions).filter(([k,v])=>v[4]===stage&&(!which||(featureActions[which]||[]).includes(k)));return list.map(([key,meta])=>cmd(meta[0],`flow:${key}`,o.id,key==='reject'?'muted':'')).join('')||'<span class="op-muted">—</span>'}
+function rowActions(o,which=''){const stage=stageOf(o);let list=Object.entries(orderActions).filter(([k,v])=>v[4]===stage&&(!which||(featureActions[which]||[]).includes(k)));return list.map(([key,meta])=>cmd(meta[0],`flow:${key}`,o.id,key==='reject'?'muted':'')).join('')}
 function flowActionsFor(feature){const names={orders:'销售订单',orderReview:'销售订单评审',schedule:'APS 排程',kitting:'物料齐套核查',issue:'仓库发料与签收',tasks:'生产 / 非生产任务',batch:'生产批次卡',inspection:'报检进度',release:'QA 放行',inventory:'库存和入库'};
  const activeOrders=ctx.data.orders.filter(o=>stageOf(o)!=='delivered');
  const orderRows=(orders=activeOrders)=>orders.map(o=>{const stage=stageOf(o),r=requirements(o),available=Object.entries(r).map(([id,qty])=>`${id} 需 ${qty} / 可用 ${availableStock(id)}`).join('；');
@@ -139,7 +139,7 @@ function flowActionsFor(feature){const names={orders:'销售订单',orderReview:
  const taskToolbar=feature==='tasks'?cmd('新增非生产任务','newTask','','primary'):'';
  const stock=feature==='inventory'?recordTable(['物料编码','库存数量','单位','操作'],Object.keys(S.stock).map(id=>`<tr>${td(esc(id))}${td(`<strong>${esc(S.stock[id])}</strong>`)}${td(id==='FG-001'?'箱':id.startsWith('PK-')?'个':id.startsWith('SF-')?'L':'kg')}${td(cmd('调整','adjustStock',id))}</tr>`)):'';
  const flow=feature==='kitting'
-  ?recordTable(['订单号','产品','数量','流程状态','齐套核查','操作'],activeOrders.map(o=>{const r=requirements(o),available=Object.entries(r).map(([id,qty])=>`${id} 需 ${qty} / 可用 ${availableStock(id)}`).join('；');return `<tr>${td(`<strong>${esc(o.id)}</strong>`)}${td(esc(o.product))}${td(`${esc(o.qty)} ${esc(o.unit||'L')}`)}${td(badge(stageForOrder(o)))}${td(`<small class="op-inline-note">${esc(available)}</small>`)}${td(`<div class="op-row-actions">${rowActions(o,feature)}</div>`)}</tr>`}))
+  ?recordTable(['订单号','产品','数量','流程状态','齐套核查','操作'],activeOrders.map(o=>{const r=requirements(o),available=Object.entries(r).map(([id,qty])=>`${id} 需 ${qty} / 可用 ${availableStock(id)}`).join('；');return `<tr>${td(`<strong>${esc(o.id)}</strong>`)}${td(esc(o.product))}${td(`${esc(o.qty)} ${esc(o.unit||'L')}`)}${td(badge(stageForOrder(o)))}${td(`<small class="op-inline-note">${esc(available)}</small>`)}${td(`<div class="op-row-actions">${rowActions(o,feature)||'<span class="op-muted">—</span>'}</div>`)}</tr>`}))
   :recordTable(['订单号','产品','数量','流程状态','当前操作'],orderRows(),orderToolbar);
  const tasks=feature==='tasks'?taskRows(taskToolbar):'';
  if(feature==='inventory'){
