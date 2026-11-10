@@ -127,8 +127,8 @@ function renderPurchases(){
   </tr>`;
  }).join('');
  const options=[...new Set(all.map(p=>p.status).filter(Boolean))].map(status=>`<option value="${esc(status)}">${esc(status)}</option>`).join('');
- const create=authorized(['purchase','purchase','create'])?button('根据 PMC 需求下单','newPurchase','','primary'):'';
- const guidance=requestChoices().length?'':'<p class="proc-order-notice">暂无可下单的 PMC 已确认需求，请先由 PMC 提交并完成需求确认。</p>';
+ const create='';
+ const guidance='';
  return `<section class="proc-page proc-purchase-board" aria-label="采购单独立工作台" data-proc-purchase-board>
    <header class="proc-board-heading">
     <div><small>采购 / 供应链部</small><h2>采购单</h2><p>根据 PMC 确认的需求采购；采购审批、到货、质检和入库记录均关联原采购单。</p></div>
@@ -136,7 +136,7 @@ function renderPurchases(){
    </header>
    <div class="proc-board-metrics" aria-label="采购业务状态统计">${statuses.map(([label,value])=>`<div class="proc-board-metric"><span>${esc(label)}</span><strong>${value}</strong></div>`).join('')}</div>
    <div class="proc-board-content">
-    <div class="proc-board-title"><h3>采购单列表</h3><span>采购单为主单，到货记录为明细；不混入销售订单</span></div>
+    <div class="proc-board-title"><h3>采购单列表</h3><span>PMC 缺料直接生成采购单；采购员在原单上补供应商、价格和交期</span></div>
     <div class="proc-board-filters">
       <input type="search" class="proc-order-search" placeholder="搜索采购单号 / 需求单 / 物料 / 供应商" aria-label="搜索采购单">
       <select class="proc-order-status" aria-label="采购单状态筛选"><option value="">全部状态</option>${options}</select>
@@ -281,6 +281,30 @@ function store(idValue){const r=arrivals().find(x=>x.id===idValue);if(!r||r.stat
  M.state.ledger.unshift({id:id('LOG'),time:new Date().toLocaleString('zh-CN'),ts:Date.now(),dept:'warehouse',type:'采购到货质检入库',ref:r.id,detail:`${r.material} +${qty} / ${bid}`,by:user().name});
  renderNow();noticeFlow({ref:r.id,docType:'到货单',action:'仓库确认入库',from:'warehouse',to:'warehouse',status:'已入库',next:'可用库存已更新',nextOpen:{dept:'warehouse',feature:'warehouseIncoming'}});
 }
+function createFromShortage(orderId){
+ if(!authorized(['pmc','kitting','execute']))return error('当前员工没有 PMC 物料齐套操作权限');
+ const order=ctx.data.orders.find(o=>o.id===orderId);if(!order)return error('销售订单不存在');
+ const rows=O.materialShortages(order);if(!rows.length)return error('已经没有缺料，不需要重复采购');
+ let first=null,created=0;
+ for(const r of rows){
+  let p=orders().find(x=>x.sourceOrder===orderId&&x.material===r.material&&!['已入库','已驳回'].includes(x.status));
+  if(!p){
+   p=orders().find(x=>x.material===r.material&&x.status==='待补采购需求'&&!x.sourceOrder);
+   const fresh=!p;if(!p)p={id:id('PO'),history:[]};
+   Object.assign(p,{material:r.material,qty:r.missing,sourceOrder:orderId,reason:'销售订单 '+orderId+' · BOM/库存缺口',neededBy:day(),
+    status:'待采购填写',createdBy:user().id,createdName:user().name,pmcAutoConfirmed:true,
+    pmcConfirmedAt:new Date().toISOString(),pmcConfirmedBy:'BOM 与库存校验'});
+   audit(p,'PMC 依据销售订单缺料生成采购单','pmc');
+   if(fresh)orders().unshift(p);
+   created++;
+  }
+  if(!first)first=p;
+ }
+ document.querySelector('#ops-modal-host')?.replaceChildren();close();renderNow();
+ if(first)detailsPurchase(first.id);
+ ctx.toast(created?'已直接生成 '+created+' 张采购单，采购员在原单补齐价格即可。':'采购单已存在，已打开原单。');
+ return first?.id;
+}
 function trackShortage(orderId){
  const all=ctx?.data||JSON.parse(localStorage.getItem('factory-workspace-v4')||'{}');
  const order=all.orders?.find(x=>x.id===orderId);
@@ -297,7 +321,9 @@ function trackShortage(orderId){
 }
 function onAction(el){const action=el.dataset.procAction,ref=el.dataset.procId;
  if(action==='close'){close();return}
- if(action==='newPurchase'){if(!authorized(['purchase','purchase','create']))return;newPurchase();return}
+ if(action==='newPurchase'){return error('采购单由 PMC 直接生成，采购员完善同一张单据即可')}
+ if(action==='createPurchaseFromShortage'){createFromShortage(ref);return}
+ if(action==='viewShortagePurchase'){document.querySelector('#ops-modal-host')?.replaceChildren();detailsPurchase(ref);return}
  if(action==='editPurchase'){const p=orders().find(x=>x.id===ref);if(!canEdit(p))return error('只有原创建人且具有采购修改权限，才能修改草稿或被驳回的采购单。');newPurchase(p);return}
  if(action==='newReceipt'){if(!authorized(['warehouse','warehouseOps','create']))return error('到货登记需要仓库收货权限，应由有权限的仓库员工办理。');newReceipt(ref);return}
  if(action==='viewPurchase'){detailsPurchase(ref);return}
@@ -338,7 +364,7 @@ function onAction(el){const action=el.dataset.procAction,ref=el.dataset.procId;
 }
 const nativeInit=M.init,nativeRender=O.render;
 M.init=function(context){const result=nativeInit(context);ctx=context;migrate();return result};
-O.render=function(feature){const base=feature==='purchase'?renderPurchases():nativeRender(feature);return feature==='kitting'?renderRequests()+base:feature==='finance'?base+renderApprovals('finance'):feature==='approvals'?base+renderApprovals('leadership'):base};
+O.render=function(feature){const base=feature==='purchase'?renderPurchases():nativeRender(feature);return feature==='finance'?base+renderApprovals('finance'):feature==='approvals'?base+renderApprovals('leadership'):base};
 M.startPurchaseReceipt=function(po){ctx.openFeature('warehouseIncoming','warehouse');setTimeout(()=>openReceipt(po),40)};
 document.addEventListener('input',e=>{if(e.target.matches?.('.proc-order-search'))filterPurchases()});
 document.addEventListener('change',e=>{if(e.target.matches?.('.proc-order-status'))filterPurchases()});
@@ -346,5 +372,5 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-proc-acti
 document.addEventListener('submit',e=>{if(e.target.id==='proc-form'){e.preventDefault();saveForm(e.target)} });
 document.addEventListener('change',e=>{if(e.target.matches('#proc-form [name="purchase"]')){const p=orders().find(x=>x.id===e.target.value);if(p){const n=numbers(p);e.target.form.querySelector('[name="qty"]').value=n.remaining;e.target.form.querySelector('#proc-remaining').textContent=`采购物料 ${p.material}，最多可登记 ${money(n.remaining)}`}}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
-window.FactoryProcurement={renderPurchases,renderIncoming,renderRequests,renderApprovals,trackShortage,numbers,shipments,available,store,openReceipt,get context(){return ctx}};
+window.FactoryProcurement={renderPurchases,renderIncoming,createFromShortage,openPurchase:detailsPurchase,renderApprovals,trackShortage,numbers,shipments,available,store,openReceipt,get context(){return ctx}};
 })();
