@@ -193,33 +193,38 @@ function readDay(){return state().ganttDay}
 function fmtMin(m){return `${pad(Math.floor(m/60))}:${pad(m%60)}`}
 function startMinute(x){const d=new Date(x.start);return d.getHours()*60+d.getMinutes()}
 function render(){
- ensure();const day=readDay(),entries=state().gantt.filter(x=>x.start.slice(0,10)===day);
- const canEdit=ctx.access.has('pmc','schedule','edit');
+ ensure();
+ const day=readDay(),view=dayLayout(state().gantt,day),canEdit=ctx.access.has('pmc','schedule','edit');
  const types=[['生产任务 · 配制 / 包装','make'],['非生产 · 清洗','clean'],['非生产 · 调机调线','change'],['QC 检验','qc'],['QA 放行','qa']];
  const times=Array.from({length:25},(_,i)=>`<span class="gantt-tick" style="left:${i/24*100}%">${pad(i)}:00</span>`).join('');
  const rows=lanes.map(lane=>{
-  const bars=entries.filter(x=>x.lane===lane.id).map(item=>{
-   const start=startMinute(item),end=Math.min(1440,start+Number(item.duration));
-   if(start>=1440||end<=0)return '';
-   const width=Math.max(8,(end-start)/1440*100);
-   const label=`${taskLabel(item.type)} · ${item.orderId} · ${fmtMin(start)}–${fmtMin(end)} · ${status(item)}`;
-   return `<button class="gantt-bar category-${categories[item.type]}" style="left:${(start/1440*100).toFixed(4)}%;width:${width.toFixed(4)}%" type="button" data-gantt="edit" data-gantt-id="${safe(item.id)}" aria-label="${safe(label)}" title="${safe(label)}"><strong>${safe(taskLabel(item.type))}</strong><small>${safe(item.orderId)} · ${fmtMin(start)}</small></button>`;
+  const layout=view.rows[lane.id];
+  const bars=layout.placements.map(pos=>{
+   const item=pos.item,conflict=view.conflictIds.has(item.id);
+   const start=new Date(pos.span.start),end=new Date(pos.span.end);
+   const time=d=>pad(d.getHours())+':'+pad(d.getMinutes());
+   const summary=`${taskLabel(item.type)} · ${item.orderId} · ${time(start)}–${time(end)} · ${status(item)}${conflict?' · 同工位时间冲突':''}`;
+   return `<button class="gantt-bar category-${categories[item.type]||'make'}${conflict?' is-conflict':''}" style="left:${pos.left.toFixed(4)}%;width:${pos.width.toFixed(4)}%;top:${11+pos.track*48}px" type="button" data-gantt="edit" data-gantt-id="${safe(item.id)}" aria-label="${safe(summary)}" title="${safe(summary)}"><strong>${safe(taskLabel(item.type))}</strong><small>${safe(item.orderId)} · ${time(start)}${conflict?' · 时间冲突':''}</small></button>`;
   }).join('');
-  return `<div class="gantt-row"><div class="gantt-lane"><strong>${safe(lane.id)}</strong><small>${safe(lane.desc)}</small></div><div class="gantt-track">${bars}</div></div>`;
+  const n=layout.placements.filter(x=>view.conflictIds.has(x.item.id)).length;
+  return `<div class="gantt-row" style="--gantt-row-height:${layout.height}px"><div class="gantt-lane"><strong>${safe(lane.id)}</strong><small>${safe(lane.desc)}${n?' · '+n+' 项冲突':''}</small></div><div class="gantt-track">${bars}</div></div>`;
  }).join('');
  const legend=types.map(([name,type])=>`<span class="gantt-legend-item"><i class="category-${type}"></i>${name}</span>`).join('');
- const n=entries.length;
+ const n=lanes.reduce((sum,lane)=>sum+view.rows[lane.id].placements.length,0);
+ const conflictCount=view.conflictPairs.length;
  const replans=(ctx.data.orders||[]).filter(o=>state().flows?.[o.id]?.stage==='trial'&&
   (state().flows[o.id].audit||[]).some(a=>a.action==='开工前一天物料不齐套，退回排程'));
  const replanNote=replans.length?'<div class="op-rule"><strong>开工前物料不足，已退回 PMC 重新排程</strong>'+
   replans.map(o=>'<p>'+safe(o.id)+'：'+safe((state().flows[o.id].audit||[]).filter(a=>a.action==='开工前一天物料不齐套，退回排程').slice(-1)[0]?.state||'请复查物料')+'</p>').join('')+'</div>':'';
+ const warning=conflictCount?`<div class="gantt-warning" role="status"><strong>发现 ${conflictCount} 对同工位时间冲突</strong><span>冲突任务已分层显示，不代表工位能同时生产；可编辑任务或整理尚未发布的排程。</span></div>`:'';
  requestAnimationFrame(()=>{const sc=$('.gantt-scroll');if(sc)sc.scrollLeft=restoreLeft});
  return replanNote+`<section class="gantt-panel" aria-label="排产甘特图">
-   <header class="gantt-panel-head"><div><h2>排产甘特图</h2><p>横轴：时间　纵轴：产线及质检工位 · 点击任务调整时间和产线</p></div>
-   <div class="gantt-controls"><button type="button" data-gantt="prev" aria-label="前一天">‹</button><input type="date" id="gantt-date" aria-label="选择排产日期" value="${day}"><button type="button" data-gantt="next" aria-label="后一天">›</button><button type="button" data-gantt="today">今天</button><button type="button" class="gantt-add" data-gantt="add" ${canEdit?'':'title="无权修改排程"'}>+ 新建任务</button></div></header>
-   <div class="gantt-legend">${legend}<span class="gantt-count">当天 ${n} 项任务</span></div>
+   <header class="gantt-panel-head"><div><h2>排产甘特图</h2><p>横轴：24 小时 · 纵轴：产线 / 检验工位 · 每个任务按真实时间比例显示</p></div>
+   <div class="gantt-controls"><button type="button" data-gantt="prev" aria-label="前一天">‹</button><input type="date" id="gantt-date" aria-label="选择排产日期" value="${day}"><button type="button" data-gantt="next" aria-label="后一天">›</button><button type="button" data-gantt="today">今天</button>${canEdit?'<button type="button" data-gantt="optimize" class="gantt-optimize">整理未发布排程</button>':''}<button type="button" data-gantt="add" class="gantt-add" ${canEdit?'':'disabled title="无权修改排程"'}>+ 新建任务</button></div></header>
+   <div class="gantt-legend">${legend}<span class="gantt-count">当天 ${n} 项任务${conflictCount?' · '+conflictCount+' 对冲突':''}</span></div>
+   ${warning}
    <div class="gantt-scroll" tabindex="0" aria-label="可左右滚动的排产甘特图"><div class="gantt-canvas"><div class="gantt-head"><div class="gantt-lane gantt-lane-title">产线 / 工位</div><div class="gantt-hours">${times}</div></div>${rows}</div></div>
-   <div class="gantt-foot"><strong>非生产任务：</strong>清洗、调机调线均有独立任务、开工、完工及复核；不计入生产产量。<strong>生产任务：</strong>配制、包装。QC 检验和 QA 放行按各自工位安排。同一工位时间冲突时不允许保存。</div>
+   <div class="gantt-foot"><strong>排程规则：</strong>同一工位不能同时执行两项任务；自动试排依次考虑清洗、配制、检验、调机调线、包装与放行，优先寻找空闲工位。整理仅调整未发布订单，正式排程及已开工任务不会自动移动。</div>
  </section>`;
 }
 function showError(msg){const el=$('#gantt-error');if(el){el.textContent=msg;el.hidden=false;}}
