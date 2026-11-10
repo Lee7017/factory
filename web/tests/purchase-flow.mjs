@@ -256,6 +256,64 @@ try {
     "Low-risk PO skips extra departmental approval")
   await page.evaluate(()=>window.FactoryFlowUI?.dismiss?.())
   await page.screenshot({path:"test-results/purchase-05-standard.png"})
+
+  // 小明拥有固定 developer 岗位，任何部门都可以测试；普通员工的相互审批限制不变。
+  await asEmployee("E012")
+  const devRights=await page.evaluate(()=>{
+    const a=window.FactoryAccess;
+    return {developer:a.isDeveloper(),role:a.assigned("E012").includes("developer"),
+      checks:[["pmc","kitting","execute"],["pmc","kitting","approve"],
+        ["purchase","purchase","edit"],["purchase","purchase","approve"],
+        ["finance","finance","approve"],["leadership","approvals","approve"],
+        ["warehouse","warehouseOps","create"],["quality","qaQc","approve"],
+        ["it","permissions","config"]].map(x=>a.has(...x))}
+  })
+  assert.equal(devRights.developer,true,"Xiaoming retains developer role")
+  assert.equal(devRights.role,true)
+  assert.ok(devRights.checks.every(Boolean),"Developer is authorized across all departments")
+  await navigate("it","permissions")
+  await page.locator("#perm-employee").selectOption("E012")
+  assert.equal(await page.getByText("开发人员自动拥有所有部门的全部功能权限，无需逐项追加。").count(),1)
+  await page.screenshot({path:"test-results/purchase-07-developer-full-rights.png"})
+
+  await navigate("pmc","kitting")
+  await page.locator('[data-proc-action="newDirectPurchase"]').click()
+  form=page.locator("#proc-form")
+  await form.locator('[name="material"]').selectOption("RM-002")
+  await form.locator('[name="qty"]').fill("7")
+  await form.locator('[name="reason"]').fill("开发人员全流程测试")
+  await form.locator('button[type="submit"]').click()
+  const devPo=(await getData()).ops.purchases.find(p=>p.material==="RM-002"&&p.qty===7&&p.createdBy==="E012")
+  assert.equal(devPo.status,"待PMC确认")
+  await page.evaluate(()=>window.FactoryFlowUI?.dismiss?.())
+  await page.locator(`[data-proc-action="approvePmcPurchase"][data-proc-id="${devPo.id}"]`).click()
+  assert.equal((await getData()).ops.purchases.find(p=>p.id===devPo.id).status,"待采购填写",
+    "Developer may confirm own test requisition")
+  await page.evaluate(()=>window.FactoryFlowUI?.dismiss?.())
+  await navigate("purchase","purchase")
+  await page.locator(`[data-proc-action="editPurchase"][data-proc-id="${devPo.id}"]`).click()
+  form=page.locator("#proc-form")
+  await form.locator('[name="supplier"]').fill("开发测试供应商")
+  await form.locator('[name="unitPrice"]').fill("2500")
+  await form.locator('button[type="submit"]').click()
+  const pricedDevPo=(await getData()).ops.purchases.find(p=>p.id===devPo.id)
+  assert.equal(pricedDevPo.totalAmount,17500)
+  assert.equal(pricedDevPo.status,"待采购主管审批")
+  assert.equal(pricedDevPo.approvalPlan.finance,true)
+  assert.equal(pricedDevPo.approvalPlan.leadership,true)
+  await page.evaluate(()=>window.FactoryFlowUI?.dismiss?.())
+  await page.locator(`[data-proc-action="approve"][data-proc-id="${devPo.id}"]`).click()
+  assert.equal((await getData()).ops.purchases.find(p=>p.id===devPo.id).status,"待财务审核")
+  await page.evaluate(()=>window.FactoryFlowUI?.dismiss?.())
+  await navigate("finance","finance")
+  await page.locator(`[data-proc-action="approveFinance"][data-proc-id="${devPo.id}"]`).click()
+  assert.equal((await getData()).ops.purchases.find(p=>p.id===devPo.id).status,"待总经办审批")
+  await page.evaluate(()=>window.FactoryFlowUI?.dismiss?.())
+  await navigate("leadership","approvals")
+  await page.locator(`[data-proc-action="approveLeadership"][data-proc-id="${devPo.id}"]`).click()
+  assert.equal((await getData()).ops.purchases.find(p=>p.id===devPo.id).status,"待到货")
+  await page.evaluate(()=>window.FactoryFlowUI?.dismiss?.())
+  await page.screenshot({path:"test-results/purchase-08-developer-cross-department.png"})
   assert.deepEqual(errors,[],"No uncaught errors during purchase, QC and stock receipt")
   console.log("PASS: purchase → separate approval → receiving → QC → qualified inventory, single batch, no double posting")
 }catch(e){failed=true;console.error(e)}finally{await browser?.close();server.kill("SIGTERM")}

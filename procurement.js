@@ -22,6 +22,7 @@ const available=()=>orders().filter(p=>['待到货','部分到货','到货处理
 const button=(text,action,record='',style='')=>`<button type="button" class="proc-btn ${style}" data-proc-action="${esc(action)}" data-proc-id="${esc(record)}">${esc(text)}</button>`;
 const tag=s=>`<span class="proc-status ${['已入库','已通过','合格待入库'].includes(s)?'is-done':''}">${esc(s)}</span>`;
 const authorized=cap=>ctx.access.has(...cap);
+const isDeveloper=()=>ctx.access.isDeveloper?.()===true;
 
 const requests=()=>O.state.purchaseRequests??(O.state.purchaseRequests=[]);
 const rules=()=>O.state.procurementPolicy??(O.state.procurementPolicy={
@@ -39,9 +40,9 @@ function approvalPlan(p){
  const leadership=overBudget||newSupplier||Boolean(p.urgent)||total>=rule.leadershipLimit;
  return {finance,leadership,overBudget,newSupplier,budgetUnset:budget===null,financeLimit:rule.financeLimit,leadershipLimit:rule.leadershipLimit};
 }
-const canPmcReview=r=>r?.status==='待PMC确认'&&r.createdBy&&r.createdBy!==user().id&&authorized(['pmc','kitting','approve']);
-const canPurchaseApprove=p=>p?.status==='待采购主管审批'&&p.purchaseId&&p.purchaseId!==user().id&&p.pmcConfirmedAt&&validNumber(p.totalAmount)&&authorized(['purchase','purchase','approve']);
-const canDepartmentApprove=(p,dept)=>p?.status===(dept==='finance'?'待财务审核':'待总经办审批')&&p.createdBy&&p.createdBy!==user().id&&p.approvedId!==user().id&&p.financeId!==user().id&&authorized(dept==='finance'?['finance','finance','approve']:['leadership','approvals','approve']);
+const canPmcReview=r=>r?.status==='待PMC确认'&&authorized(['pmc','kitting','approve'])&&(isDeveloper()||(r.createdBy&&r.createdBy!==user().id));
+const canPurchaseApprove=p=>p?.status==='待采购主管审批'&&p.purchaseId&&p.pmcConfirmedAt&&validNumber(p.totalAmount)&&authorized(['purchase','purchase','approve'])&&(isDeveloper()||p.purchaseId!==user().id);
+const canDepartmentApprove=(p,dept)=>p?.status===(dept==='finance'?'待财务审核':'待总经办审批')&&authorized(dept==='finance'?['finance','finance','approve']:['leadership','approvals','approve'])&&(isDeveloper()||(p.createdBy&&p.createdBy!==user().id&&p.approvedId!==user().id&&p.financeId!==user().id));
 function pmcQueue(){
  const items=orders().filter(p=>p.status==='待PMC确认');if(!items.length)return '';
  const rows=items.map(p=>`<tr class="biz-order-row"><td><strong>${esc(p.id)}</strong></td><td>${esc(p.material)}</td><td>${money(p.qty)}</td><td>${tag(p.status)}</td><td><div class="proc-actions">${button('查看采购单','viewPurchase',p.id)}${canPmcReview(p)?button('确认采购单','approvePmcPurchase',p.id,'primary')+button('退回','rejectPmcPurchase',p.id):''}</div></td></tr>`).join('');

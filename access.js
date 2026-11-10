@@ -112,7 +112,9 @@ if(!state.purchaseEditPermissionMigratedV1){
  for(const role of ['purchase','purchase_manager']){const rights=state.positionRights[role]||[];if(rights.includes('purchase.purchase.create')&&!rights.includes('purchase.purchase.edit'))rights.push('purchase.purchase.edit');state.positionRights[role]=rights}
  state.purchaseEditPermissionMigratedV1=true;try{localStorage.setItem(storage,JSON.stringify(state))}catch{}
 }
-let selectedEmployee='E020',selectedPosition='production',selectedDept='production';
+// 预置开发人员岗位固定存在；历史浏览器里的岗位保存值不能覆盖小明。
+state.assigned.E012=[...new Set([...(state.assigned.E012||[]),'developer'])];
+let selectedEmployee=state.current,selectedPosition=(state.assigned[state.current]||[])[0]||'employee',selectedDept=state.current==='E012'?'it':'production';
 let departments=[],features={};
 const save=()=>{try{localStorage.setItem(storage,JSON.stringify(state))}catch{}};
 function init(depts,featureNames){departments=depts;features=featureNames}
@@ -122,9 +124,11 @@ const assigned=id=>state.assigned[id]||[];
 const own=id=>state.extra[id]||[];
 const position=id=>positions.find(p=>p.id===id);
 const roleKeys=id=>state.positionRights[id]||[];
-function sources(personId,key){const ids=assigned(personId);if(ids.includes('developer'))return {viaJob:true,viaPersonal:false,developer:true};return {viaJob:ids.some(id=>roleKeys(id).includes(key)),viaPersonal:own(personId).includes(key),developer:false}}
+const isDeveloper=(id=state.current)=>assigned(id).includes('developer');
+function sources(personId,key){const ids=assigned(personId);if(isDeveloper(personId))return {viaJob:true,viaPersonal:false,developer:true};return {viaJob:ids.some(id=>roleKeys(id).includes(key)),viaPersonal:own(personId).includes(key),developer:false}}
 function hasFor(personId,dept,feat,action='view'){
   if(!departments.some(d=>d.id===dept&&d.features.includes(feat)))return false;
+  if(isDeveloper(personId))return true; // 开发人员自动拥有所有已注册功能的全部操作权限
   // PMC may inspect procurement progress without permission to edit or approve POs.
   if(dept==='purchase'&&feat==='purchase'&&action==='view'&&assigned(personId).some(p=>p==='pmc'||p==='pmc_manager'))return true;
   const key=`${dept}.${feat}.${action}`;
@@ -138,7 +142,7 @@ function hasFor(personId,dept,feat,action='view'){
 const has=(dept,feat,action='view')=>hasFor(state.current,dept,feat,action);
 const canEdit=()=>has('it','permissions','config');
 function switchCurrent(id){if(!staff.some(p=>p.id===id))return false;state.current=id;save();return true}
-function updateSelection(key,value){if(key==='employee'&&staff.some(p=>p.id===value))selectedEmployee=value;
+function updateSelection(key,value){if(key==='employee'&&staff.some(p=>p.id===value)){selectedEmployee=value;selectedPosition=isDeveloper(value)?'developer':(assigned(value)[0]||selectedPosition)}
   if(key==='position'&&positions.some(p=>p.id===value))selectedPosition=value;
   if(key==='dept'&&departments.some(d=>d.id===value))selectedDept=value;
 }
@@ -159,7 +163,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const setSelect=(id,values,value)=>`<select class="field" id="${id}">${values.map(([v,n])=>`<option value="${esc(v)}" ${v===value?'selected':''}>${esc(n)}</option>`).join('')}</select>`;
 function render(){
  const rolesExpanded=!!document.querySelector('.access-role-details[open]');
- const employee=person(selectedEmployee), employed=assigned(employee.id), modifiable=canEdit();
+ const employee=person(selectedEmployee), employed=assigned(employee.id), modifiable=canEdit(),developerEmployee=isDeveloper(employee.id);
  const rows=permissionRows(), active=position(selectedPosition);
  const keys=[...new Set(departments.flatMap(d=>d.features.flatMap(f=>(capabilities[f]||['view']).map(a=>`${d.id}.${f}.${a}`))))];
  const count=keys.filter(key=>{let [d,f,a]=key.split('.');return hasFor(employee.id,d,f,a)}).length;
@@ -168,13 +172,13 @@ function render(){
   const src=sources(employee.id,r.key),effective=src.developer||src.viaJob||src.viaPersonal;
   const personal=own(employee.id).includes(r.key),pos=roleKeys(selectedPosition).includes(r.key);
   const origin=src.developer?'开发人员':src.viaJob&&src.viaPersonal?'岗位 + 个人':src.viaJob?'岗位权限':src.viaPersonal?'个人权限':'—';
-  return `<tr><td><strong>${esc(r.name)}</strong></td><td>${esc(actionNames[r.action])}</td><td><button class="permission-toggle ${pos||selectedPosition==='developer'?'granted':''}" data-access-role="${esc(r.key)}" aria-pressed="${pos||selectedPosition==='developer'}" ${!modifiable||selectedPosition==='developer'?'disabled':''}>${selectedPosition==='developer'?'全部':pos?'已授权':'未授权'}</button></td><td><button class="permission-toggle ${personal?'granted':''}" data-access-personal="${esc(r.key)}" aria-pressed="${personal}" ${!modifiable?'disabled':''}>${personal?'已追加':'未追加'}</button></td><td><span class="tag ${effective?'dark':''}">${effective?'可用':'无权限'}</span></td><td><span class="permission-source">${origin}</span></td></tr>`
+  return `<tr><td><strong>${esc(r.name)}</strong></td><td>${esc(actionNames[r.action])}</td><td><button class="permission-toggle ${pos||selectedPosition==='developer'?'granted':''}" data-access-role="${esc(r.key)}" aria-pressed="${pos||selectedPosition==='developer'}" ${!modifiable||selectedPosition==='developer'?'disabled':''}>${selectedPosition==='developer'?'全部':pos?'已授权':'未授权'}</button></td><td><button class="permission-toggle ${developerEmployee||personal?'granted':''}" data-access-personal="${esc(r.key)}" aria-pressed="${developerEmployee||personal}" ${!modifiable||developerEmployee?'disabled':''}>${developerEmployee?'无需追加':personal?'已追加':'未追加'}</button></td><td><span class="tag ${effective?'dark':''}">${effective?'可用':'无权限'}</span></td><td><span class="permission-source">${origin}</span></td></tr>`
  }).join('');
  const assignedRows=employed.map(id=>{const p=position(id);let locked=id==='developer'&&(!canChangeDeveloper()||employee.id==='E012');return `<button data-access-assign="${esc(id)}" ${!modifiable||locked?'disabled':''} title="${locked?'固定岗位':'点击移除此岗位'}"><b>${esc(p?.name||id)}</b><span>${locked?'固定':'×'}</span></button>`}).join('');
  const options=positions.filter(p=>!employed.includes(p.id)).map(p=>`<button type="button" data-access-assign="${esc(p.id)}" ${!modifiable||(p.id==='developer'&&!canChangeDeveloper())?'disabled':''}>${esc(p.name)}</button>`).join('');
  return `<div class="access-workbench">
   <section class="panel access-side"><div class="access-side-head"><h2>员工与岗位</h2></div><div class="access-content"><label class="access-field-label" for="perm-employee">选择员工</label>${setSelect('perm-employee',staff.map(p=>[p.id,`${p.name} · ${p.title}`]),selectedEmployee)}<div class="access-selected-user"><span class="avatar">${esc(employee.name.slice(-1))}</span><div><strong>${esc(employee.name)}</strong><small>${esc(employee.id)} · ${esc(employee.dept)}</small></div></div><h3>当前兼任岗位</h3><div class="access-assigned-list">${assignedRows||'<div class="small-note">尚未分配岗位</div>'}</div><details class="access-role-details" ${rolesExpanded?'open':''}><summary>增加或调整岗位</summary><div class="access-role-options">${options||'<span class="small-note">已拥有全部岗位</span>'}</div></details><div class="access-rights-count"><span>有效操作权限</span><div><strong>${count}</strong><span> / ${keys.length}</span></div></div></div></section>
-  <section class="panel access-main"><div class="access-main-head"><h2>操作权限</h2><span>岗位权限 ∪ 个人权限</span></div><div class="access-tools"><label>正在编辑的岗位模板${setSelect('perm-position',positions.map(p=>[p.id,p.name]),selectedPosition)}</label><label>业务部门${setSelect('perm-dept',departments.map(d=>[d.id,d.name]),selectedDept)}</label></div><div class="access-description">修改「岗位模板」会影响该岗位全部员工；「个人追加」只影响 <b>${esc(employee.name)}</b>。${selectedJob?.id==='developer'?' 开发人员岗位拥有全部权限。':''}</div><div class="access-mobile-hint">向左滑动表格，查看个人授权与最终权限</div><div class="table-wrap"><table class="data-table access-table"><thead><tr><th>功能</th><th>操作</th><th>岗位：${esc(active?.name||'')}</th><th>个人追加</th><th>最终权限</th><th>来源</th></tr></thead><tbody>${rights||'<tr><td colspan="6">该部门没有可配置的功能</td></tr>'}</tbody></table></div><div class="access-footer-hint">一个员工可兼任多个岗位，最终权限为所有岗位权限与个人追加权限的并集。</div></section>
+  <section class="panel access-main"><div class="access-main-head"><h2>操作权限</h2><span>岗位权限 ∪ 个人权限</span></div><div class="access-tools"><label>正在编辑的岗位模板${setSelect('perm-position',positions.map(p=>[p.id,p.name]),selectedPosition)}</label><label>业务部门${setSelect('perm-dept',departments.map(d=>[d.id,d.name]),selectedDept)}</label></div><div class="access-description">${developerEmployee?'<strong>开发人员自动拥有所有部门的全部功能权限，无需逐项追加。</strong>':'修改「岗位模板」会影响该岗位全部员工；「个人追加」只影响 <b>'+esc(employee.name)+'</b>。'}${selectedJob?.id==='developer'?' 开发人员岗位拥有全部权限。':''}</div><div class="access-mobile-hint">向左滑动表格，查看个人授权与最终权限</div><div class="table-wrap"><table class="data-table access-table"><thead><tr><th>功能</th><th>操作</th><th>岗位：${esc(active?.name||'')}</th><th>个人追加</th><th>最终权限</th><th>来源</th></tr></thead><tbody>${rights||'<tr><td colspan="6">该部门没有可配置的功能</td></tr>'}</tbody></table></div><div class="access-footer-hint">一个员工可兼任多个岗位，最终权限为所有岗位权限与个人追加权限的并集。</div></section>
  </div>`;
 }
 function handleClick(el){if(!el||!canEdit())return false;
@@ -183,6 +187,6 @@ function handleClick(el){if(!el||!canEdit())return false;
  const personal=el.dataset.accessPersonal;if(personal)return togglePersonalPermission(selectedEmployee,personal);
  return false;
 }
-function reset(){state=fresh();save();selectedEmployee='E020';selectedPosition='production';selectedDept='production'}
-window.FactoryAccess={init,positions,staff,capabilities,actionNames,person,assigned,own,position,has,hasFor,canEdit,current,switchCurrent,updateSelection,render,handleClick,reset,get selectedDept(){return selectedDept},get selectedEmployee(){return selectedEmployee}};
+function reset(){state=fresh();save();selectedEmployee=state.current;selectedPosition='developer';selectedDept='it'}
+window.FactoryAccess={init,positions,staff,capabilities,actionNames,person,assigned,isDeveloper,own,position,has,hasFor,canEdit,current,switchCurrent,updateSelection,render,handleClick,reset,get selectedDept(){return selectedDept},get selectedEmployee(){return selectedEmployee}};
 })();
