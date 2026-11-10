@@ -166,7 +166,8 @@ function warehousePage(){const t=currentTab.warehouseOps||'batches';let content=
  content=note('按同物料最早入库批次优先；冻结、待检或过期批次排除')+grid(['领料单','物料 / 数量','推荐批次','状态','操作'],S.materialRequests.filter(x=>x.type==='领料').map(r=>{const allocations=allocateFIFO(r.material,r.qty);return row([esc(r.id),esc(r.material)+' / '+money(r.qty),esc(r.allocations?.map(x=>x.id+' × '+x.qty).join('、')||allocations?.map(x=>x.id+' × '+x.qty).join('、')||'暂无合格批次'),status(r.status),r.status==='待备料'?btn('按 FIFO 备料','prepare',r.id,'primary'):r.status==='待仓库签发'?btn('仓库签发','issueStock',r.id,'primary'):'—'])}));
  }else if(t==='outbound'){
  tools=completedOrderOptions().length?(permitted('warehouse','warehouseOps','execute')?btn('按销售订单出库','form:outbound','','primary'):'<span class="mw-muted">当前员工没有出库执行权限</span>'):'';
- const orderRows=ctx.data.orders.filter(o=>['dispatch','shipping','shipped','delivered'].includes(ops().flows[o.id]?.stage)||S.outbound.some(x=>x.order===o.id)).map(o=>{
+ const outboundOrders=ctx.data.orders.filter(o=>['dispatch','shipping','shipped','delivered'].includes(ops().flows[o.id]?.stage)||S.outbound.some(x=>x.order===o.id));
+ const orderRows=outboundOrders.map(o=>{
   const records=S.outbound.filter(x=>x.order===o.id);
   const sent=records.filter(x=>x.status==='已出库').reduce((n,x)=>n+Number(x.qty),0);
   const pending=records.filter(x=>x.status==='待出库');
@@ -182,10 +183,15 @@ function warehousePage(){const t=currentTab.warehouseOps||'batches';let content=
   const explanation=due>0?`${esc(o.product)}：${stockHint}${blockedHint}`:'已全部出库，等待客户收货确认';
   const act=btn('查看订单','viewOrder',o.id)+((stage==='dispatch'||stage==='shipping')&&allowed&&due>0?btn('按订单出库','form:outbound',o.id,'primary'):'')+(allowed?pending.map(r=>btn('继续旧出库记录','shipOutbound',r.id)).join(''):'');
   const currentStatus=stage==='shipping'?`部分发货（${money(sent)}/${money(expected)} 箱）`:o.status||'待处理';
-  return row([`<strong>${esc(o.id)}</strong>`,esc(o.product),money(expected)+' 箱',money(sent)+' 箱',money(due)+' 箱',money(available)+' 箱',money(shortage)+' 箱',status(currentStatus),`<span class="mw-muted">${explanation}</span>`,act]);
+  return row([`<strong>${esc(o.id)}</strong>`,esc(o.product),money(expected)+' 箱',money(sent)+' 箱',money(due)+' 箱',money(available)+' 箱',money(shortage)+' 箱',status(currentStatus),`<span class="mw-muted">${explanation}</span>`,act]).replace('<tr>',`<tr class="biz-order-row" data-order-status="${esc(currentStatus)}">`);
  });
  const shipmentRows=S.outbound.map(r=>row([esc(r.order),money(r.qty)+' 箱',esc(r.destination||'客户'),esc((r.allocations||[]).map(x=>x.id+' × '+x.qty).join('、')||'—'),esc(r.shippedAt||r.createdAt||'—'),status(r.status),btn('查看订单','viewOrder',r.order)]));
- content=dataSection('订单发货进度与缺口','逐单显示应发、已发、待发和缺货原因',grid(['销售订单','成品','应发数量','已发数量','待发数量','合格可发','库存缺口','订单状态','缺口说明','操作'],orderRows,'暂无待出库的销售订单'),tools)+dataSection('分批出库明细','每次出库按订单和批次留痕',grid(['销售订单','本次数量','客户 / 去向','成品批次','办理时间','状态','操作'],shipmentRows,'暂无出库记录')); tools='';
+ const stages=outboundOrders.map(o=>ops().flows[o.id]?.stage);
+ const stageCount=key=>stages.filter(x=>x===key).length;
+ const stats=[['待出库',stageCount('dispatch')],['部分发货',stageCount('shipping')],['已发货',stageCount('shipped')],['已交付',stageCount('delivered')]];
+ const statuses=outboundOrders.map(o=>ops().flows[o.id]?.stage==='shipping'?'部分发货（'+money(S.outbound.filter(r=>r.order===o.id&&r.status==='已出库').reduce((n,r)=>n+Number(r.qty),0))+'/'+money(finishedUnitsForOrder(o))+' 箱）':o.status||'待处理');
+ const orderTable=grid(['销售订单','成品','应发数量','已发数量','待发数量','合格可发','库存缺口','订单状态','缺口说明','操作'],orderRows,'暂无待出库的销售订单');
+ content=window.FactoryOrderListUI.panel({key:'warehouseOutbound',item:'发货销售订单',table:orderTable,toolbar:tools,stats,statuses,placeholder:'搜索销售订单号 / 成品'})+dataSection('分批出库明细','每次出库按订单和批次留痕',grid(['销售订单','本次数量','客户 / 去向','成品批次','办理时间','状态','操作'],shipmentRows,'暂无出库记录')); tools='';
  }else if(t==='returns'){
  content=note('退库确认后增加原批次结余并记录入库流水')+grid(['退库单','原批次','物料 / 数量','状态','操作'],S.materialRequests.filter(r=>r.type==='退库').map(r=>row([esc(r.id),esc(r.batch||'—'),esc(r.material)+' / '+money(r.qty),status(r.status),r.status==='待仓库接收'?btn('验收并退库','acceptReturn',r.id,'primary'):'—'])));
  }else{
