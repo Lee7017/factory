@@ -76,7 +76,52 @@ try {
           return [{selector,height:Math.round(r.height),top:Math.round(r.top),bottom:Math.round(r.bottom),minHeight:c.minHeight,padding:c.padding,display:c.display,flex:c.flex,overflow:c.overflow}]
         })
       })
-      visualAudit.push({department:dept,feature,...appearance,boxes})
+      // Shared visual rules must be checked on every route, not just on one sample page.
+      const layout=await page.evaluate(()=>{
+        const frame=document.querySelector(".business-page-frame")
+        const root=frame?.querySelector(".legacy-root")
+        const view=root?.querySelector("#view")
+        const command=view?.querySelector(".ops-workbench > .ops-command-row")
+        const workbench=view?.querySelector(".ops-workbench,.mw-page,.proc-page")
+        const main=frame?.querySelector(".business-page-body")
+        const toBox=element=>{
+          if(!element)return null
+          const r=element.getBoundingClientRect()
+          return {top:r.top,bottom:r.bottom,height:r.height,left:r.left,right:r.right}
+        }
+        const f=toBox(frame),m=toBox(main),w=toBox(workbench),c=toBox(command)
+        const gapToTable=command?.nextElementSibling?.matches(".op-table-wrap")
+          ?toBox(command.nextElementSibling).top-c.bottom:null
+        const buttons=[...(command?.querySelectorAll("button")??[])]
+          .filter(el=>getComputedStyle(el).display!=="none")
+        const b=buttons[0]?toBox(buttons[0]):null
+        const h=command?.querySelector(".business-help")
+        const help=h?toBox(h):null
+        return {
+          frameBackground:frame?getComputedStyle(frame).backgroundColor:null,
+          frameBorder:frame?getComputedStyle(frame).borderTopWidth:null,
+          firstContentGap:f&&w?Math.round(w.top-f.top):f&&m?Math.round(m.top-f.top):null,
+          commandHeight:c?Math.round(c.height):null,
+          commandTableGap:gapToTable===null?null:Math.round(gapToTable),
+          commandAlignment:b&&help?Math.round(Math.abs((b.top+b.bottom-help.top-help.bottom)/2)):null,
+          hasDetachedToolbar:!!view?.querySelector(".ops-workbench > .ops-heading"),
+          hasDetachedHelp:!!view?.querySelector(".ops-workbench > .business-help"),
+          legacyCssLinks:document.querySelectorAll('link[href*="legacy-business.css"]').length
+        }
+      })
+      if(layout.legacyCssLinks!==1)missing.push(`${name}: ${feature} legacy CSS must be loaded once in document head`)
+      if(layout.frameBorder!=="0px")missing.push(`${name}: ${feature} duplicate outer card border`)
+      if(layout.firstContentGap!==null&&layout.firstContentGap>85)
+        missing.push(`${name}: ${feature} has ${layout.firstContentGap}px blank top area`)
+      if(layout.commandHeight!==null&&layout.commandHeight>62)
+        missing.push(`${name}: ${feature} command row too tall (${layout.commandHeight}px)`)
+      if(layout.commandTableGap!==null&&(layout.commandTableGap<0||layout.commandTableGap>22))
+        missing.push(`${name}: ${feature} command/table gap ${layout.commandTableGap}px`)
+      if(layout.commandAlignment!==null&&layout.commandAlignment>20)
+        missing.push(`${name}: ${feature} action/help alignment off by ${layout.commandAlignment}px`)
+      if(layout.hasDetachedToolbar||layout.hasDetachedHelp)
+        missing.push(`${name}: ${feature} still has split legacy toolbar/help`)
+      visualAudit.push({department:dept,feature,...appearance,boxes,layout})
       if(dept==="purchase"&&feature==="purchase")console.log("PURCHASE LAYOUT AUDIT",JSON.stringify(boxes))
       await page.screenshot({
         path:`test-results/business-${dept}-${feature}.jpg`,
