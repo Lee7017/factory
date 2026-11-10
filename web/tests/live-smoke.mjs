@@ -69,6 +69,27 @@ try{
   await page.waitForTimeout(1900)
   await page.screenshot({path:"test-results/live-current-step-dialog.png"})
   await currentButton.screenshot({path:"test-results/live-current-step-button.png"})
+  // Verify four 176px cards are visible side-by-side at a typical desktop width.
+  await page.setViewportSize({width:1024,height:768})
+  const cardLayout=await dialog.locator(".journey-snake-scroll").evaluate(el=>{
+    const viewport=el.getBoundingClientRect()
+    const cards=Array.from(el.querySelectorAll(".journey-snake-position")).slice(0,4)
+    return {
+      widths:cards.map(card=>card.getBoundingClientRect().width),
+      fullyVisible:cards.every(card=>{
+        const bounds=card.getBoundingClientRect()
+        return bounds.left>=viewport.left-1&&bounds.right<=viewport.right+1
+      })
+    }
+  })
+  assert.equal(cardLayout.widths.length,4,"Flow must have four cards in the first row")
+  assert.ok(cardLayout.widths.every(width=>Math.abs(width-176)<1),
+    "Card width must be 176px, exactly 20% less than before")
+  assert.ok(cardLayout.fullyVisible,"All four cards must fit without horizontal clipping at 1024px")
+  await dialog.evaluate(el=>{el.scrollTop=0})
+  await page.screenshot({path:"test-results/live-four-cards-1024.png"})
+  await page.setViewportSize({width:1440,height:900})
+
   assert.equal((await currentButton.textContent())?.trim(),"跟踪当前环节 →",
     "Running card has one combined '跟踪当前环节' action")
   assert.equal(await dialog.locator(".journey-card.is-current .journey-state").count(),0,

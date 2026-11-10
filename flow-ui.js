@@ -154,7 +154,7 @@ function makeCard(step,i,state,history){const [dept,act]=step,record=lastStepRec
  ${['current','complete'].includes(state)?'<svg class="journey-marquee" aria-hidden="true"><rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)" rx="12"/></svg>':''}</div>`}
 // 所有单据共用同一条顺时针闭合路线。只有历史上确实发生退回时才绘制回环。
 function snakeOfCards(steps,kind,stage,history){
- const cols=4,cardW=220,cardH=122,gapX=36,gapY=72,padX=34,padY=34;
+ const cols=4,cardW=176,cardH=122,gapX=36,gapY=72,padX=34,padY=34;
  const rows=Math.ceil(steps.length/cols),width=padX*2+cols*cardW+(cols-1)*gapX,height=padY*2+rows*cardH+Math.max(0,rows-1)*gapY;
  const pos=steps.map((_,i)=>{const row=Math.floor(i/cols),slot=i%cols,col=row%2===0?slot:cols-1-slot;return {row,col,x:padX+col*(cardW+gapX),y:padY+row*(cardH+gapY)}});
  const states=steps.map((_,i)=>stepState(i,kind,stage)),currentIndex=states.indexOf('current'),arrivalConnector=currentIndex>0?currentIndex-1:-1;
