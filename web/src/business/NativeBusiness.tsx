@@ -69,7 +69,6 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     void getBusinessRuntime().then(runtime=>runtime.submit(event.nativeEvent))
   }
   return <section className="native-business" aria-label="业务工作区">
-    <link rel="stylesheet" href={`${import.meta.env.BASE_URL}legacy-business.css`}/>
     {status==="loading"&&<div className="glass-panel flex items-center gap-3 rounded-xl p-5 text-sm text-muted-foreground" role="status">
       <LoaderCircle className="size-4 animate-spin"/>正在加载业务表单和原有权限规则…
     </div>}
