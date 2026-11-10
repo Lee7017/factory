@@ -16,9 +16,9 @@ export function StatusBadge({value}:{value:string}){
   const done=/已通过|已完成|已入库|已核准|已发布|合格|已放行|审核通过/.test(value)
   return <Badge variant={danger?"destructive":done?"secondary":"outline"} className="whitespace-nowrap text-[11px]">{value}</Badge>
 }
-export function DataTable<T>({rows,columns,rowKey,placeholder="搜索记录…",pageSize=10,empty="暂无记录"}:{
+export function DataTable<T>({rows,columns,rowKey,placeholder="搜索记录…",pageSize=10,empty="暂无记录",actions}:{
   rows:T[];columns:Column<T>[];rowKey:(row:T)=>string;
-  placeholder?:string;pageSize?:number;empty?:string
+  placeholder?:string;pageSize?:number;empty?:string;actions?:ReactNode
 }){
   const [query,setQuery]=useState("")
   const [sort,setSort]=useState<{key:string;desc:boolean}|null>(null)
@@ -39,13 +39,16 @@ export function DataTable<T>({rows,columns,rowKey,placeholder="搜索记录…",
   },[rows,columns,query,sort])
   const pages=Math.max(1,Math.ceil(result.length/pageSize))
   const current=Math.min(page,pages-1)
-  return <div className="space-y-3">
-    <div className="relative w-full max-w-72">
-      <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/>
-      <Input value={query} onChange={e=>{setQuery(e.target.value);setPage(0)}}
-        className="bg-white/70 pl-9 text-xs" placeholder={placeholder} aria-label="搜索业务记录"/>
+  return <div className="business-native-list">
+    <div className="business-native-list-toolbar">
+      <div className="relative w-full max-w-72">
+        <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/>
+        <Input value={query} onChange={e=>{setQuery(e.target.value);setPage(0)}}
+          className="bg-white/70 pl-9 text-xs" placeholder={placeholder} aria-label="搜索业务记录"/>
+      </div>
+      {actions&&<div className="business-native-list-actions">{actions}</div>}
     </div>
-    <div className="overflow-hidden rounded-xl border border-border/70 bg-white/55">
+    <div className="business-native-list-table">
       <Table>
         <TableHeader><TableRow>
           {columns.map(c=><TableHead key={c.key} className="text-xs">
@@ -61,7 +64,7 @@ export function DataTable<T>({rows,columns,rowKey,placeholder="搜索记录…",
         </TableBody>
       </Table>
     </div>
-    <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+    <div className="business-native-list-footer">
       <span>共 {result.length} 条 · 第 {current+1}/{pages} 页</span>
       <div className="flex gap-1">
         <Button variant="outline" size="icon-xs" disabled={current===0} onClick={()=>setPage(current-1)} aria-label="上一页"><ChevronLeft size={14}/></Button>
