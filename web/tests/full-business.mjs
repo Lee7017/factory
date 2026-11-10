@@ -67,7 +67,17 @@ try {
         missing.push(`${name}: ${feature} missing shared business frame`)
       if(appearance?.horizontalOverflow)missing.push(`${name}: ${feature} causes horizontal page overflow`)
       if(!appearance?.infoButton)missing.push(`${name}: ${feature} missing topbar info button`)
-      visualAudit.push({department:dept,feature,...appearance})
+      const boxes=await page.evaluate(()=>{
+        const selectors=[".shell-content",".business-page-frame",".business-page-body",".legacy-root",".legacy-workbench",".ops-workbench",".proc-page",".proc-top",".proc-approval-banner",".op-table-wrap",".op-table",".mw-page",".mw-content",".mw-table-scroll"]
+        return selectors.flatMap(selector=>{
+          const element=document.querySelector(selector)
+          if(!element)return []
+          const r=element.getBoundingClientRect(),c=getComputedStyle(element)
+          return [{selector,height:Math.round(r.height),top:Math.round(r.top),bottom:Math.round(r.bottom),minHeight:c.minHeight,padding:c.padding,display:c.display,flex:c.flex,overflow:c.overflow}]
+        })
+      })
+      visualAudit.push({department:dept,feature,...appearance,boxes})
+      if(dept==="purchase"&&feature==="purchase")console.log("PURCHASE LAYOUT AUDIT",JSON.stringify(boxes))
       await page.screenshot({
         path:`test-results/business-${dept}-${feature}.jpg`,
         type:"jpeg",quality:55,fullPage:false
