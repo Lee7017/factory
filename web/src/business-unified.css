@@ -90,12 +90,12 @@
   background:transparent!important;box-shadow:none!important;
   border:0!important;border-radius:0!important;
   border-right:1px solid var(--biz-line)!important;
-  min-width:0;min-height:78px;padding:12px 14px!important;
+  min-width:0;min-height:64px;padding:8px 12px!important;
   gap:4px;
 }
 .native-business .legacy-root :is(.mw-metric,.mw-snapshot):last-child {border-right:0!important}
 .native-business .legacy-root :is(.mw-metric,.mw-snapshot) strong {
-  color:#31523b;font-size:23px;font-weight:760
+  color:#31523b;font-size:20px;font-weight:760
 }
 .native-business .legacy-root :is(.mw-metric,.mw-snapshot) :is(span,small) {color:var(--biz-muted)}
 /* Tables form a single bounded surface, with no card surrounding the card. */
