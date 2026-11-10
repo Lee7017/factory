@@ -121,22 +121,23 @@ function pendingForDept(dept){const out=[];const push=(arr,feature,k,filter,titl
  return out;}
 function qualityPage(){const t=currentTab.qaQc||'decision';let content='',toolbar='';
  if(t==='decision'){
- toolbar=btn('新建报检单','form:inspection','','primary');
- content=note('生产流程到“配制报检 / 包装报检”后会自动生成对应报检单；这里是实际 QC 判定入口。')+grid(['报检单','阶段','关联订单','对象','批次','状态','处理'],S.inspections.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.phase||'来料'),esc(r.order||'—'),esc(r.material||'—'),esc(r.batch||'—'),status(r.status),r.status==='待判定'?btn('判定合格','qc:pass',r.id,'primary')+btn('判定不合格','qc:fail',r.id):esc(r.result||'已记录')])));
+  const action=btn('新建报检单','form:inspection','','primary');
+  const metrics=[['报检判定',S.inspections.filter(r=>r.status==='待判定').length],['抽检',S.samples.filter(r=>r.status==='待判定').length],['清洗报检',S.cleanReports.filter(r=>r.status==='待判定').length],['不合格品处置',S.ncr.filter(r=>r.status==='待处置').length],['质量库存',S.batches.filter(b=>b.quality==='冻结').length]];
+  const table=grid(['报检单','阶段','关联订单','对象','批次','状态','处理'],S.inspections.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.phase||'来料'),esc(r.order||'—'),esc(r.material||'—'),esc(r.batch||'—'),status(r.status),r.status==='待判定'?btn('判定合格','qc:pass',r.id,'primary')+btn('判定不合格','qc:fail',r.id):esc(r.result||'已记录')])));
+  content=`<section class="mw-quality-surface"><div class="mw-quality-command"><div class="mw-quality-status">${metrics.map(([label,value])=>`<div class="mw-quality-status-item"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join('')}</div><div class="mw-actions">${action}</div></div>${table}</section>`;
  }else if(t==='sampling'){
- toolbar=btn('发起抽检','form:sample','','primary');
- content=note('抽检异常自动生成不合格品处置单')+grid(['抽检单','抽检对象','项目','数量','结论','操作'],S.samples.map(r=>row([esc(r.id),esc(r.batch||r.material),esc(r.item),esc(r.qty),status(r.status),r.status==='待判定'?btn('合格','sample:pass',r.id,'primary')+btn('不合格','sample:fail',r.id):'—'])));
+  toolbar=btn('发起抽检','form:sample','','primary');
+  content=grid(['抽检单','抽检对象','项目','数量','结论','操作'],S.samples.map(r=>row([esc(r.id),esc(r.batch||r.material),esc(r.item),esc(r.qty),status(r.status),r.status==='待判定'?btn('合格','sample:pass',r.id,'primary')+btn('不合格','sample:fail',r.id):'—'])));
  }else if(t==='clean'){
- toolbar=btn('新建清洗报检','form:clean','','primary');
- content=note('清洗为独立非生产任务；检验通过后才能复核完工')+grid(['报检单','清洗工单','产线','结论','操作'],S.cleanReports.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.task),esc(r.line),status(r.status),r.status==='待判定'?btn('合格','clean:pass',r.id,'primary')+btn('不合格','clean:fail',r.id):'—'])));
+  toolbar=btn('新建清洗报检','form:clean','','primary');
+  content=grid(['报检单','清洗工单','产线','结论','操作'],S.cleanReports.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.task),esc(r.line),status(r.status),r.status==='待判定'?btn('合格','clean:pass',r.id,'primary')+btn('不合格','clean:fail',r.id):'—'])));
  }else if(t==='ncr'){
- toolbar=btn('登记不合格品','form:ncr','','primary');
- content=note('隔离、返洗、返工、报废有独立处置记录')+grid(['处置单','来源','关联对象','问题','状态','操作'],S.ncr.map(r=>row([esc(r.id),esc(r.source),esc(r.ref),esc(r.reason),status(r.status),r.status==='待处置'?btn('处置','dispose',r.id,'primary'):esc(r.disposal||'—')])));
+  toolbar=btn('登记不合格品','form:ncr','','primary');
+  content=grid(['处置单','来源','关联对象','问题','状态','操作'],S.ncr.map(r=>row([esc(r.id),esc(r.source),esc(r.ref),esc(r.reason),status(r.status),r.status==='待处置'?btn('处置','dispose',r.id,'primary'):esc(r.disposal||'—')])));
  }else{
- content=note('未经放行或冻结的批次不能参与正常发料')+grid(['批次号','物料','数量','有效期','质量状态','操作'],S.batches.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.material),money(r.qty)+' '+esc(r.unit||''),esc(r.expiry||'—'),status(r.quality),btn(r.quality==='冻结'?'解除冻结':'冻结批次','toggleFreeze',r.id)])));
+  content=grid(['批次号','物料','数量','有效期','质量状态','操作'],S.batches.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.material),money(r.qty)+' '+esc(r.unit||''),esc(r.expiry||'—'),status(r.quality),btn(r.quality==='冻结'?'解除冻结':'冻结批次','toggleFreeze',r.id)])));
  }
- const count=t==='decision'?cards([['报检判定',S.inspections.filter(r=>r.status==='待判定').length,'待处理'],['抽检',S.samples.filter(r=>r.status==='待判定').length,'待处理'],['清洗报检',S.cleanReports.filter(r=>r.status==='待判定').length,'待处理'],['不合格品处置',S.ncr.filter(r=>r.status==='待处置').length,'待处理'],['质量库存',S.batches.filter(b=>b.quality==='冻结').length,'冻结批次']]):'';
- return wrap('qaQc','质量检验及审批','报检判定、抽检、清洗报检、不合格处置与质量库存',toolbar,content,count);
+ return wrap('qaQc','质量检验及审批','报检判定、抽检、清洗报检、不合格处置与质量库存',toolbar,content);
 }
 function workshopPage(){const t=currentTab.workshop||'request';let content='',tools='';
  if(t==='request'){
