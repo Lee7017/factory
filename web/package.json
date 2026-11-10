@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "typecheck": "npm run prepare:legacy && tsc --noEmit",
     "test:smoke": "node tests/smoke.mjs",
+    "test:overview": "node tests/overview-dashboard.mjs",
     "test:full": "node tests/full-business.mjs",
     "test:purchase": "node tests/purchase-flow.mjs",
     "test:current": "node tests/current-data.mjs",
