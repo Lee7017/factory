@@ -33,7 +33,7 @@ try{
   const operations=window.FactoryOperations
   const modules=window.FactoryModules.state
   const a=operations.getOrder(first),b=operations.getOrder(second)
-  a.qty=3000;a.spec="5L × 4桶";b.qty=1200;b.spec="1L × 12瓶"
+  a.qty=3000;a.spec="5L × 4桶";b.spec="1L × 12瓶"
   operations.state.flows[first].stage="dispatch"
   operations.state.flows[second].stage="dispatch"
   a.status="待成品出库";b.status="待成品出库"
@@ -72,10 +72,10 @@ try{
  // Changing the sales order must immediately update the quantity and the order summary.
  await form.locator('[name="order"]').selectOption(second)
  assert.equal(await form.locator('[name="qty"]').inputValue(),"65",
-  "When qualified stock is short (65 vs 100 cases), prefill actual shippable quantity")
- assert.match(await form.locator('[data-outbound-summary]').textContent(),/订单应发.*100 箱/)
+  "When qualified stock is short (65 vs 150 cases), prefill actual shippable quantity")
+ assert.match(await form.locator('[data-outbound-summary]').textContent(),/订单应发.*150 箱/)
  assert.match(await form.locator('[data-outbound-summary]').textContent(),/合格可发.*65 箱/)
- assert.match(await form.locator('[data-outbound-summary]').textContent(),/仍缺 35 箱/)
+ assert.match(await form.locator('[data-outbound-summary]').textContent(),/仍缺 85 箱/)
  await page.screenshot({path:"test-results/outbound-03-change-order-and-stock-shortage.png"})
  await form.locator('[name="order"]').selectOption(first)
  assert.equal(await form.locator('[name="qty"]').inputValue(),"110",
