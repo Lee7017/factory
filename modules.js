@@ -331,7 +331,7 @@ function handleClick(node){const a=node.dataset.moduleAction||'',key=node.datase
  }
  if(a.startsWith('sample:')){const r=S.samples.find(x=>x.id===key);if(!r||r.status!=='待判定')return false;r.status=a.endsWith(':pass')?'合格':'不合格';const lot=getBatch(r.batch);if(lot&&r.status==='合格'){lot.quality='合格';if(!lot.counted){ops().stock[lot.material]=(ops().stock[lot.material]||0)+Number(lot.qty);lot.counted=true;audit('批次质量放行入账',lot.id,`${lot.material} +${lot.qty}`)}}if(r.status==='不合格')nonconform('抽检',r.id,r.batch,`${r.item}不合格`,r.qty);audit('抽检判定',r.id,r.status);save('抽检判定已保存。');return true}
  if(a.startsWith('clean:')){
-  if(!check('quality','qaCleanInspection','approve'))return true;
+  if(!check('quality','qaQc','approve'))return true;
   const r=S.cleanReports.find(x=>x.id===key);if(!r||r.status!=='待判定')return false;
   const passed=a.endsWith(':pass');r.status=passed?'合格':'不合格';r.checkedBy=me().name;r.checkedAt=stamp();
   const task=ctx.data.tasks.find(t=>t.id===r.task);
