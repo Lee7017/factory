@@ -164,7 +164,7 @@ function warehousePage(){const t=currentTab.warehouseOps||'batches';let content=
  }else if(t==='pick'){
  content=note('按同物料最早入库批次优先；冻结、待检或过期批次排除')+grid(['领料单','物料 / 数量','推荐批次','状态','操作'],S.materialRequests.filter(x=>x.type==='领料').map(r=>{const allocations=allocateFIFO(r.material,r.qty);return row([esc(r.id),esc(r.material)+' / '+money(r.qty),esc(r.allocations?.map(x=>x.id+' × '+x.qty).join('、')||allocations?.map(x=>x.id+' × '+x.qty).join('、')||'暂无合格批次'),status(r.status),r.status==='待备料'?btn('按 FIFO 备料','prepare',r.id,'primary'):r.status==='待仓库签发'?btn('仓库签发','issueStock',r.id,'primary'):'—'])}));
  }else if(t==='outbound'){
- tools=completedOrderOptions().length?(permitted('warehouse','warehouseOps','execute')?btn('按销售订单出库','form:outbound','','primary'):'<span class="mw-muted">当前员工没有出库执行权限</span>'):'<span class="mw-muted">暂无待出库的销售订单</span>';
+ tools=completedOrderOptions().length?(permitted('warehouse','warehouseOps','execute')?btn('按销售订单出库','form:outbound','','primary'):'<span class="mw-muted">当前员工没有出库执行权限</span>'):'';
  const orderRows=ctx.data.orders.filter(o=>['dispatch','shipping','shipped','delivered'].includes(ops().flows[o.id]?.stage)||S.outbound.some(x=>x.order===o.id)).map(o=>{
   const records=S.outbound.filter(x=>x.order===o.id);
   const sent=records.filter(x=>x.status==='已出库').reduce((n,x)=>n+Number(x.qty),0);
