@@ -121,15 +121,14 @@
 }
 
 /* Unified department/employee/action journey, used by both View Order and transition dialogs. */
-#flow-transition-host:has(.journey-dialog){background:transparent;z-index:105}
-.journey-dialog{width:min(1040px,calc(100vw - 36px));max-height:calc(100dvh - 36px);overflow:auto;padding:0!important;border-radius:17px;background:rgba(255,255,255,.94);border:1px solid rgba(255,255,255,.92);box-shadow:0 32px 110px rgba(25,33,48,.27);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);transform:none;opacity:1;animation:journey-appear .26s cubic-bezier(.2,.8,.2,1) both}
+#flow-transition-host:has(.journey-dialog){background:transparent;z-index:105;padding:16px;box-sizing:border-box}
+.journey-dialog{width:min(1040px,100%);min-width:0;max-height:calc(100dvh - 32px);overflow:auto;padding:0!important;border-radius:17px;background:rgba(255,255,255,.94);border:1px solid rgba(255,255,255,.92);box-shadow:0 32px 110px rgba(25,33,48,.27);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);transform:none;opacity:1;animation:journey-appear .26s cubic-bezier(.2,.8,.2,1) both}
 .journey-dialog *{box-sizing:border-box}
 .journey-dialog .journey-top{display:flex;justify-content:space-between;align-items:flex-start;padding:25px 30px 20px;gap:12px;background:linear-gradient(120deg,#f8f9fb,#fff);border-bottom:1px solid #e8ebef}
 .journey-eyebrow{font-size:11px;color:#738096;letter-spacing:1px;font-weight:750}
 .journey-top h2{color:#1d2734;font-size:22px;font-weight:770;line-height:1.38;letter-spacing:0;margin:8px 0 6px}
 .journey-top h2 span{color:#637082;font-size:18px;margin-left:7px;font-variant-numeric:tabular-nums}
 .journey-top p{color:#788393;margin:0;font-size:12px;line-height:1.6}
-.journey-close{border:1px solid #dce3ea;background:#fff;color:#606b78;width:34px;height:34px;border-radius:50%;font-size:21px;flex:0 0 34px;cursor:pointer}
 .journey-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 30px 14px}
 .journey-toolbar>span{background:#f1f3f6;border:1px solid #e5e9ee;border-radius:8px;padding:8px 12px;font-size:11px;color:#7a8796}
 .journey-toolbar>span b{color:#293749;margin-left:6px;font-size:12px}
@@ -152,7 +151,8 @@
 .journey-dept{font-size:11px;color:#687a8e;font-weight:750;line-height:1.35}
 .journey-task{font-size:13px;color:#1e2d3c;line-height:1.36;min-height:18px}
 .journey-person{font-size:10px;color:#6b7886;display:flex;justify-content:space-between;gap:4px;line-height:1.45;margin-top:auto;border-top:1px solid #e5e9ef;padding-top:7px}
-.journey-person-label{color:#9aa4af}
+.journey-time{color:#8795a4;white-space:nowrap;font-variant-numeric:tabular-nums}
+.journey-operator{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
 .journey-arrow{display:block;width:42px;height:27px;overflow:visible;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;fill:none;opacity:1}
 .journey-marquee{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
 .journey-marquee rect{fill:none;stroke:#355a83;stroke-width:2;stroke-dasharray:10 7;stroke-linejoin:round;animation:journey-border-march 1.05s linear infinite}
@@ -161,36 +161,21 @@
 .journey-extra .journey-section-head{margin:10px 0}
 .journey-extra-line{display:flex;gap:12px;align-items:center;padding:9px 0;border-top:1px solid #eef0f3;font-size:11px;color:#788594;flex-wrap:wrap}
 .journey-extra-line b{color:#303d4f}
-.journey-history{margin:0 30px 0;max-height:160px;overflow:auto;border:1px solid #e6e9ee;border-radius:9px;background:#fff}
-.journey-history-row{display:grid;grid-template-columns:1.35fr .9fr .75fr .7fr;gap:10px;padding:9px 12px;border-bottom:1px solid #f0f1f4;font-size:11px;color:#737f8d;min-width:0;align-items:center}
-.journey-history-row:last-child{border-bottom:0}
-.journey-history-row time{color:#a2aab4;text-align:right}
-.journey-history-action{color:#364356;font-weight:680}
-.journey-history-empty{font-size:12px;color:#9aa5b0;padding:13px}
-.journey-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;bottom:0;padding:17px 30px;background:rgba(255,255,255,.95);border-top:1px solid #e9edf2;margin-top:18px;backdrop-filter:blur(12px)}
-.journey-footer>span{font-size:11px;color:#94a0ac}
-.journey-footer>div{display:flex;gap:8px;align-items:center}
-.journey-button{border:1px solid #d6dfe7;border-radius:7px;padding:10px 17px;background:#fff;font-size:12px;color:#48576a;cursor:pointer;font-weight:700}
-.journey-button.primary{background:#273d56;color:#fff;border-color:#273d56}
 @keyframes journey-border-march{to{stroke-dashoffset:-34}}
 @keyframes journey-appear{from{transform:translateY(12px) scale(.99);opacity:0}to{transform:none;opacity:1}}
 @media(max-width:760px){
- .journey-dialog{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);border-radius:11px}
+ #flow-transition-host:has(.journey-dialog){padding:16px 12px}
+ .journey-dialog{width:100%;max-height:calc(100dvh - 32px);border-radius:11px}
  .journey-dialog .journey-top{padding:17px 17px 14px}
  .journey-top h2{font-size:17px;overflow-wrap:anywhere}.journey-top h2 span{font-size:14px;display:block;margin:3px 0 0}
  .journey-toolbar{margin:12px 15px}.journey-section-head{margin:14px 15px 8px;align-items:flex-start;flex-wrap:wrap}
  .journey-steps{margin:0 15px}
  .journey-card{min-height:106px;padding:10px 13px 9px}
- .journey-extra,.journey-history{margin-left:15px;margin-right:15px}
- .journey-history-row{grid-template-columns:1.4fr 1fr;gap:4px 7px}
- .journey-history-row time{text-align:left}
- .journey-footer{padding:12px 15px;flex-direction:column;align-items:stretch}
- .journey-footer>div{display:grid;grid-template-columns:1fr 1fr}
- .journey-footer .journey-button{padding:10px 9px}
+ .journey-extra{margin-left:15px;margin-right:15px}
 }
 @media(prefers-reduced-motion:reduce){.journey-marquee rect,.journey-dialog{animation:none!important}}
 /* Avoid any invisible initial frames: the arrow and dashed current-step outline render immediately. */
-#flow-transition-host:has(.journey-dialog) .flow-veil{opacity:1!important;animation:none!important;background:rgba(23,32,46,.25);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+#flow-transition-host:has(.journey-dialog) .flow-veil{cursor:pointer;opacity:1!important;animation:none!important;background:rgba(23,32,46,.25);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
 #flow-transition-host .journey-dialog{animation:none!important;opacity:1!important;transform:none!important}
 
 @media(min-width:761px){

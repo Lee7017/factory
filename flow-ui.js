@@ -142,16 +142,15 @@ function getHistory(entry,kind){if(entry.history?.length)return entry.history;
  if(kind==='order')return ops?.flows?.[ref]?.audit||[];
  if(kind==='receipt')return (modules?.ledger||[]).filter(x=>x.ref===ref).map(x=>({action:x.type,person:x.by,at:x.time,from:x.dept}));
  if(kind==='outbound')return (modules?.ledger||[]).filter(x=>x.ref===ref).map(x=>({action:x.type,person:x.by,at:x.time,from:x.dept}));
- return [];
+ return entry.action?[{action:entry.action,at:entry.at||'',person:entry.operator||'',from:entry.from}]:[];
 }
-function personFor(step,history,done){const h=[...history].reverse().find(x=>step[2]?.test(String(x.action||''))&&x.person||step[2]?.test(String(x.action||''))&&x.by);if(h)return h.person||h.by;
- return done?'历史记录未注明':'待分配';}
+function lastStepRecord(step,history){return [...history].reverse().find(row=>step[2]?.test(String(row.action||'')))}
 function buildSteps(entry,kind){const config=flowConfig[kind];if(config)return config.steps;
  const source=entry.from||'sales',target=entry.to||source;return [[source,entry.action||'业务办理',new RegExp('.*')],[target,entry.next||'下一个业务动作',new RegExp('(?!)')]];}
 function stepState(i,kind,stage){if(kind==='handoff')return i===0?'done':'current';const score=flowConfig[kind]?.progress?.[stage]??-1,last=(flowConfig[kind]?.steps?.length||0)-1;if(score>=last&&i===last)return 'complete';return i<=score?'done':i===score+1?'current':'waiting'}
-function makeCard(step,i,state,history){const [dept,act]=step,operator=personFor(step,history,['done','complete'].includes(state)),canTrack=Boolean(activeContinue)&&['current','complete'].includes(state);return `<div class="journey-card is-${state}" data-journey-step="${i}">
+function makeCard(step,i,state,history){const [dept,act]=step,record=lastStepRecord(step,history),done=['done','complete'].includes(state),operator=record?.person||record?.by||(done?'历史记录未注明':'待分配'),time=record?.at||record?.time||'—',canTrack=Boolean(activeContinue)&&['current','complete'].includes(state);return `<div class="journey-card is-${state}" data-journey-step="${i}">
  <div class="journey-card-head"><span class="journey-seq">${String(i+1).padStart(2,'0')}</span><div class="journey-card-head-actions"><span class="journey-state">${state==='done'?'已办理':state==='current'?'当前环节':state==='complete'?'已办结':'待办理'}</span>${canTrack?"<button type=\"button\" class=\"journey-card-track\" data-flow-track>跟踪卡点 →</button>":""}</div></div>
- <div class="journey-dept">${clean(label(dept))}</div><strong class="journey-task">${clean(act)}</strong><div class="journey-person"><span class="journey-person-label">${['done','complete'].includes(state)?'经办员工':'负责员工'}</span><span>${clean(operator)}</span></div>
+ <div class="journey-dept">${clean(label(dept))}</div><strong class="journey-task">${clean(act)}</strong><div class="journey-person"><time class="journey-time">${clean(time)}</time><span class="journey-operator" title="${clean(operator)}">${clean(operator)}</span></div>
  ${['current','complete'].includes(state)?'<svg class="journey-marquee" aria-hidden="true"><rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)" rx="12"/></svg>':''}</div>`}
 // 所有单据共用同一条顺时针闭合路线。只有历史上确实发生退回时才绘制回环。
 function snakeOfCards(steps,kind,stage,history){
@@ -205,18 +204,15 @@ function extras(entry,kind){if(entry.detailHtml)return `<div class="journey-extr
  if(outbound.length)return `<div class="journey-extra"><div class="journey-section-head"><strong>成品出库与客户交付</strong><small>${outbound.length} 次出库记录</small></div>${outbound.map(r=>`<div class="journey-extra-line"><b>${clean(r.id)}</b><span>${clean(r.qty)} 箱 · ${clean(r.destination)} · ${clean(r.status)}</span></div>`).join('')}</div>`;
  }return ''}
 function renderGraph(entry){const kind=inferKind(entry),history=getHistory(entry,kind),cfg=flowConfig[kind],stage=getStage(entry,kind),type=entry.docType||cfg?.title||docMeta(entry).type;
- const steps=buildSteps(entry,kind);const summary=entry.summary||'',status=entry.status||stage||'待办理',contentLabel=kind==='order'?'订单内容':'单据内容';
- const historyRows=history.slice().reverse().map(h=>`<div class="journey-history-row"><span class="journey-history-action">${clean(h.action||'处理单据')}</span><span>${clean(label(h.from||h.dept||''))}</span><span>${clean(h.person||h.by||'经办人未记录')}</span><time>${clean(h.at||h.time||'')}</time></div>`).join('');
+ const steps=buildSteps(entry,kind);const summary=entry.summary||'',status=entry.status||stage||'待办理';
  return `<div class="flow-veil" data-flow-close aria-hidden="true"></div><section class="flow-window journey-dialog" role="dialog" aria-modal="true" aria-labelledby="journey-title">
- <header class="journey-top"><div><span class="journey-eyebrow">跨部门单据流转</span><h2 id="journey-title">${clean(type)} <span>${clean(entry.ref||'业务记录')}</span></h2><p>${clean(summary)}</p></div><button class="journey-close" data-flow-close type="button" aria-label="关闭流程弹窗">×</button></header>
+ <header class="journey-top"><div><span class="journey-eyebrow">跨部门单据流转</span><h2 id="journey-title">${clean(type)} <span>${clean(entry.ref||'业务记录')}</span></h2><p>${clean(summary)}</p></div></header>
  <div class="journey-toolbar"><span>当前状态 <b>${clean(status)}</b></span>${entry.action?`<span>刚刚办理 <b>${clean(entry.action)}</b> · ${clean(entry.operator||'经办人未记录')}</span>`:''}<span>单据按实际办理顺序流转</span></div>
  ${orderDetails(entry,kind)}
  <div class="journey-section-head"><strong>部门 · 员工 · 处理事项</strong><small>先看完整流程；随后动画展示“刚完成 → 当前环节”，真实退回用橙色回弧</small></div>
  <div class="journey-range"><span><b>起点</b>${clean(label(steps[0]?.[0]))} · ${clean(steps[0]?.[1]||'开始')}</span><i>→</i><span><b>终点</b>${clean(label(steps[steps.length-1]?.[0]))} · ${clean(steps[steps.length-1]?.[1]||'结束')}</span></div>
  <div class="journey-steps">${snakeOfCards(steps,kind,stage,history)}</div>
  ${extras(entry,kind)}
- <div class="journey-section-head journey-history-title"><strong>操作记录</strong><small>${history.length} 条</small></div><div class="journey-history">${historyRows||'<div class="journey-history-empty">当前没有已记录的操作</div>'}</div>
- <footer class="journey-footer"><span>退回、审批、出库均记录实际经办员工</span><div><button type="button" class="journey-button" data-flow-close>关闭</button></div></footer>
  </section>`}
 function openDialog(entry){const host=document.querySelector('#flow-transition-host');if(!host||!entry)return;
  clearTimeout(dismissTimer);
@@ -253,7 +249,7 @@ document.addEventListener('click',event=>{
  const tab=event.target.closest('[data-journey-tab]');
  if(tab){const dialog=tab.closest('.journey-dialog'),name=tab.dataset.journeyTab;if(dialog){dialog.querySelectorAll('[data-journey-tab]').forEach(btn=>{const on=btn===tab;btn.classList.toggle('is-active',on);btn.setAttribute('aria-selected',on?'true':'false')});dialog.querySelectorAll('[data-journey-panel]').forEach(panel=>{const on=panel.dataset.journeyPanel===name;panel.hidden=!on;panel.classList.toggle('is-active',on)});dialog.scrollTop=0}return;}
  if(event.target.closest('[data-flow-track]')){const target=activeContinue?{...activeContinue}:null,ref=activeTrackRef;dismiss();if(target)window.FactoryNavigation?.trackBottleneck?.(target,ref);return;}
- if(event.target.closest('[data-flow-close]'))dismiss();});
+ if(event.target.closest('[data-flow-close]')||(event.target.closest('#flow-transition-host')&&!event.target.closest('.journey-dialog')))dismiss();});
 document.addEventListener('keydown',event=>{if(event.key==='Escape')dismiss()});
 window.FactoryFlowUI={show,openDocument,dismiss,fromAudit,names:deptNames,flowConfig};
 })();
