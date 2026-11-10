@@ -34,30 +34,33 @@ try {
   }
   await asEmployee("E014")
   await navigate("purchase","purchase")
-  // Verify the current purchase layout: title, compact action strip, then table.
+  // Purchase follows the same record-list foundation as sales: one table surface,
+  // status and primary action in its toolbar, no content-area title or detached panel.
   const toolbarLayout=await page.evaluate(()=>{
     const root=document.querySelector(".proc-purchase-page")
-    const title=root?.querySelector(":scope > .proc-page-title")
-    const toolbar=root?.querySelector(":scope > .proc-list-toolbar")
     const panel=root?.querySelector(":scope > .proc-purchase-list")
+    const toolbar=panel?.querySelector(":scope > .proc-purchase-toolbar")
     const action=toolbar?.querySelector('[data-proc-action="newPurchase"]')
-    if(!root||!title||!toolbar||!panel||!action)return null
-    const t=title.getBoundingClientRect(),b=toolbar.getBoundingClientRect()
-    const p=panel.getBoundingClientRect(),c=action.getBoundingClientRect()
+    const table=panel?.querySelector(":scope > .op-table")
+    if(!root||!panel||!toolbar||!action||!table)return null
+    const p=panel.getBoundingClientRect(),b=toolbar.getBoundingClientRect()
+    const t=table.getBoundingClientRect(),c=action.getBoundingClientRect()
     return {
-      titleHeight:Math.round(t.height),toolbarHeight:Math.round(b.height),
-      titleGap:Math.round(b.top-t.bottom),tableGap:Math.round(p.top-b.bottom),
-      actionInside:Math.round(c.top)>=Math.round(b.top)&&Math.round(c.bottom)<=Math.round(b.bottom),
-      duplicateHeading:!!root.querySelector(":scope > .proc-top")
+      toolbarHeight:Math.round(b.height),
+      toolbarTopGap:Math.round(b.top-p.top),
+      tableGap:Math.round(t.top-b.bottom),
+      actionInside:c.top>=b.top-1&&c.bottom<=b.bottom+1,
+      duplicateTitle:!!root.querySelector(":scope > .proc-page-title"),
+      detachedToolbar:!!root.querySelector(":scope > .proc-list-toolbar")
     }
   })
-  assert.ok(toolbarLayout,"Purchase page heading, toolbar, and table must render")
-  assert.equal(toolbarLayout.duplicateHeading,false,"Purchase page must have no duplicate legacy top")
-  assert.ok(toolbarLayout.titleHeight<=60,`Purchase heading too tall: ${JSON.stringify(toolbarLayout)}`)
-  assert.ok(toolbarLayout.toolbarHeight<=85,`Purchase action bar too tall: ${JSON.stringify(toolbarLayout)}`)
-  assert.ok(toolbarLayout.titleGap>=0&&toolbarLayout.titleGap<=24,`Purchase heading gap too large: ${JSON.stringify(toolbarLayout)}`)
-  assert.ok(toolbarLayout.tableGap>=0&&toolbarLayout.tableGap<=24,`Purchase table gap too large: ${JSON.stringify(toolbarLayout)}`)
-  assert.equal(toolbarLayout.actionInside,true,"Purchase button must stay inside toolbar")
+  assert.ok(toolbarLayout,"Purchase shared table toolbar must render")
+  assert.equal(toolbarLayout.duplicateTitle,false,"Purchase must not duplicate its title in content")
+  assert.equal(toolbarLayout.detachedToolbar,false,"Purchase must not use a detached action panel")
+  assert.ok(toolbarLayout.toolbarHeight<=58,`Purchase table toolbar too tall: ${JSON.stringify(toolbarLayout)}`)
+  assert.ok(Math.abs(toolbarLayout.toolbarTopGap)<=2,`Purchase toolbar must start at table surface top: ${JSON.stringify(toolbarLayout)}`)
+  assert.ok(Math.abs(toolbarLayout.tableGap)<=2,`Purchase table must directly follow toolbar: ${JSON.stringify(toolbarLayout)}`)
+  assert.equal(toolbarLayout.actionInside,true,"Purchase primary action must stay inside table toolbar")
   await page.screenshot({path:"test-results/purchase-toolbar-desktop.png",fullPage:false})
   console.log("PURCHASE TOOLBAR VISUAL CHECK",JSON.stringify(toolbarLayout))
   // Original engine initializes the seeded purchase PO-001 only after this mount.
