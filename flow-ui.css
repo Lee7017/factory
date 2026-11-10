@@ -220,3 +220,8 @@
 .journey-marquee{display:none}
 .journey-dialog.is-arrived-current .journey-card.is-current .journey-marquee{display:block}
 @media(prefers-reduced-motion:reduce){.journey-dialog.is-flowing-current .journey-snake-arrow.is-arrival{animation:none;stroke-dashoffset:0}.journey-dialog.is-flowing-current .journey-snake-arrival-tip{animation:none;opacity:1}.journey-dialog.is-flowing-current .journey-card.is-current .journey-marquee{display:block}}
+
+/* Blocked production gate shows the actual cleaning/setup work item, not a toast. */
+.journey-blocker{margin:4px 10px 12px;padding:12px 16px;border:1px solid #cddbcf;border-radius:9px;background:#f2f7f3;color:#2d4939;display:flex;gap:5px;flex-direction:column;font-size:12px;line-height:1.55}
+.journey-blocker strong{font-size:13px;font-weight:700;color:#274e37}
+.journey-blocker small{color:#587465;font-size:11px}
