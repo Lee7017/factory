@@ -46,6 +46,9 @@ jobs:
       - name: Purchase approval and warehouse-QC integrity
         working-directory: web
         run: npm run test:purchase
+      - name: Production cleaning and setup gate tracking
+        working-directory: web
+        run: npm run test:production-gates
       - name: Current workspace only — do not import obsolete data
         working-directory: web
         run: npm run test:current
