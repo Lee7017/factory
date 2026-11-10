@@ -42,15 +42,6 @@ function approvalPlan(p){
 const canPmcReview=r=>r?.status==='待PMC确认'&&r.createdBy&&r.createdBy!==user().id&&authorized(['pmc','kitting','approve']);
 const canPurchaseApprove=p=>p?.status==='待采购主管审批'&&p.purchaseId&&p.purchaseId!==user().id&&p.pmcConfirmedAt&&validNumber(p.totalAmount)&&authorized(['purchase','purchase','approve']);
 const canDepartmentApprove=(p,dept)=>p?.status===(dept==='finance'?'待财务审核':'待总经办审批')&&p.createdBy&&p.createdBy!==user().id&&p.approvedId!==user().id&&p.financeId!==user().id&&authorized(dept==='finance'?['finance','finance','approve']:['leadership','approvals','approve']);
-const requestChoices=(poId='')=>requests().filter(r=>r.status==='已确认'&&(!linkedPo(r.id)||linkedPo(r.id)?.id===poId));
-function renderRequests(){
- const mayCreate=authorized(['pmc','kitting','execute']),rows=requests().map(r=>{
-  const po=linkedPo(r.id),canReview=canPmcReview(r),mine=r.createdBy===user().id;
-  const action=button('查看需求','viewRequest',r.id)+(canReview?button('确认需求','approveRequest',r.id,'primary')+button('退回需求','rejectRequest',r.id):'')+(mine&&['已驳回','待PMC确认'].includes(r.status)?button('修改需求','editRequest',r.id):'');
-  return `<tr class="biz-order-row"><td><strong>${esc(r.id)}</strong></td><td>${esc(r.sourceOrder||'安全库存补货')}</td><td>${esc(r.material)}</td><td>${money(r.qty)}</td><td>${esc(r.neededBy||'—')}</td><td>${tag(r.status)}<small class="proc-sub">${esc(r.createdName||'—')}${po?' · 关联 '+esc(po.id):''}</small></td><td><div class="proc-actions">${action}</div></td></tr>`;
- }).join('');
- return `<section class="proc-page proc-linked-panel" aria-label="PMC 采购需求"><div class="mw-data-section"><div class="mw-data-section-head"><div><strong>采购需求 · PMC 确认</strong><span>根据订单排程、BOM 与库存缺口提出需求；提交人与确认人必须不同</span></div><div class="mw-actions">${mayCreate?button('提出采购需求','newRequest','','primary'):''}</div></div><div class="op-table-wrap"><table class="op-table"><thead><tr><th>需求单号</th><th>生产订单</th><th>物料</th><th>数量</th><th>需用日期</th><th>状态</th><th>办理</th></tr></thead><tbody>${rows||'<tr><td colspan="7">暂无采购需求。PMC 可根据实际缺料或安全库存提出需求。</td></tr>'}</tbody></table></div></div></section>`;
-}
 function pmcQueue(){
  const items=orders().filter(p=>p.status==='待PMC确认');if(!items.length)return '';
  const rows=items.map(p=>`<tr class="biz-order-row"><td><strong>${esc(p.id)}</strong></td><td>${esc(p.material)}</td><td>${money(p.qty)}</td><td>${tag(p.status)}</td><td><div class="proc-actions">${button('查看采购单','viewPurchase',p.id)}${canPmcReview(p)?button('确认采购单','approvePmcPurchase',p.id,'primary')+button('退回','rejectPmcPurchase',p.id):''}</div></td></tr>`).join('');
