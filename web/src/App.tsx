@@ -44,6 +44,10 @@ const SHORT_DEPARTMENT_NAMES:Record<string,string>={
   quality:"质量部",production:"生产车间",finance:"财务部",it:"信息化",leadership:"总经办"
 }
 function shortDepartmentName(dept:Department){return SHORT_DEPARTMENT_NAMES[dept.id]??dept.name}
+const DEPARTMENT_BAND_ORDER=["sales","pmc","purchase","warehouse","quality","production","finance","hr","it","leadership"]
+function departmentsForBand(){
+  return [...DEPARTMENTS].sort((a,b)=>DEPARTMENT_BAND_ORDER.indexOf(a.id)-DEPARTMENT_BAND_ORDER.indexOf(b.id))
+}
 
 function SystemRail({route,onSelect,employee,staff,onSwitch,messages,onRead,onReadAll,workspace}:{
   route:Route;onSelect:(hash:string)=>void;employee?:Employee;staff:Employee[];onSwitch:(id:string)=>void;
@@ -171,7 +175,7 @@ function SystemRail({route,onSelect,employee,staff,onSwitch,messages,onRead,onRe
 function DepartmentBand({route,onSelect}:{route:Route;onSelect:(hash:string)=>void}) {
   return <div className="department-band-shell">
     <nav className="department-band" aria-label="部门导航">
-      {DEPARTMENTS.map(dept=>{
+      {departmentsForBand().map(dept=>{
         const active=route.kind==="department"&&route.dept===dept.id
         return <button type="button" key={dept.id} className={"department-band-button "+(active?"active":"")}
           aria-current={active?"page":undefined} onClick={()=>onSelect("#/departments/"+dept.id)}>
