@@ -114,6 +114,13 @@ try {
   await mobile.goto(base,{waitUntil:"networkidle"})
   await mobile.getByRole("button",{name:"打开部门菜单"}).click()
   await mobile.locator(".shell-sidebar .department-tile").filter({hasText:"仓库 / 物流部"}).click()
+  await mobile.getByRole("button",{name:"查看仓库 / 物流部介绍"}).click()
+  const mobilePopup=mobile.locator('[data-slot="popover-content"]')
+  await mobilePopup.waitFor({state:"visible"})
+  const mobileBox=await mobilePopup.boundingBox()
+  assert.ok(mobileBox&&mobileBox.width<=390&&mobileBox.x>=0&&mobileBox.x+mobileBox.width<=390,
+    "Touch popup must stay on screen")
+  await mobile.keyboard.press("Escape")
   await mobile.getByRole("tab",{name:/部门花名簿/}).click()
   const mobileRoster=await mobile.locator(".roster-grid").evaluate(grid=>({
     columns:getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length,
@@ -136,12 +143,6 @@ try {
   assert.ok(mobileFeatureLayout.heights.every(height=>height>=60&&height<=112),
     "Phone cards remain compact without cropping text: "+JSON.stringify(mobileFeatureLayout))
   assert.equal(mobileFeatureLayout.overflow,false,"Dense mobile grid must not cause horizontal scrolling")
-  await mobile.getByRole("button",{name:"查看仓库 / 物流部介绍"}).click()
-  const mobilePopup=mobile.locator('[data-slot="popover-content"]')
-  await mobilePopup.waitFor({state:"visible"})
-  const mobileBox=await mobilePopup.boundingBox()
-  assert.ok(mobileBox&&mobileBox.width<=390&&mobileBox.x>=0&&mobileBox.x+mobileBox.width<=390,
-    "Touch popup must stay on screen")
   await mobile.screenshot({path:"test-results/mobile.png",fullPage:true})
   await mobile.close()
   console.log("PASS: overview, 12 nav tiles, 8 warehouse cards, shadcn popover, roster, iframe-free business workbench.")
