@@ -2362,3 +2362,41 @@ body::before,body::after{display:none!important}
   .feature-band-nav{gap:13px}
   .department-band-button{padding:0 9px}
 }
+
+
+/* Context-toolbar polish: once status/search live in the feature band, do not repeat
+   the old statistics rail and fold control above the transaction table. */
+.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-stats,
+.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-fold{
+  display:none!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-toolbar{
+  min-height:34px!important;
+  padding:0!important;
+  border-bottom:0!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-toolbar:has(.biz-order-create:empty),
+.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-toolbar:not(:has(.biz-order-create)){
+  display:none!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-create{
+  padding:0 0 8px!important;
+}
+.business-context-status button{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+}
+.business-context-status button>span{
+  min-width:15px;height:15px;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:0 4px;border-radius:8px;
+  background:rgba(120,140,93,.10);
+  color:#7F887F;
+  font-size:7.5px;
+  font-weight:700;
+}
+.business-context-status button.active>span{
+  background:#E7EBE3;
+  color:#596459;
+}
