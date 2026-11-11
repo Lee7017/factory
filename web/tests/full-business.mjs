@@ -362,7 +362,14 @@ try {
         whiteTable:getComputedStyle(table).backgroundColor==="rgb(255, 255, 255)",
         flatBody:bg.borderTopWidth==="0px"&&bg.backgroundColor==="rgba(0, 0, 0, 0)",
         flatWrapper:getComputedStyle(wrapper).borderTopWidth==="0px"&&getComputedStyle(wrapper).borderTopLeftRadius==="0px",
-        naturalHeight:element.getBoundingClientRect().height<tb.height+(isKitting?95:130),
+        naturalHeight:element.getBoundingClientRect().height<tb.height+(
+          isKitting?95:element.matches('[data-module-page="shiftStats"]')?205:130
+        ),
+        statsCompact:!element.matches('[data-module-page="shiftStats"]')||(()=>{
+          const metrics=element.querySelector(".mw-metrics")
+          return Boolean(metrics)&&metrics.getBoundingClientRect().height<=105&&
+            getComputedStyle(metrics).borderTopWidth==="0px"
+        })(),
         footerAttached:!footer||Math.abs(fb.top-tb.bottom)<3,
         noPageOverflow:document.documentElement.scrollWidth<=innerWidth+4
       }
