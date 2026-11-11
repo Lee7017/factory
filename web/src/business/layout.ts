@@ -26,7 +26,7 @@ export const businessFamilies = {
   ],
   execution: [
     "tasks","batch","workshopReceive","workshopRework","qaQc","qaSampling",
-    "qaCleanInspection","qaNcr","release","workshop","engineering"
+    "qaCleanInspection","qaNcr","release","workshop","nonProductionTasks"
   ]
 } as const
 
