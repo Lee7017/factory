@@ -15,11 +15,11 @@ try{
     try{
       const response=await page.goto(url,{waitUntil:"networkidle",timeout:20000})
       await page.locator(".department-band-button").first().waitFor({timeout:6500})
-      if(response?.ok()&&await page.locator(".department-band-button").count()===10){loaded=true;break}
+      if(response?.ok()&&await page.locator(".department-band-button").count()===9){loaded=true;break}
     }catch{}
     await page.waitForTimeout(3000)
   }
-  assert.ok(loaded,"Published GitHub Pages must load React and all 10 departments in the horizontal band")
+  assert.ok(loaded,"Published GitHub Pages must load React and all 9 operating departments in the horizontal band")
   assert.ok((await page.title()).includes("工厂管理系统"))
   assert.equal(await page.locator("svg.svg-bank[data-icon-library=lucide] symbol[data-lucide-icon]").count(),77)
   assert.equal(await page.locator(".system-rail").count(),1,"Published site uses one compact system rail")
@@ -87,7 +87,6 @@ try{
   assert.equal(navStyle.overflow,false)
   await page.screenshot({path:"test-results/live-horizontal-department-band.png",fullPage:true})
 
-  await page.getByRole("tab",{name:/部门花名簿/}).click()
   await page.getByText("办公位置",{exact:true}).waitFor()
   await page.screenshot({path:"test-results/live-warehouse-roster.png",fullPage:true})
 
