@@ -182,14 +182,34 @@ try {
   await salesPanel.waitFor({state:"visible"})
   assert.equal(await salesPanel.locator(".biz-order-stats").isVisible(),false,"Duplicate status statistics rail is hidden")
   assert.equal(await salesPanel.locator(".biz-order-fold").isVisible(),false,"Obsolete statistics fold control is hidden")
-  assert.equal(await salesPanel.locator(".biz-order-toolbar [data-op-action='newOrder']").count(),1,"Create action stays next to the workbench")
+  assert.equal(await salesPanel.locator(".biz-order-toolbar [data-op-action='newOrder']").count(),1,"Existing MES creation handler remains in the DOM")
   const contextTools=page.locator(".business-context-tools")
   await contextTools.waitFor({state:"visible"})
   const contextSearch=contextTools.locator(".business-context-search input")
   assert.equal(await contextSearch.isVisible(),true,"Context search stays visible in the feature band")
   assert.equal(await salesPanel.locator(".biz-order-search").isVisible(),false,"Legacy duplicate search is hidden")
   assert.equal(await salesPanel.locator(".biz-order-status").isVisible(),false,"Legacy duplicate status select is hidden")
-  assert.equal(await salesPanel.locator("[data-op-action='newOrder']").isVisible(),true,"Create stays visible")
+  assert.equal(await salesPanel.locator("[data-op-action='newOrder']").isVisible(),false,"Old in-table creation button is hidden")
+  const topRightCreate=contextTools.getByRole("button",{name:"新建销售订单"})
+  assert.equal(await topRightCreate.isVisible(),true,"Create action is visible in the upper-right feature band")
+  const salesGeometry=await page.evaluate(()=>{
+    const feature=document.querySelector(".feature-band").getBoundingClientRect()
+    const button=document.querySelector(".business-context-create").getBoundingClientRect()
+    const panel=document.querySelector('.biz-order-panel[data-order-panel="orders"]').getBoundingClientRect()
+    const table=document.querySelector('.biz-order-panel[data-order-panel="orders"] .op-table').getBoundingClientRect()
+    const footer=document.querySelector('.biz-order-panel[data-order-panel="orders"] .biz-order-footer').getBoundingClientRect()
+    const body=document.querySelector(".business-page-body")
+    const style=getComputedStyle(body)
+    return {
+      buttonInBand:button.top>=feature.top&&button.bottom<=feature.bottom,
+      buttonAboveTable:button.bottom<table.top,
+      noPanelCard:style.borderTopWidth==="0px"&&style.backgroundColor==="rgba(0, 0, 0, 0)",
+      tableImmediatelyAboveFooter:Math.abs(table.bottom-footer.top)<3,
+      noTallEmptyArea:panel.height<table.height+100,
+      noPageOverflow:document.documentElement.scrollWidth<=window.innerWidth+4
+    }
+  })
+  assert.ok(Object.values(salesGeometry).every(Boolean),"Sales uses a flat, content-height ledger with creation in the feature band: "+JSON.stringify(salesGeometry))
   await contextSearch.fill("INVALID-NO-MATCH")
   await page.waitForTimeout(80)
   assert.equal(await salesPanel.locator(".biz-order-row:visible").count(),0,"Feature-band search filters actual order rows")
@@ -207,12 +227,12 @@ try {
   assert.equal(await salesPanel.locator(".biz-order-row:visible").count(),totalSales,"All status restores the complete order list")
   await page.screenshot({path:"test-results/sales-orders-table-toolbar.png",fullPage:false})
   console.log("SALES CONTEXT FILTER CHECK",JSON.stringify({totalSales,filteredSales,statusButtons:await statusButtons.count()}))
-  const create=page.locator('.native-business [data-op-action="newOrder"]')
-  await create.first().waitFor({state:"visible",timeout:10000})
-  assert.equal(await create.first().getAttribute("data-slot"),"button","MES action buttons should be rendered using shadcn Button")
+  const create=topRightCreate
+  await create.waitFor({state:"visible",timeout:10000})
+  assert.equal(await create.getAttribute("data-slot"),"button","Top-right creation action uses shadcn Button")
   assert.ok(await page.locator(".native-business [data-slot=table]").count()>0,"MES tables should be React shadcn Table elements")
   if(await create.count()){
-    await create.first().click()
+    await create.click()
     await page.locator("#ops-form").waitFor({state:"visible",timeout:6000})
     const form=page.locator("#ops-form")
     if(await form.locator('[name="product"]').count())await form.locator('[name="product"]').fill("自动化测试产品")
