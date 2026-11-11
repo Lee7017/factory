@@ -241,3 +241,10 @@
 .journey-doc-choice:focus-visible{outline:2px solid #6b9f7a;outline-offset:1px}
 .journey-doc-choice span{color:#718878;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 @media(max-width:760px){.journey-card-document{font-size:9.5px;max-width:130px;padding:3px 5px}}
+
+/* 多张清洗报检单：显示根据真实工单、产线和检验结果推得的原因。 */
+.journey-doc-picker:has(.journey-doc-explanation){width:min(565px,100%)}
+.journey-doc-explanation{margin:0;padding:12px 16px 13px;background:#f2f7f3;color:#375945;border-bottom:1px solid #dce8df;font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+.journey-doc-choice-main{display:flex;flex-direction:column;gap:6px;flex:1;align-items:flex-start;min-width:0}
+.journey-doc-choice-main strong{font-size:12px;color:#31533d;font-weight:700;overflow-wrap:anywhere}
+.journey-doc-choice-main small{font-size:11px;color:#728378;line-height:1.5;overflow-wrap:anywhere}
