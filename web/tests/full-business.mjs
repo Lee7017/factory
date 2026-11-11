@@ -173,6 +173,81 @@ try {
   assert.equal(visualAudit.length,features.length,"Each business feature has a captured browser screenshot")
   assert.deepEqual(missing,[],"Every department feature must render inside its shared page family")
   assert.deepEqual(errors,[],"No uncaught errors in business modules")
+  // Purchase orders: a real, flat eight-column table. PMC creates the purchase
+  // document; this page must not manufacture a separate "new purchase" path.
+  activeFeature="purchase/purchase"
+  await page.evaluate(()=>{location.hash="#/departments/purchase/purchase"})
+  const purchaseBoard=page.locator(".proc-purchase-board")
+  await purchaseBoard.waitFor({state:"visible",timeout:12000})
+  const purchaseSelect=purchaseBoard.getByRole("combobox",{name:/筛选审批状态/})
+  await purchaseSelect.waitFor({state:"attached"})
+  assert.equal(await page.locator(".business-context-status").count(),0,
+    "Procurement status filters live in their table heading, not the feature band")
+  assert.equal(await page.locator(".business-context-create").count(),0,
+    "Procurement purchase document creation remains with PMC; do not invent a duplicate button")
+  const purchaseLayout=await purchaseBoard.evaluate(board=>{
+    const table=board.querySelector(".proc-order-table")
+    const heads=Array.from(table?.querySelectorAll("thead th")??[])
+    const select=board.querySelector("[data-purchase-status-filter]")
+    const header=select?.closest("th")
+    const control=select?.closest(".sales-order-status-control")
+    const icon=control?.querySelector(".sales-order-status-caret")
+    const footer=board.querySelector(".proc-board-footer")
+    const content=board.querySelector(".proc-board-content")
+    const body=document.querySelector(".business-page-body")
+    if(!table||!select||!header||!control||!icon||!footer||!content||!body)return null
+    const th=header.getBoundingClientRect(),ct=control.getBoundingClientRect()
+    const action=board.querySelector(".proc-order-row .proc-actions")
+    const actionTitle=heads.at(-1)?.getBoundingClientRect()
+    const bg=getComputedStyle(body),cbg=getComputedStyle(content)
+    const allBadges=[...board.querySelectorAll(".proc-order-row .proc-status")]
+    return {
+      columns:heads.length,
+      statusColumn:heads.indexOf(header),
+      filterAligned:Math.abs((th.top+th.bottom-ct.top-ct.bottom)/2)<5,
+      nativeFilter:select.parentElement===control&&icon.getBoundingClientRect().width>=13,
+      headingColor:heads.every(el=>getComputedStyle(el).backgroundColor==="rgb(244, 244, 239)"),
+      badgeColor:allBadges.every(el=>getComputedStyle(el).backgroundColor==="rgb(251, 252, 248)"),
+      actionAligned:!action||!actionTitle||Math.abs(actionTitle.left+12-action.getBoundingClientRect().left)<5,
+      flatBody:bg.backgroundColor==="rgba(0, 0, 0, 0)"&&bg.borderTopWidth==="0px",
+      flatContent:cbg.backgroundColor==="rgba(0, 0, 0, 0)"&&cbg.borderTopWidth==="0px",
+      duplicateHeadingHidden:getComputedStyle(board.querySelector(".proc-board-heading")).display==="none",
+      metricsHidden:getComputedStyle(board.querySelector(".proc-board-metrics")).display==="none",
+      duplicateFiltersHidden:getComputedStyle(board.querySelector(".proc-board-filters")).display==="none",
+      footerAttached:Math.abs(footer.getBoundingClientRect().top-table.getBoundingClientRect().bottom)<3,
+      naturalHeight:board.getBoundingClientRect().height<table.getBoundingClientRect().height+100,
+      noHorizontalPageOverflow:document.documentElement.scrollWidth<=innerWidth+4
+    }
+  })
+  assert.ok(purchaseLayout,"Procurement list must have a native eight-column table")
+  assert.equal(purchaseLayout.columns,8,"Do not remove procurement business data columns")
+  assert.equal(purchaseLayout.statusColumn,5,"The procurement filter belongs inside the approval status column")
+  for(const [key,value] of Object.entries(purchaseLayout)){
+    if(typeof value==="boolean")assert.equal(value,true,"Procurement "+key+": "+JSON.stringify(purchaseLayout))
+  }
+  const purchaseRows=await purchaseBoard.locator(".proc-order-row:visible").count()
+  assert.ok(await purchaseSelect.locator("option").count()>1,"Purchase status menu is available without purchase records")
+  await purchaseSelect.selectOption({index:1})
+  await page.waitForTimeout(80)
+  assert.ok(await purchaseBoard.locator(".proc-order-row:visible").count()<=purchaseRows,
+    "Purchase status filter changes real order visibility")
+  assert.equal(await purchaseBoard.locator(".sales-order-status-control").evaluate(el=>getComputedStyle(el).backgroundColor),
+    "rgb(251, 252, 248)","Selected purchase status uses #FBFCF8")
+  await purchaseSelect.selectOption("")
+  await page.waitForTimeout(80)
+  assert.equal(await purchaseBoard.locator(".proc-order-row:visible").count(),purchaseRows)
+  const purchaseSearch=page.locator(".business-context-search input")
+  await purchaseSearch.fill("__no_matching_purchase_record__")
+  await page.waitForTimeout(80)
+  assert.equal(await purchaseBoard.locator(".proc-order-row:visible").count(),0,
+    "Top-right purchase search filters the real purchase rows")
+  assert.equal((await purchaseBoard.locator(".proc-order-count").textContent())?.trim(),"0",
+    "Purchase footer shows the filtered record count")
+  await purchaseSearch.fill("")
+  await page.waitForTimeout(80)
+  await page.screenshot({path:"test-results/purchase-orders-flat-ledger.png",fullPage:false})
+  console.log("PURCHASE FLAT LEDGER CHECK",JSON.stringify({purchaseRows,purchaseLayout}))
+
   // Sales order review and history reuse the compact ledger, but have different column counts.
   for(const [feature,columns,statusColumn] of [
     ["orderReview",5,3],["orderHistory",6,4]
