@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react"
 import { createPortal } from "react-dom"
-import { AlertCircle, LoaderCircle, RotateCcw, Search } from "lucide-react"
+import { AlertCircle, LoaderCircle, Plus, RotateCcw, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { FactoryAccessAPI } from "@/factory-state"
 import { getBusinessRuntime } from "@/business/runtime"
@@ -196,6 +196,14 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
   return <section className="native-business" aria-label="业务工作区">
     {toolHost&&createPortal(
       <div className="business-context-tools">
+        {dept==="sales"&&feature==="orders"&&<Button type="button" size="sm"
+          className="business-context-create" aria-label="新建销售订单"
+          disabled={!access.has("sales","orders","create")||status!=="ready"}
+          onClick={()=>rootRef.current?.querySelector<HTMLButtonElement>(
+            '.biz-order-panel[data-order-panel="orders"] [data-op-action="newOrder"]'
+          )?.click()}>
+          <Plus size={13}/><span className="create-label-full">新建销售订单</span><span className="create-label-short">新建</span>
+        </Button>}
         {contextStatuses.length>0&&<div className="business-context-status" aria-label="当前列表状态">
           <button type="button" className={!contextStatus?"active":""} onClick={()=>setContextStatus("")}>全部</button>
           {contextStatuses.map(name=><button type="button" key={name} className={contextStatus===name?"active":""}
