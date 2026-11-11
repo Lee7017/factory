@@ -1459,3 +1459,243 @@
 .native-business .legacy-root .bottleneck-track-highlight:not(tr) {
   background:rgba(255,214,64,.20)!important;
 }
+
+
+/* overview warm Claude palette v1 */
+body:has(.operations-dashboard){
+  background:#F4F4EF!important;
+  color:#1F241F;
+}
+body:has(.operations-dashboard)::before,
+body:has(.operations-dashboard)::after{display:none!important}
+.factory-shell:has(.operations-dashboard){
+  background:#F4F4EF!important;
+}
+.factory-shell:has(.operations-dashboard) .shell-workspace,
+.factory-shell:has(.operations-dashboard) .shell-content{
+  background:#F4F4EF!important;
+}
+
+/* 首页侧栏：Claude 绿作为整块品牌面 */
+.factory-shell:has(.operations-dashboard) .shell-sidebar{
+  background:#788C5D!important;
+  border-right:1px solid rgba(31,36,31,.08)!important;
+  box-shadow:none!important;
+}
+.factory-shell:has(.operations-dashboard) .sidebar-brand{
+  background:#788C5D!important;
+  border-bottom-color:rgba(255,255,255,.18)!important;
+}
+.factory-shell:has(.operations-dashboard) .sidebar-brand,
+.factory-shell:has(.operations-dashboard) .sidebar-brand strong,
+.factory-shell:has(.operations-dashboard) .sidebar-brand b{
+  color:#fff!important;
+}
+.factory-shell:has(.operations-dashboard) .sidebar-brand small{
+  color:rgba(255,255,255,.62)!important;
+}
+.factory-shell:has(.operations-dashboard) .brand-icon{
+  position:relative;
+  background:#FBFCF8!important;
+  color:#74895F!important;
+  border-color:rgba(255,255,255,.35)!important;
+  box-shadow:none!important;
+}
+.factory-shell:has(.operations-dashboard) .brand-icon::after{
+  content:"";
+  position:absolute;
+  left:8px;right:8px;bottom:5px;
+  height:2px;border-radius:2px;
+  background:#00973F;
+}
+.factory-shell:has(.operations-dashboard) .department-tile{
+  background:rgba(255,255,255,.10)!important;
+  border-color:rgba(255,255,255,.14)!important;
+  color:rgba(255,255,255,.88)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+.factory-shell:has(.operations-dashboard) .department-tile:hover{
+  transform:none!important;
+  background:rgba(255,255,255,.16)!important;
+  border-color:rgba(255,255,255,.20)!important;
+  box-shadow:none!important;
+}
+.factory-shell:has(.operations-dashboard) .department-tile[aria-current="page"]{
+  position:relative;
+  background:rgba(255,255,255,.20)!important;
+  border-color:rgba(255,255,255,.22)!important;
+  color:#fff!important;
+  box-shadow:none!important;
+}
+.factory-shell:has(.operations-dashboard) .department-tile[aria-current="page"]::before{
+  content:"";
+  position:absolute;
+  left:-11px;top:13px;bottom:13px;
+  width:2px;border-radius:0 2px 2px 0;
+  background:#00973F;
+}
+.factory-shell:has(.operations-dashboard) .tile-icon,
+.factory-shell:has(.operations-dashboard) .department-tile[aria-current="page"] .tile-icon{
+  background:rgba(255,255,255,.14)!important;
+  color:#fff!important;
+  border-color:rgba(255,255,255,.16)!important;
+}
+.factory-shell:has(.operations-dashboard) .sidebar-foot{
+  background:#788C5D!important;
+  color:rgba(255,255,255,.60)!important;
+  border-top-color:rgba(255,255,255,.16)!important;
+}
+
+/* 顶栏与工作区退回暖米灰，不再整页浅绿雾 */
+.factory-shell:has(.operations-dashboard) .shell-topbar{
+  background:rgba(244,244,239,.94)!important;
+  border-bottom-color:#DEE3DC!important;
+  box-shadow:none!important;
+  backdrop-filter:blur(14px)!important;
+}
+.factory-shell:has(.operations-dashboard) .crumb-button:hover,
+.factory-shell:has(.operations-dashboard) .user-action:hover{
+  background:#ECEFE9!important;
+}
+.factory-shell:has(.operations-dashboard) .user-action{
+  background:transparent!important;
+  border-color:#DEE3DC!important;
+}
+.factory-shell:has(.operations-dashboard) .user-avatar{
+  background:#788C5D!important;
+  color:#fff!important;
+}
+
+/* 首页内容面统一 #FBFCF8 */
+.factory-shell:has(.operations-dashboard) .operations-dashboard{
+  color:#1F241F;
+}
+.factory-shell:has(.operations-dashboard) .operations-dashboard .glass-panel,
+.factory-shell:has(.operations-dashboard) .operations-dashboard [data-slot="card"]{
+  background:#FBFCF8!important;
+  border-color:#DEE3DC!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-kpi-card{
+  border-radius:14px!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-kpi-card>button:hover{
+  background:#F4F4EF!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-kpi-card>button:focus-visible,
+.factory-shell:has(.operations-dashboard) .operations-dashboard button:focus-visible{
+  outline:2px solid #00973F!important;
+  outline-offset:2px!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-kpi-icon{
+  background:#82986722!important;
+  border-color:#82986744!important;
+  color:#74895F!important;
+}
+.factory-shell:has(.operations-dashboard) .metric-pending .overview-kpi-icon{
+  background:#718A5920!important;
+  border-color:#718A5940!important;
+  color:#718A59!important;
+}
+.factory-shell:has(.operations-dashboard) .metric-today .overview-kpi-icon{
+  background:#7B916420!important;
+  border-color:#7B916440!important;
+  color:#7B9164!important;
+}
+.factory-shell:has(.operations-dashboard) .metric-stock .overview-kpi-icon{
+  background:#869B7020!important;
+  border-color:#869B7040!important;
+  color:#74895F!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-kpi-label,
+.factory-shell:has(.operations-dashboard) .overview-section-head h2,
+.factory-shell:has(.operations-dashboard) .overview-kpi-number,
+.factory-shell:has(.operations-dashboard) .overview-kpi-number .kpi-value{
+  color:#1F241F!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-kpi-detail,
+.factory-shell:has(.operations-dashboard) .overview-kpi-note,
+.factory-shell:has(.operations-dashboard) .overview-section-head p{
+  color:#7B837C!important;
+}
+
+/* 甘特与右侧信息面：暖白，不再绿底铺满 */
+.factory-shell:has(.operations-dashboard) .overview-gantt-scroller{
+  background:#FBFCF8!important;
+  border-color:#DEE3DC!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-gantt-head{
+  background:#F4F4EF!important;
+  color:#4F574F!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-gantt-dates>div.is-today{
+  background:#788C5D18!important;
+  color:#4F574F!important;
+  box-shadow:inset 0 -2px 0 #00973F;
+}
+.factory-shell:has(.operations-dashboard) .overview-gantt-order{
+  background:#FBFCF8!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-gantt-order:hover{
+  background:#F4F4EF!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-view-buttons{
+  background:#F0F1EC!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-view-buttons button[aria-pressed="true"]{
+  background:#FBFCF8!important;
+  color:#1F241F!important;
+  border-color:#DEE3DC!important;
+  box-shadow:none!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-today{
+  background:#FBFCF8!important;
+  border-color:#D8DED7!important;
+  color:#4F574F!important;
+}
+
+/* 右侧预警只保留状态色，不用绿雾当容器色 */
+.factory-shell:has(.operations-dashboard) .overview-alert-count{
+  background:#788C5D18!important;
+  color:#74895F!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-alert-row{
+  background:#F4F4EF!important;
+  border-color:#DEE3DC!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-alert-row:hover{
+  background:#EFF1EB!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-alert-indicator.low{
+  background:#82986722!important;
+  color:#718A59!important;
+}
+
+/* Agent 卡片使用暖白面，动物本身负责辨识度 */
+.factory-shell:has(.operations-dashboard) .overview-agent-card{
+  background:#F4F4EF!important;
+  border-color:#DEE3DC!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-agent-card:hover{
+  background:#FBFCF8!important;
+  border-color:#D2D9D1!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-agent-connection{
+  background:#F0F1EC!important;
+  color:#7B837C!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-agent-name em{
+  background:#788C5D18!important;
+  color:#74895F!important;
+}
+.factory-shell:has(.operations-dashboard) .overview-agent-status i{
+  background:#00973F!important;
+}
+
+/* 首页底部 */
+.factory-shell:has(.operations-dashboard) .shell-footer{
+  border-top-color:#DEE3DC!important;
+  color:#7B837C!important;
+}
