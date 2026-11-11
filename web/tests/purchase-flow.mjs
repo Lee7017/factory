@@ -41,13 +41,25 @@ try {
   assert.equal(await page.locator('.native-business .biz-order-panel[data-order-panel="purchase"]').count(),0,
     "Procurement must never reuse the sales order panel")
   assert.equal(await board.locator('[data-proc-action="newPurchase"]').count(),0,"Purchasing completes POs; only PMC creates")
-  assert.equal(await board.locator('.proc-order-search').isVisible(),true)
-  assert.equal(await board.locator('.proc-order-status').isVisible(),true)
+  assert.equal(await board.locator('.proc-order-search').isVisible(),false,
+    "Duplicated in-card search is hidden in the React workbench")
+  assert.equal(await board.locator('.proc-order-status').isVisible(),false,
+    "Duplicated in-card status picker is hidden")
+  const topRightSearch=page.locator(".business-context-search input")
+  assert.equal(await topRightSearch.isVisible(),true,
+    "Purchasing search now belongs to the top-right feature band")
+  const headerFilter=board.getByRole("combobox",{name:/筛选审批状态/})
+  await headerFilter.waitFor({state:"attached"})
   assert.equal(await board.locator('.proc-order-row').count(),1)
-  await board.locator('.proc-order-search').fill("NO-MATCH-PURCHASE")
-  assert.equal(await board.locator('.proc-order-row:visible').count(),0)
-  await board.locator('.proc-order-search').fill("")
-  assert.equal(await board.locator('.proc-order-row:visible').count(),1)
+  await topRightSearch.fill("NO-MATCH-PURCHASE")
+  await page.waitForFunction(()=>document.querySelectorAll(".proc-purchase-board .proc-order-row:not([hidden])").length===0)
+  assert.equal(await board.locator('.proc-order-count').textContent(),"0")
+  await topRightSearch.fill("")
+  await page.waitForFunction(()=>document.querySelectorAll(".proc-purchase-board .proc-order-row:not([hidden])").length===1)
+  await headerFilter.selectOption({index:1})
+  assert.equal(await board.locator('.sales-order-status-control').evaluate(el=>getComputedStyle(el).backgroundColor),
+    "rgb(251, 252, 248)","Selected procurement status uses #FBFCF8")
+  await headerFilter.selectOption("")
   assert.equal(await board.locator('.proc-order-table td').filter({hasText:"SO-"}).count(),0,
     "Purchase workbench cannot display sales order IDs as business rows")
   await page.screenshot({path:"test-results/purchase-toolbar-desktop.png",fullPage:false})
