@@ -43,8 +43,8 @@ try {
           return Boolean(view?.querySelector(".ops-workbench,.mw-page,.proc-page,[data-slot=table],button"))
         },null,{timeout:12000})
       }
-      const heading=await page.locator(".crumb-current").textContent()
-      if(!heading?.trim())missing.push(`${name}: ${feature} title missing`)
+      const heading=await page.locator('.feature-band-button[aria-current="page"]').textContent()
+      if(!heading?.trim())missing.push(`${name}: ${feature} active feature title missing`)
       if(await page.locator("iframe").count())missing.push(`${name}: ${feature} still uses iframe`)
       const appearance=await page.evaluate(()=>{
         const frame=document.querySelector(".business-page-frame")
@@ -54,8 +54,8 @@ try {
         return {
           family:frame.getAttribute("data-business-family"),
           frames:document.querySelectorAll(".business-page-frame").length,
-          title:document.querySelector(".crumb-current")?.textContent?.trim(),
-          infoButton:!!document.querySelector(`button[aria-label^="查看"][aria-label$="介绍"]`),
+          title:document.querySelector('.feature-band-button[aria-current="page"]')?.textContent?.trim(),
+          featureBandHeight:Math.round(document.querySelector(".feature-band")?.getBoundingClientRect().height??0),
           redundantTitle:!!frame.querySelector(".business-page-heading"),
           borderRadius:style.borderRadius,
           width:Math.round(rect.width),
@@ -66,7 +66,7 @@ try {
       if(!appearance||appearance.frames!==1||!appearance.family||!appearance.title||appearance.redundantTitle)
         missing.push(`${name}: ${feature} missing shared business frame`)
       if(appearance?.horizontalOverflow)missing.push(`${name}: ${feature} causes horizontal page overflow`)
-      if(!appearance?.infoButton)missing.push(`${name}: ${feature} missing topbar info button`)
+      if(appearance&&appearance.featureBandHeight!==48)missing.push(`${name}: ${feature} feature band height is ${appearance.featureBandHeight}px`)
       if(["leave","leaveApproval","employees","skills"].includes(feature)){
         const native=await page.evaluate(()=>{
           const list=document.querySelector(".business-native-list")
@@ -316,7 +316,7 @@ try {
     selectedOption:document.querySelector("#perm-employee")?.value,
     selectedEmployee:window.FactoryAccess?.selectedEmployee,
     selectedText:document.querySelector(".access-selected-user strong")?.textContent,
-    title:document.querySelector(".crumb-current")?.textContent
+    title:document.querySelector('.feature-band-button[aria-current="page"]')?.textContent
   }))))
   await page.waitForFunction(()=>document.querySelector(".access-selected-user strong")?.textContent==="孙浩",null,{timeout:6000})
   assert.equal(await page.locator(".access-selected-user strong").textContent(),"孙浩",
