@@ -2119,7 +2119,7 @@ body::before,body::after{display:none!important}
   padding:15px;
   border:1px solid var(--factory-line-strong);
   border-radius:12px;
-  background:linear-gradient(115deg,#F2F5EF 0%,#F8F9F5 100%);
+  background:#FBFCF8;
 }
 .department-profile-photo{
   position:relative;
