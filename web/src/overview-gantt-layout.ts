@@ -13,7 +13,9 @@ export type OverviewBar = {
 export function layoutOverviewBars(entries:GanttEntry[],range:OverviewRange):OverviewBar[]{
   const total=range.endMs-range.startMs
   if(!(total>0))return []
-  const minimum=range.days===1?5:range.days===7?5.8:1.4
+  // Narrow colored markers remain legible without claiming hours of nonexistent occupancy.
+  // At the defined minimum timeline widths these are approximately 7-10 CSS pixels.
+  const minimum=range.days===1?2.5:range.days===7?1.6:0.8
   const positions=entries.flatMap(entry=>{
     const start=new Date(entry.start).getTime()
     const end=start+Number(entry.duration)*60000
