@@ -90,7 +90,7 @@
 .overview-gantt-bar.pack{background:#c0d7bb}
 .overview-gantt-bar.quality{background:#d9d1b7;color:#695f46}
 .overview-gantt-bar.clean,.overview-gantt-bar.change{background:#d1ddd1}
-.overview-gantt-bar.draft{border-style:dashed;opacity:.77}
+.overview-gantt-bar.draft{border-style:dashed;opacity:1}
 .overview-empty-gantt{display:flex;align-items:center;justify-content:center;padding:28px;font-size:11px;
   color:#839486;min-height:115px}
 .overview-gantt-foot{display:flex;align-items:center;gap:11px;flex-wrap:wrap;font-size:10px;color:#7b8c7c;
