@@ -1,7 +1,7 @@
 import type { WorkspaceData, WorkItem } from "./factory-state"
 
 export interface TodoRecord {
-  id:string;dept:string;kind:"ops"|"mod"|"leave"|"hrPay"|"financePay"|"engineering";
+  id:string;dept:string;kind:"ops"|"mod"|"leave"|"hrPay"|"financePay";
   title:string;detail:string;status:string;feature:string;
 }
 type WorkArray=WorkItem[]
@@ -107,9 +107,9 @@ export function getTodos(dept:string,workspace:WorkspaceData):TodoRecord[] {
   if(dept==="finance")for(const record of workspace.payroll??[])
     if(record.status==="待财务核准")
       add("financePay","payroll",record,`工资核准 · ${str(record.name)}`,record.basis,record.status)
-  if(dept==="engineering")for(const record of workspace.tasks??[])
-    if(record.type==="调机调线"&&!["已完成","已取消"].includes(record.status))
-      add("engineering","engineering",record,`${str(record.type)} · ${str(record.line)}`,record.category,record.status)
+  if(dept==="production")for(const record of workspace.tasks??[])
+    if(["清洗","调机调线","设备点检"].includes(str(record.type))&&!["已完成","已取消"].includes(str(record.status)))
+      add("ops","nonProductionTasks",record,`${str(record.type)} · ${str(record.id)}`,record.orderId||record.line||"非生产工单",record.status)
   return result
 }
 export function todoLane(status:string):"waiting"|"doing"|"review" {
@@ -124,7 +124,7 @@ export function dashboardMetrics(workspace:WorkspaceData){
     orders:workspace.orders?.length??0,
     activeOrders:(workspace.orders??[]).filter(o=>orderStage(o,workspace)!=="delivered").length,
     productionTasks:(workspace.tasks??[]).filter(t=>t.category==="生产任务").length,
-    pending:["hr","sales","pmc","purchase","warehouse","quality","production","engineering","finance","it","leadership"]
+    pending:["hr","sales","pmc","purchase","warehouse","quality","production","finance","it","leadership"]
       .reduce((sum,dept)=>sum+getTodos(dept,workspace).length,0),
     stages:entries.map(stage=>({stage,label:stageNames[stage],count:(workspace.orders??[]).filter(o=>orderStage(o,workspace)===stage).length}))
   }
