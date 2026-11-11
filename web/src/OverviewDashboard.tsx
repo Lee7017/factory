@@ -98,7 +98,7 @@ function GanttPanel({workspace,onSelect}:{workspace:WorkspaceData;onSelect:Props
       </div>
     </div>
     <div className="overview-gantt-scroller" role="region" aria-label="排程时间轴" tabIndex={0}>
-      <div className="overview-gantt-layout" style={{minWidth:view==="month"?"1180px":view==="week"?"660px":"640px"}}>
+      <div className="overview-gantt-layout" style={{minWidth:view==="month"?"1180px":view==="week"?"940px":"800px"}}>
         <div className="overview-gantt-row overview-gantt-head">
           <div>产线 / 工位</div><div>排程任务</div>
           <div className="overview-gantt-dates" style={cellStyle}>
@@ -126,7 +126,7 @@ function GanttPanel({workspace,onSelect}:{workspace:WorkspaceData;onSelect:Props
                   const kind=types[entry.type]??{label:entry.type,className:"other"}
                   const draft=entry.source==="订单排程"
                   const conflict=conflicts.has(entry.id)
-                  return <button type="button" key={entry.id}
+                  return <button type="button" key={entry.id} data-gantt-task={entry.id}
                     className={`overview-gantt-bar ${kind.className} ${draft?"draft":""} ${compact?"is-mini":""} ${conflict?"is-conflict":""}`}
                     style={{left:`${left}%`,width:`${width}%`,top:`${7+slot*26}px`}}
                     onClick={()=>onSelect("#/departments/pmc/schedule")}
