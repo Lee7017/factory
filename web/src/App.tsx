@@ -242,7 +242,7 @@ function Roster({dept,staff,employee,can,office,onUpdate}:{
     })
     setDraft("");setChatVersion(v=>v+1);onUpdate()
   }
-  return <Card className="glass-panel gap-4 p-4">
+  return <Card className="glass-panel roster-panel gap-3 p-3">
     <div className="roster-header">
       <div><h2 className="roster-title">部门花名簿</h2>
         <p className="roster-description">可按姓名、岗位或工号查找，点击成员进入私聊</p></div>
@@ -274,13 +274,16 @@ function Roster({dept,staff,employee,can,office,onUpdate}:{
       </DialogContent>
     </Dialog>
     <div className="roster-grid">
-      {visible.map(person=><button key={person.id} className="person-tile hover:bg-white/75" type="button" onClick={()=>setPeer(person)}>
+      {visible.map(person=><button key={person.id} className="person-tile hover:bg-white/75" type="button"
+        title={`${person.name} · ${person.title} · ${person.id}`}
+        aria-label={`与${person.name}私聊，${person.title}，工号${person.id}`}
+        onClick={()=>setPeer(person)}>
         <span className="person-avatar">{person.name.slice(-1)}</span>
         <span className="person-meta flex-1">
           <strong>{person.name}</strong>
           <span>{person.title} · {person.id}</span>
         </span>
-        <MessageCircle size={15} className="text-muted-foreground"/>
+        <MessageCircle size={14} className="shrink-0 text-muted-foreground" aria-hidden="true"/>
       </button>)}
       {visible.length===0&&<p className="empty-note">没有找到匹配的部门成员</p>}
     </div>
