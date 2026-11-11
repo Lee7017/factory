@@ -1,5 +1,6 @@
 import type { WorkspaceData, WorkItem } from "./factory-state"
 import orderStages from "./order-stages.json"
+import orderWorkflow from "./order-workflow.json"
 
 export interface TodoRecord {
   id:string;dept:string;kind:"ops"|"mod"|"leave"|"hrPay"|"financePay";
@@ -34,29 +35,14 @@ export function getTodos(dept:string,workspace:WorkspaceData):TodoRecord[] {
   const add=(kind:TodoRecord["kind"],feature:string,record:WorkItem,title:string,detail:unknown,status:unknown)=>{
     result.push({kind,id:str(record.id),dept,feature,title,detail:str(detail),status:str(status)})
   }
-  // Identical order routing to FactoryOperations.pendingForDept().
-  const match:Record<string,[string,string,string]>={
-    sales:["review","orderReview","待评审订单"],
-    pmc:["approved","schedule","等待排程"],
-    warehouse:["reserved","issue","待发料"],
-    quality:["semi_qc","qaQc","半成品报检待判定"],
-    production:["issued","tasks","待生产"]
-  }
+  // Shared department/feature routing is also used by the MES execution engine.
+  const routes=orderWorkflow.nextWorkForStage as Record<string,{dept:string;feature:string}>
+  const todoTitles=orderWorkflow.todoTitles as Record<string,string>
   for(const order of workspace.orders??[]){
-    const stage=orderStage(order,workspace),detail=order.product??order.id,status=stageNames[stage]??"未知状态"
-    if(dept==="pmc"&&stage==="formal")add("ops","kitting",order,"待齐套锁库",detail,status)
-    else if(dept==="quality"&&stage==="final_qc")add("ops","qaQc",order,"成品报检待判定",detail,status)
-    else if(dept==="quality"&&stage==="inspected")add("ops","release",order,"待质量放行",detail,status)
-    else if(dept==="warehouse"&&stage==="released")add("ops","inventory",order,"待成品入库",detail,status)
-    else if(dept==="warehouse"&&["dispatch","shipping"].includes(stage))add("ops","warehouseOutbound",order,"待成品出库",detail,status)
-    else if(dept==="sales"&&stage==="stored")add("ops","orders",order,"待发货通知",detail,status)
-    else if(dept==="sales"&&stage==="shipped")add("ops","orders",order,"待客户收货确认",detail,status)
-    else if(dept==="production"&&["blend_clean","pack_clean"].includes(stage))add("ops","nonProductionTasks",order,"清洗任务待执行",detail,status)
-    else if(dept==="production"&&["blending","semi_ok","packaging"].includes(stage))add("ops","tasks",order,"生产任务待执行",detail,status)
-    else if(match[dept]?.[0]===stage){
-      const [,feature,title]=match[dept]
-      add("ops",feature,order,title,detail,status)
-    }
+    const stage=orderStage(order,workspace)
+    const route=routes[stage],title=todoTitles[stage]
+    if(route?.dept===dept&&title)
+      add("ops",route.feature,order,title,order.product??order.id,stageNames[stage]??"未知状态")
   }
   const ops=workspace.ops
   if(dept==="purchase")for(const record of records(ops,"purchases"))
