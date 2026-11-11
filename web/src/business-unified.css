@@ -2375,8 +2375,9 @@ body::before,body::after{display:none!important}
   padding:0!important;
   border-bottom:0!important;
 }
-.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-toolbar:has(.biz-order-create:empty),
-.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-toolbar:not(:has(.biz-order-create)){
+.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-toolbar:not(
+  :has([data-op-action]:not([data-op-action="orderUi:fold"]),[data-proc-action],[data-module-action])
+){
   display:none!important;
 }
 .factory-shell-v2 .business-page-body .biz-order-panel .biz-order-create{
