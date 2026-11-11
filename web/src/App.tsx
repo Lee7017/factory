@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useRef, type ChangeEvent, type FormEvent } from "react"
 import {
-  Bell, Check, CheckCheck, Factory, Home, ImagePlus, Trash2,
+  Bell, Check, CheckCheck, Factory, Home, ImagePlus, MapPin, Trash2,
   LockKeyhole, MessageCircle, Pencil, Search, Settings, Sparkles
 } from "lucide-react"
 import { DEPARTMENTS, FEATURE_HINTS, FEATURE_NAMES, getDepartment, type Department } from "@/catalog"
@@ -206,15 +206,7 @@ function FeatureBand({route,onSelect,can,workspace}:{
   </div>
 }
 
-function FeatureGrid({dept}:{dept:Department}) {
-  return <section className="department-overview-panel">
-    <div className="department-overview-copy">
-      <span>部门工作台</span><h1>{shortDepartmentName(dept)}</h1><p>{dept.description}</p>
-    </div>
-  </section>
-}
-
-function OfficeLocation({dept,can,office,image,onUpdate}:{
+function DepartmentProfile({dept,can,office,image,onUpdate}:{
   dept:Department;
   can:(dept:string,feat:string,action?:string)=>boolean;
   office:string;image:string;onUpdate:()=>void
@@ -263,39 +255,50 @@ function OfficeLocation({dept,can,office,image,onUpdate}:{
     setImageError("")
     onUpdate()
   }
-  return <section className="office-panel" aria-labelledby={`office-${dept.id}`}>
-    <div className="office-panel-header">
-      <h2 id={`office-${dept.id}`} className="office-title">办公位置</h2>
-      <p className="office-description">记录部门实际厂区、楼栋、楼层和房间号</p>
+  return <section className="department-profile" aria-labelledby={`department-title-${dept.id}`}>
+    <div className="department-profile-photo">
+      {canEdit?<button type="button" className="department-profile-photo-slot"
+        title={image?"更换部门照片":"上传部门照片"}
+        aria-label={image?"更换部门照片":"上传部门照片"}
+        onClick={()=>fileInput.current?.click()}>
+        {image?<img src={image} alt={shortDepartmentName(dept)+"办公环境"}/>:
+          <span className="department-profile-photo-empty">
+            <ImagePlus size={24} strokeWidth={1.5}/>
+            <strong>添加部门照片</strong>
+            <small>办公室、楼栋或门牌</small>
+          </span>}
+      </button>:
+        <div className="department-profile-photo-slot">
+          {image?<img src={image} alt={shortDepartmentName(dept)+"办公环境"}/>:
+            <span className="department-profile-photo-empty">
+              <ImagePlus size={24} strokeWidth={1.5}/>
+              <strong>暂无部门照片</strong>
+            </span>}
+        </div>}
+      {canEdit&&<input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp"
+        className="office-photo-input" aria-label="上传部门照片" onChange={uploadImage}/>}
+      {canEdit&&image&&<button type="button" className="department-profile-photo-remove"
+        title="删除部门照片" aria-label="删除部门照片" onClick={removeImage}>
+        <Trash2 size={14}/>
+      </button>}
     </div>
-    <div className="office-location-row">
-      <div className="office-photo-wrap">
-        {canEdit?<button type="button" className="office-photo-slot" title={image?"更换办公位置图片":"上传办公位置图片"}
-            aria-label={image?"更换办公位置图片":"上传办公位置图片"}
-            onClick={()=>fileInput.current?.click()}>
-          {image?<img src={image} alt={shortDepartmentName(dept)+"办公位置"} />:
-            <span className="office-photo-empty"><ImagePlus size={20}/><small>添加图片</small></span>}
-        </button>:
-          <div className="office-photo-slot">
-            {image?<img src={image} alt={shortDepartmentName(dept)+"办公位置"}/>:
-              <span className="office-photo-empty"><ImagePlus size={20}/><small>暂无图片</small></span>}
-          </div>}
-        {canEdit&&<input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp"
-          className="office-photo-input" aria-label="上传办公位置图片" onChange={uploadImage}/>}
+    <div className="department-profile-main">
+      <div className="department-profile-heading">
+        <span className="department-profile-eyebrow">部门工作台</span>
+        <h1 id={`department-title-${dept.id}`}>{shortDepartmentName(dept)}</h1>
+        <p>{dept.description}</p>
       </div>
-      <div className="office-location-details">
-        <span className="office-label">当前位置</span>
-        <strong className="office-address">{office||"尚未登记，请填写实际办公位置"}</strong>
-        {imageError&&<small className="office-image-error" role="alert">{imageError}</small>}
-      </div>
-      {canEdit&&<div className="office-location-actions">
-        <Button variant="outline" size="sm" className="bg-white/70" onClick={()=>{setAddress(office);setEditing(true)}}>
+      <div className="department-profile-bottom">
+        <div className="department-profile-location">
+          <span className="department-profile-location-label"><MapPin size={14} strokeWidth={1.8}/>办公位置</span>
+          <strong className="office-address">{office||"尚未登记办公位置"}</strong>
+          {imageError&&<small className="office-image-error" role="alert">{imageError}</small>}
+        </div>
+        {canEdit&&<Button variant="outline" size="sm" className="department-profile-edit-location"
+          onClick={()=>{setAddress(office);setEditing(true)}}>
           <Pencil size={13}/>{office?"修改位置":"填写位置"}
-        </Button>
-        {image&&<Button variant="ghost" size="sm" className="office-remove-image" onClick={removeImage} aria-label="删除办公位置图片">
-          <Trash2 size={13}/>删除图片
         </Button>}
-      </div>}
+      </div>
     </div>
     <Dialog open={editing} onOpenChange={setEditing}>
       <DialogContent className="glass-dialog">
@@ -390,8 +393,7 @@ function DepartmentPage({dept,staff,employee,workspace,can,onRefresh}:{
   onRefresh:()=>void
 }) {
   return <div className="dept-main">
-    <FeatureGrid dept={dept}/>
-    <OfficeLocation dept={dept} can={can} office={workspace.offices?.[dept.id]??""} image={workspace.officeImages?.[dept.id]??""} onUpdate={onRefresh}/>
+    <DepartmentProfile dept={dept} can={can} office={workspace.offices?.[dept.id]??""} image={workspace.officeImages?.[dept.id]??""} onUpdate={onRefresh}/>
     <Roster dept={dept} staff={staff} employee={employee} onUpdate={onRefresh}/>
   </div>
 }
