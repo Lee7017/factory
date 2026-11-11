@@ -47,6 +47,21 @@ try {
   await page.locator(".department-tile").filter({hasText:"仓库 / 物流部"}).click()
   await page.locator(".feature-tile").first().waitFor()
   assert.equal(await page.locator(".feature-tile").count(),8,"Warehouse has 8 business cards")
+  // Business function cards are dense but still individually readable and clickable.
+  const desktopFeatureLayout=await page.locator(".feature-grid").evaluate(grid=>{
+    const tiles=[...grid.querySelectorAll(".feature-tile")]
+    const columns=getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length
+    const boxes=tiles.map(el=>el.getBoundingClientRect())
+    return {columns,heights:boxes.map(box=>box.height),rowCount:new Set(boxes.map(box=>Math.round(box.top))).size,
+      hasDescriptions:tiles.every(el=>Boolean(el.querySelector(".feature-description")?.textContent?.trim())),
+      hasTooltips:tiles.every(el=>Boolean(el.getAttribute("title")))}
+  })
+  assert.equal(desktopFeatureLayout.columns,4,"Desktop shows four business function cards per row")
+  assert.equal(desktopFeatureLayout.rowCount,2,"Eight warehouse functions occupy two compact rows")
+  assert.ok(desktopFeatureLayout.heights.every(height=>height>=70&&height<=115),
+    "Compact business cards must avoid previous 142px empty height: "+JSON.stringify(desktopFeatureLayout))
+  assert.ok(desktopFeatureLayout.hasDescriptions&&desktopFeatureLayout.hasTooltips,
+    "All feature cards retain a readable description and full text on hover")
   assert.equal(await page.locator(".page-title").count(),0,"Department home should not waste height on title")
   await page.getByRole("button",{name:"查看仓库 / 物流部介绍"}).hover()
   const tooltip=page.locator('[data-slot="popover-content"]')
@@ -79,6 +94,16 @@ try {
   await mobile.goto(base,{waitUntil:"networkidle"})
   await mobile.getByRole("button",{name:"打开部门菜单"}).click()
   await mobile.locator(".shell-sidebar .department-tile").filter({hasText:"仓库 / 物流部"}).click()
+  const mobileFeatureLayout=await mobile.locator(".feature-grid").evaluate(grid=>{
+    const cards=[...grid.querySelectorAll(".feature-tile")]
+    return {columns:getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length,
+      heights:cards.map(card=>card.getBoundingClientRect().height),
+      overflow:document.documentElement.scrollWidth>innerWidth+4}
+  })
+  assert.equal(mobileFeatureLayout.columns,1,"Phone uses one short, readable function card per row")
+  assert.ok(mobileFeatureLayout.heights.every(height=>height>=60&&height<=112),
+    "Phone cards remain compact without cropping text: "+JSON.stringify(mobileFeatureLayout))
+  assert.equal(mobileFeatureLayout.overflow,false,"Dense mobile grid must not cause horizontal scrolling")
   await mobile.getByRole("button",{name:"查看仓库 / 物流部介绍"}).click()
   const mobilePopup=mobile.locator('[data-slot="popover-content"]')
   await mobilePopup.waitFor({state:"visible"})
