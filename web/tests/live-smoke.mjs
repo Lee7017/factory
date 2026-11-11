@@ -83,54 +83,42 @@ try{
   await orderButton.click()
   const dialog=page.locator(".journey-dialog")
   await dialog.waitFor({state:"visible",timeout:10000})
-  // Confirm live order modal defaults to the flow tab and keeps order information separate.
-  const flowTab=dialog.locator('[data-journey-tab="flow"]')
-  const orderTab=dialog.locator('[data-journey-tab="order"]')
-  const flowPanel=dialog.locator('[data-journey-panel="flow"]')
-  const orderPanel=dialog.locator('[data-journey-panel="order"]')
-  assert.equal(await dialog.locator('[role="tablist"] [role="tab"]').count(),2)
-  assert.equal(await dialog.locator(".journey-toolbar,.journey-range").count(),0,"Redundant status and endpoint rows are removed")
-  assert.equal(await flowPanel.locator(".journey-section-head").count(),0,"Flow chart has no duplicate header and explanatory text")
-  const orderSteps=await flowPanel.locator(".journey-task").allTextContents()
-  assert.equal(orderSteps.length,19,"Order includes distinct after-task cleaning for blending and packaging")
+  // Current UX: the first two flow cards expose "订单内容"; there are no order tabs.
+  assert.equal(await dialog.locator('[role="tablist"] [role="tab"]').count(),0,"Order flow must not render obsolete tabs")
+  assert.equal(await dialog.locator("[data-flow-order-content]").count(),2,
+    "Both receiving and review cards provide the order-content action")
+  assert.equal(await dialog.locator(".journey-toolbar,.journey-range,.journey-return-overview").count(),0)
+  const orderSteps=await dialog.locator(".journey-task").allTextContents()
+  assert.equal(orderSteps.length,19,"Order keeps all 19 production and delivery workflow steps")
+  assert.equal(orderSteps[0],"接收订单并提交评审")
+  assert.equal(orderSteps[1],"订单评审通过")
   assert.ok(orderSteps.includes("配制线清洗执行与复核"))
   assert.ok(orderSteps.includes("包装线清洗执行与复核"))
   assert.ok(orderSteps.indexOf("配制任务完成")<orderSteps.indexOf("配制线清洗执行与复核"))
   assert.ok(orderSteps.indexOf("调机调线执行与复核")<orderSteps.indexOf("包装开工"))
   assert.ok(orderSteps.indexOf("包装任务完成")<orderSteps.indexOf("包装线清洗执行与复核"))
-  assert.equal(orderSteps[0],"接收订单并提交评审","Receiving the order and submitting for review are one step")
-  assert.ok(orderSteps.includes("成品检验判定并放行"),"QC decision and QA release share a card")
-  assert.ok(!orderSteps.includes("QA 质量放行"),"No standalone QA release card")
-  const tabAppearance=await flowTab.evaluate(el=>{
-    const css=getComputedStyle(el),activeLine=getComputedStyle(el,"::after"),tablist=getComputedStyle(el.parentElement)
-    return {background:css.backgroundColor,borderWidth:css.borderTopWidth,underline:activeLine.backgroundColor,barBorder:tablist.borderBottomWidth}
-  })
-  assert.equal(tabAppearance.background,"rgba(0, 0, 0, 0)","Tabs have no pill background")
-  assert.equal(tabAppearance.borderWidth,"0px","Tabs have no button border")
-  assert.equal(tabAppearance.barBorder,"1px","Tab row has a subtle divider")
-  assert.notEqual(tabAppearance.underline,"rgba(0, 0, 0, 0)","Active tab has a thin underline")
-
-  assert.equal(await flowTab.getAttribute("aria-selected"),"true")
-  assert.equal(await orderTab.getAttribute("aria-selected"),"false")
-  assert.ok(await flowPanel.isVisible(),"Flow tab is visible by default")
-  assert.equal(await orderPanel.isVisible(),false,"Order content is hidden by default")
+  assert.ok(orderSteps.includes("成品检验判定并放行"))
+  assert.ok(!orderSteps.includes("QA 质量放行"))
+  assert.equal(await dialog.locator(".journey-step-count,.journey-step-returns").count(),0,
+    "No execution/return count badges on workflow cards")
   await dialog.evaluate(el=>{el.scrollTop=0})
-  await page.screenshot({path:"test-results/live-flow-default-tab.png"})
-  await orderTab.click()
-  assert.equal(await flowPanel.isVisible(),false,"Flow chart hides on order tab")
-  assert.ok(await orderPanel.isVisible(),"Order content has its own tab")
-  assert.ok((await orderPanel.textContent())?.includes("订单编号"),"Order fields remain available")
-  await page.screenshot({path:"test-results/live-order-content-tab.png"})
-  await flowTab.click()
-  assert.ok(await flowPanel.isVisible(),"Switching back restores the original flow")
-  assert.equal(await orderPanel.isVisible(),false)
-
-  const currentButton=dialog.locator(".journey-card.is-current [data-flow-track]")
-  await currentButton.waitFor({state:"visible",timeout:10000})
-  await currentButton.scrollIntoViewIfNeeded()
+  await page.screenshot({path:"test-results/live-flow-no-tabs.png"})
+  await dialog.locator("[data-flow-order-content]").first().click()
+  const orderDrawer=page.locator(".journey-order-panel")
+  await orderDrawer.waitFor({state:"visible",timeout:5000})
+  assert.ok((await orderDrawer.textContent())?.includes("订单编号"),"Order fields are available in the right drawer")
+  const drawerPosition=await orderDrawer.evaluate(el=>({right:el.getBoundingClientRect().right,width:el.getBoundingClientRect().width,viewport:window.innerWidth}))
+  assert.ok(drawerPosition.width<=630&&Math.abs(drawerPosition.right-drawerPosition.viewport)<40,
+    "Order content must open at the screen right")
+  await page.screenshot({path:"test-results/live-order-content-right-drawer.png"})
+  await orderDrawer.locator("[data-flow-order-dismiss]").click()
+  await orderDrawer.waitFor({state:"detached",timeout:5000})
+  const currentCard=dialog.locator(".journey-card.is-current").first()
+  await currentCard.waitFor({state:"visible",timeout:10000})
+  await currentCard.scrollIntoViewIfNeeded()
   await page.waitForTimeout(1900)
   await page.screenshot({path:"test-results/live-current-step-dialog.png"})
-  await currentButton.screenshot({path:"test-results/live-current-step-button.png"})
+  await currentCard.screenshot({path:"test-results/live-current-step-card.png"})
   // Verify four 176px cards are visible side-by-side at a typical desktop width.
   await page.setViewportSize({width:1024,height:768})
   const cardLayout=await dialog.locator(".journey-snake-scroll").evaluate(el=>{
@@ -152,22 +140,25 @@ try{
   await page.screenshot({path:"test-results/live-four-cards-1024.png"})
   await page.setViewportSize({width:1440,height:900})
 
-  assert.equal((await currentButton.textContent())?.trim(),"跟踪当前环节 →",
-    "Running card has one combined '跟踪当前环节' action")
-  assert.equal(await dialog.locator(".journey-card.is-current .journey-state").count(),0,
-    "Current-step badge must not duplicate tracking button")
-  assert.equal(await dialog.locator('[data-flow-track]').count(),1,
-    "There must be one tracking action in this journey")
-  assert.equal(await dialog.getByText("跟踪卡点",{exact:false}).count(),0,
-    "Outdated tracking button must be absent")
+  // Tracking is available only when the order dialog has an explicit next target.
+  assert.equal(await dialog.getByText("跟踪卡点",{exact:false}).count(),0)
   await page.setViewportSize({width:390,height:844})
-  await currentButton.scrollIntoViewIfNeeded()
+  await currentCard.scrollIntoViewIfNeeded()
   await page.screenshot({path:"test-results/live-current-step-mobile.png"})
   await page.setViewportSize({width:1440,height:900})
-  await currentButton.click()
-  await dialog.waitFor({state:"detached",timeout:10000})
-  assert.match(new URL(page.url()).hash,new RegExp("^#/departments/[a-z]+(?:/[a-zA-Z]+)?$"),
-    "Tracking action navigates to a department route")
+  const trackAction=dialog.locator(".journey-card.is-current [data-flow-track]")
+  if(await trackAction.count()){
+    await trackAction.click()
+    await dialog.waitFor({state:"detached",timeout:10000})
+    assert.match(new URL(page.url()).hash,new RegExp("^#/departments/[a-z]+(?:/[a-zA-Z]+)?$"))
+  }else{
+    // A read-only order detail may have no nextOpen: the card still opens its execution history.
+    await currentCard.click()
+    await orderDrawer.waitFor({state:"visible",timeout:5000})
+    assert.ok((await orderDrawer.textContent())?.includes("记录"))
+    await orderDrawer.locator("[data-flow-order-dismiss]").click()
+    await page.evaluate(()=>window.FactoryFlowUI?.dismiss?.())
+  }
   // Validate both paths against real operations/modules in this isolated browser.
   const qcResult=await page.evaluate(()=>{
     const ops=window.FactoryOperations,modules=window.FactoryModules;
