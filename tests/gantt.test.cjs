@@ -97,14 +97,12 @@ test('PMC compact and full views share a six-color task renderer', () => {
   entry('Z','Z','半成品 QC','QC 检验位','2026-11-11T11:00',15)
  ];
  const app=boot([order('X'),order('Y'),order('Z')],jobs);
- const home=app.api.renderOverview(),pmc=app.api.render();
- assert.match(home,/class="gantt-panel gantt-overview"/);
- assert.match(home,/--gantt-row-height:112px/);
- assert.match(home,/is-mini/);
- const positions=html=>Array.from(html.matchAll(/class="gantt-bar [^"]+" style="([^"]+)"/g),m=>m[1]);
- assert.deepEqual(positions(home),positions(pmc));
+ const html=app.api.render();
+ assert.match(html,/class="gantt-panel"/);
+ assert.match(html,/--gantt-row-height:112px/);
+ assert.match(html,/is-mini/);
  const classes=['clean','blend','semi-qc','change','pack','final-qc'];
- assert.ok(classes.every(x=>home.includes('category-'+x)),'six legend categories required');
+ assert.ok(classes.every(x=>html.includes('category-'+x)),'six legend categories required');
  const css=fs.readFileSync(path.join(__dirname,'..','web/src/gantt-palette.css'),'utf8');
  const palette=classes.map(x=>{
   const result=css.match(new RegExp('--gantt-'+x+':\\s*(#[0-9a-fA-F]{6})'));
@@ -113,7 +111,8 @@ test('PMC compact and full views share a six-color task renderer', () => {
  });
  assert.equal(new Set(palette).size,6,'operation colors must be distinct');
  const modules=fs.readFileSync(path.join(__dirname,'..','modules.js'),'utf8');
- assert.match(modules,/FactoryGantt\?\.renderOverview\?\.\(\)/);
+ assert.doesNotMatch(modules,/overview:overviewPage/);
+ assert.doesNotMatch(modules,/renderOverview/);
 });
 
 test('only two QAQC tasks remain; old QC names migrate and old QA release schedule is preserved in archive', () => {
