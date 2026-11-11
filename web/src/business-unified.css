@@ -2982,3 +2982,95 @@ button.department-profile-photo-slot:focus-visible,
   border-color:#D8DFD6!important;
   color:#526456!important;
 }
+
+/* Final sales ledger alignment: in-header native filter, neutral status, consistent columns. */
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .op-table{
+  table-layout:fixed!important;
+  width:100%!important;
+  min-width:760px!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .op-table :is(th,td):nth-child(1){width:18%!important}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .op-table :is(th,td):nth-child(2){width:21%!important}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .op-table :is(th,td):nth-child(3){width:12%!important}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .op-table :is(th,td):nth-child(4){width:19%!important}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .op-table :is(th,td):nth-child(5){width:30%!important}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .op-table :is(th,td){
+  text-align:left!important;
+  vertical-align:middle!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .op-table td:nth-child(2){
+  overflow-wrap:anywhere;
+}
+.factory-shell-v2 .native-business .legacy-root .biz-order-panel[data-order-panel="orders"] .op-row-actions{
+  display:flex!important;
+  justify-content:flex-start!important;
+  align-items:center!important;
+  flex-wrap:wrap!important;
+  margin:0!important;
+  gap:7px!important;
+}
+.factory-shell-v2 .native-business .legacy-root .biz-order-panel[data-order-panel="orders"] .op-table span.op-badge,
+.factory-shell-v2 .native-business .legacy-root .biz-order-panel[data-order-panel="orders"] .op-table span.op-badge.complete{
+  background:#FBFCF8!important;
+  color:#4F574F!important;
+  border:1px solid #DEE3DC!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root .biz-order-panel[data-order-panel="orders"] .op-table tbody tr:hover td{
+  background:#FBFCF8!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .sales-order-status-heading{
+  padding:0 12px!important;
+  background:#F4F4EF!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .sales-order-status-control{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:7px;
+  height:34px;
+  max-width:100%;
+  padding:0 5px 0 0;
+  white-space:nowrap;
+  color:#4F574F;
+  font-size:11px;
+  font-weight:700;
+  line-height:1;
+  cursor:pointer;
+  border-radius:5px;
+}
+.factory-shell-v2 .sales-order-status-caret{
+  width:15px;
+  height:15px;
+  flex-shrink:0;
+  color:#58655C;
+}
+.factory-shell-v2 .sales-order-status-control:hover,
+.factory-shell-v2 .sales-order-status-control.is-active,
+.factory-shell-v2 .sales-order-status-control:focus-within{
+  background:#FBFCF8!important;
+  color:#343D36;
+}
+.factory-shell-v2 .sales-order-status-control:focus-within{
+  outline:2px solid #9AA99A;
+  outline-offset:1px;
+}
+.factory-shell-v2 .sales-order-status-control .sales-order-status-select{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  opacity:0!important;
+  cursor:pointer!important;
+  border:0!important;
+  z-index:2;
+}
+.factory-shell-v2 .sales-order-status-select option:checked{
+  background:#FBFCF8;
+  color:#343D36;
+}
