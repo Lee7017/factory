@@ -36,3 +36,36 @@ export function layoutOverviewBars(entries:GanttEntry[],range:OverviewRange):Ove
 /** 20px bars + 6px gap + 7px top/bottom padding. */
 export const overviewRowHeight=(bars:OverviewBar[]):number=>
   Math.max(57,14+(bars.length?Math.max(...bars.map(bar=>bar.slot))+1:1)*26)
+
+/** 工位名称与 gantt.js 的 PMC 正式排程表保持一致。 */
+export const PMC_LANES=[
+ {id:"L01 配制一线",desc:"配制"},
+ {id:"L02 配制二线",desc:"配制"},
+ {id:"S03-4# 瓶装线",desc:"包装"},
+ {id:"S04 包装二线",desc:"包装"},
+ {id:"QC 检验位",desc:"半成品 / 成品 QAQC"}
+] as const
+
+/**
+ * 真正的产能冲突：仅当同一工位上的任务实际起止时间相交。
+ * 不把因任务条最小可视宽度而产生的绘图拥挤误判为工位冲突。
+ */
+export function resourceConflicts(entries:GanttEntry[]):Set<string>{
+ const result=new Set<string>()
+ const byLane=new Map<string,{id:string;start:number;end:number}[]>()
+ for(const e of entries){
+  const start=new Date(e.start).getTime(),duration=Number(e.duration)
+  if(!Number.isFinite(start)||!Number.isFinite(duration)||duration<=0)continue
+  const current=byLane.get(e.lane)||[]
+  current.push({id:e.id,start,end:start+duration*60000})
+  byLane.set(e.lane,current)
+ }
+ for(const tasks of byLane.values()){
+  tasks.sort((a,b)=>a.start-b.start||a.end-b.end)
+  for(let i=0;i<tasks.length;i++)for(let j=i+1;j<tasks.length&&tasks[j].start<tasks[i].end;j++){
+   result.add(tasks[i].id)
+   result.add(tasks[j].id)
+  }
+ }
+ return result
+}
