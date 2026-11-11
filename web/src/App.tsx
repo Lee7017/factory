@@ -13,6 +13,7 @@ import { LeavePage } from "@/business/LeavePage"
 import { EmployeesPage } from "@/business/EmployeesPage"
 import { SkillsPage } from "@/business/SkillsPage"
 import { OverviewDashboard } from "@/OverviewDashboard"
+import { AgentCenter } from "@/AgentCenter"
 import { SVG_SPRITE } from "@/generated-lucide-sprite"
 import { DataBackup } from "@/components/DataBackup"
 import { Button } from "@/components/ui/button"
@@ -23,8 +24,9 @@ import {
   DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog"
 
-type Route={kind:"overview"}|{kind:"department";dept:string;feature?:string}
+type Route={kind:"overview"}|{kind:"ai"}|{kind:"department";dept:string;feature?:string}
 function parseRoute(hash:string):Route {
+  if(hash==="#/ai")return {kind:"ai"}
   const match=hash.match(/^#\/departments\/([a-z]+)(?:\/([a-zA-Z]+))?$/)
   if(match?.[1]==="engineering")return {kind:"department",dept:"production",feature:"nonProductionTasks"}
   if(match?.[1]==="it"&&!match[2])return {kind:"department",dept:"it",feature:"settings"}
@@ -59,6 +61,7 @@ function SystemRail({route,onSelect,employee,staff,onSwitch,messages,onRead,onRe
   const unread=messages.filter(m=>m.unread).length
   const searchItems=[
     {label:"首页总览",hint:"工厂运行总览",hash:"#/overview"},
+    {label:"AI Agent 中心",hint:"2.5D 智慧地图、部门守护兽、任务与企业共享 Credits",hash:"#/ai"},
     ...departmentsForBand().flatMap(dept=>[
       {label:shortDepartmentName(dept),hint:dept.description,hash:"#/departments/"+dept.id},
       ...dept.features.map(feature=>({
@@ -122,19 +125,9 @@ function SystemRail({route,onSelect,employee,staff,onSwitch,messages,onRead,onRe
           </div>
         </DialogContent>
       </Dialog>
-      <Dialog>
-        <DialogTrigger asChild>
-          <button type="button" className="rail-button rail-ai" title="AI 协同" aria-label="AI 协同"><Sparkles size={18}/><i className="rail-ai-dot"/></button>
-        </DialogTrigger>
-        <DialogContent className="glass-dialog">
-          <DialogHeader><DialogTitle>AI 协同</DialogTitle><DialogDescription>按任务形态区分单实例与多实例 Agent。</DialogDescription></DialogHeader>
-          <div className="agent-mini-list">
-            <div><span>🐻</span><strong>小熊管家</strong><small>单实例 · 跨部门提醒与汇总</small></div>
-            <div><span>🐝</span><strong>蜂群排程</strong><small>多实例 · 并行分析排程任务</small></div>
-            <div><span>🐜</span><strong>蚁群巡检</strong><small>多实例 · 并行核查业务异常</small></div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <button type="button" className={"rail-button rail-ai "+(route.kind==="ai"?"active":"")} title="AI Agent 中心" aria-label="AI Agent 中心" onClick={()=>onSelect("#/ai")}>
+        <Sparkles size={18}/><i className="rail-ai-dot"/>
+      </button>
     </nav>
     <div className="rail-bottom">
       <button type="button" className={"rail-button "+(route.kind==="department"&&route.dept==="it"?"active":"")} title="系统设置" aria-label="系统设置"
@@ -439,8 +432,8 @@ export default function App() {
       <div className="shell-workspace">
         <DepartmentBand route={route} onSelect={navigate}/>
         <FeatureBand route={route} onSelect={navigate} can={can} workspace={workspace}/>
-        <main className={"shell-content "+(route.kind==="overview"?"is-overview":"is-department")+" "+(currentFeature?"is-business":"")} id="main-content">
-          {route.kind==="overview"?<OverviewDashboard workspace={workspace} onSelect={navigate} onRefresh={refresh}/>:
+        <main className={"shell-content "+(route.kind==="overview"?"is-overview":route.kind==="ai"?"is-ai":"is-department")+" "+(currentFeature?"is-business":"")} id="main-content">
+          {route.kind==="overview"?<OverviewDashboard workspace={workspace} onSelect={navigate} onRefresh={refresh}/>:route.kind==="ai"?<AgentCenter onSelect={navigate}/>:
             currentDept&&(!currentFeature||!validFeature)?
               <DepartmentPage key={currentDept.id} dept={currentDept} staff={staff} employee={employee}
                 workspace={workspace} can={can} onRefresh={refresh}/>
