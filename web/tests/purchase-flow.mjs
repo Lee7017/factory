@@ -12,7 +12,7 @@ try {
   const errors=[]
   page.on("pageerror",err=>errors.push(err.stack??err.message))
   await page.goto(base,{waitUntil:"networkidle"})
-  await page.locator(".department-tile").first().waitFor()
+  await page.locator(".department-band-button").first().waitFor()
   const getData=()=>page.evaluate(()=>JSON.parse(localStorage.getItem("factory-workspace-v4")||"{}"))
   async function asEmployee(id){
     const employee=await page.evaluate(id=>{
