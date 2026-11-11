@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import type { WorkspaceData } from "@/factory-state"
 import {layoutOverviewBars,overviewRowHeight,PMC_LANES,resourceConflicts} from "@/overview-gantt-layout"
+import schedulingDefinitions from "@/scheduling-definitions.json"
 import {
   dayShift,dayString,weekStart,overviewMetrics,orderStage,scheduleEntries,
   type DashboardAlert,type DonutSegment
@@ -40,18 +41,14 @@ function periodFor(day:string,view:View){
     startMs:new Date(first+"T00:00:00").getTime(),
     endMs:new Date(end+"T00:00:00").getTime()}
 }
-const types:Record<string,{label:string;className:string}>={
-  "清洗":{label:"清洗",className:"clean"},
-  "配制":{label:"配制",className:"blend"},
-  "半成品 QAQC":{label:"半成品 QAQC",className:"semi-qc"},
-  "半成品 QC":{label:"半成品 QAQC",className:"semi-qc"},
-  "调机调线":{label:"调机调线",className:"change"},
-  "包装":{label:"包装",className:"pack"},
-  "成品 QAQC":{label:"成品 QAQC",className:"final-qc"},
-  "成品 QC":{label:"成品 QAQC",className:"final-qc"}
-}
-const ganttLegend=[["clean","清洗"],["blend","配制"],["semi-qc","半成品 QAQC"],
-  ["change","调机调线"],["pack","包装"],["final-qc","成品 QAQC"]] as const
+const types:Record<string,{label:string;className:string}>=Object.fromEntries([
+  ...Object.entries(schedulingDefinitions.categories).map(([label,className])=>
+    [label,{label,className}]),
+  ...Object.entries(schedulingDefinitions.legacyTypeNames).map(([legacy,label])=>
+    [legacy,{label,className:(schedulingDefinitions.categories as Record<string,string>)[label]}])
+])
+const ganttLegend=schedulingDefinitions.stages.map(label=>
+  ({label,className:(schedulingDefinitions.categories as Record<string,string>)[label]}))
 function GanttPanel({workspace,onSelect}:{workspace:WorkspaceData;onSelect:Props["onSelect"]}){
   const [view,setView]=useState<View>("week")
   const [day,setDay]=useState(()=>dayString(new Date()))
@@ -94,7 +91,7 @@ function GanttPanel({workspace,onSelect}:{workspace:WorkspaceData;onSelect:Props
         <button type="button" className="overview-today" onClick={()=>setDay(dayString(new Date()))}>今天</button>
       </div>
       <div className="overview-gantt-legend">
-        {ganttLegend.map(([kind,label])=><span key={kind}><i className={kind}/>{label}</span>)}
+        {ganttLegend.map(({label,className})=><span key={label}><i className={className}/>{label}</span>)}
       </div>
     </div>
     <div className="overview-gantt-scroller" role="region" aria-label="排程时间轴" tabIndex={0}>
