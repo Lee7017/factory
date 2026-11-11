@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react"
+import { useCallback, useEffect, useState, useRef, type ChangeEvent, type FormEvent } from "react"
 import {
-  Bell, Check, CheckCheck, Factory, Home,
+  Bell, Check, CheckCheck, Factory, Home, ImagePlus, Trash2,
   LockKeyhole, MessageCircle, Pencil, Search, Settings, Sparkles
 } from "lucide-react"
 import { DEPARTMENTS, FEATURE_HINTS, FEATURE_NAMES, getDepartment, type Department } from "@/catalog"
@@ -214,18 +214,54 @@ function FeatureGrid({dept}:{dept:Department}) {
   </section>
 }
 
-function OfficeLocation({dept,can,office,onUpdate}:{
+function OfficeLocation({dept,can,office,image,onUpdate}:{
   dept:Department;
   can:(dept:string,feat:string,action?:string)=>boolean;
-  office:string;onUpdate:()=>void
+  office:string;image:string;onUpdate:()=>void
 }) {
   const [editing,setEditing]=useState(false)
   const [address,setAddress]=useState(office)
+  const [imageError,setImageError]=useState("")
+  const fileInput=useRef<HTMLInputElement>(null)
   const canEdit=can("it","employees","edit")||can("it","permissions","config")
   function saveOffice(event:FormEvent) {
     event.preventDefault()
     updateWorkspace(data=>{(data.offices??={})[dept.id]=address.trim().slice(0,140)})
     setEditing(false);onUpdate()
+  }
+  async function uploadImage(event:ChangeEvent<HTMLInputElement>) {
+    const file=event.target.files?.[0]
+    event.target.value=""
+    if(!file)return
+    if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>8*1024*1024){
+      setImageError("请选择不超过 8 MB 的 JPG、PNG 或 WebP 图片")
+      return
+    }
+    try {
+      const bitmap=await createImageBitmap(file)
+      const scale=Math.min(1,960/Math.max(bitmap.width,bitmap.height))
+      const canvas=document.createElement("canvas")
+      canvas.width=Math.max(1,Math.round(bitmap.width*scale))
+      canvas.height=Math.max(1,Math.round(bitmap.height*scale))
+      const context=canvas.getContext("2d")
+      if(!context)throw new Error("无法处理图片")
+      context.fillStyle="#ffffff"
+      context.fillRect(0,0,canvas.width,canvas.height)
+      context.drawImage(bitmap,0,0,canvas.width,canvas.height)
+      bitmap.close()
+      const encoded=canvas.toDataURL("image/jpeg",0.75)
+      if(encoded.length>600000)throw new Error("图片压缩后仍过大，请换一张图片")
+      updateWorkspace(data=>{(data.officeImages??={})[dept.id]=encoded})
+      setImageError("")
+      onUpdate()
+    } catch(error){
+      setImageError(error instanceof Error?error.message:"图片保存失败，请重试")
+    }
+  }
+  function removeImage() {
+    updateWorkspace(data=>{delete data.officeImages?.[dept.id]})
+    setImageError("")
+    onUpdate()
   }
   return <section className="office-panel" aria-labelledby={`office-${dept.id}`}>
     <div className="office-panel-header">
@@ -233,11 +269,33 @@ function OfficeLocation({dept,can,office,onUpdate}:{
       <p className="office-description">记录部门实际厂区、楼栋、楼层和房间号</p>
     </div>
     <div className="office-location-row">
-      <span className="office-label">当前位置</span>
-      <strong className="office-address">{office||"尚未登记，请填写实际办公位置"}</strong>
-      {canEdit&&<Button variant="outline" size="sm" className="shrink-0 bg-white/70" onClick={()=>{setAddress(office);setEditing(true)}}>
-        <Pencil size={13}/>{office?"修改位置":"填写位置"}
-      </Button>}
+      <div className="office-photo-wrap">
+        {canEdit?<button type="button" className="office-photo-slot" title={image?"更换办公位置图片":"上传办公位置图片"}
+            aria-label={image?"更换办公位置图片":"上传办公位置图片"}
+            onClick={()=>fileInput.current?.click()}>
+          {image?<img src={image} alt={shortDepartmentName(dept)+"办公位置"} />:
+            <span className="office-photo-empty"><ImagePlus size={20}/><small>添加图片</small></span>}
+        </button>:
+          <div className="office-photo-slot">
+            {image?<img src={image} alt={shortDepartmentName(dept)+"办公位置"}/>:
+              <span className="office-photo-empty"><ImagePlus size={20}/><small>暂无图片</small></span>}
+          </div>}
+        {canEdit&&<input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp"
+          className="office-photo-input" aria-label="上传办公位置图片" onChange={uploadImage}/>}
+      </div>
+      <div className="office-location-details">
+        <span className="office-label">当前位置</span>
+        <strong className="office-address">{office||"尚未登记，请填写实际办公位置"}</strong>
+        {imageError&&<small className="office-image-error" role="alert">{imageError}</small>}
+      </div>
+      {canEdit&&<div className="office-location-actions">
+        <Button variant="outline" size="sm" className="bg-white/70" onClick={()=>{setAddress(office);setEditing(true)}}>
+          <Pencil size={13}/>{office?"修改位置":"填写位置"}
+        </Button>
+        {image&&<Button variant="ghost" size="sm" className="office-remove-image" onClick={removeImage} aria-label="删除办公位置图片">
+          <Trash2 size={13}/>删除图片
+        </Button>}
+      </div>}
     </div>
     <Dialog open={editing} onOpenChange={setEditing}>
       <DialogContent className="glass-dialog">
@@ -333,7 +391,7 @@ function DepartmentPage({dept,staff,employee,workspace,can,onRefresh}:{
 }) {
   return <div className="dept-main">
     <FeatureGrid dept={dept}/>
-    <OfficeLocation dept={dept} can={can} office={workspace.offices?.[dept.id]??""} onUpdate={onRefresh}/>
+    <OfficeLocation dept={dept} can={can} office={workspace.offices?.[dept.id]??""} image={workspace.officeImages?.[dept.id]??""} onUpdate={onRefresh}/>
     <Roster dept={dept} staff={staff} employee={employee} onUpdate={onRefresh}/>
   </div>
 }
