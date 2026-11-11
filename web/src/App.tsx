@@ -4,7 +4,6 @@ import {
   LockKeyhole, MessageCircle, Pencil, Search, Settings, Sparkles
 } from "lucide-react"
 import { DEPARTMENTS, FEATURE_HINTS, FEATURE_NAMES, getDepartment, type Department } from "@/catalog"
-import { getDepartmentIcon, getFeatureIcon } from "@/icons"
 import {
   useFactoryState, readWorkspace, updateWorkspace, getTodos, todoLane, type Employee, type Todo
 } from "@/factory-state"
@@ -17,7 +16,7 @@ import { OverviewDashboard } from "@/OverviewDashboard"
 import { SVG_SPRITE } from "@/generated-lucide-sprite"
 import { DataBackup } from "@/components/DataBackup"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -366,7 +365,7 @@ function DepartmentPage({dept,staff,employee,workspace,can,onSelect,onRefresh}:{
   return <div className="dept-main">
     <Tabs value={tab} onValueChange={value=>setTab(value as TabKey)} className="dept-tabs">
       <TabsList>
-        <TabsTrigger value="functions">业务功能 <span className="count-pill">{dept.features.length}</span></TabsTrigger>
+        <TabsTrigger value="functions">部门概况</TabsTrigger>
         <TabsTrigger value="members">部门花名簿 <span className="count-pill">{members.length}</span></TabsTrigger>
         <TabsTrigger value="todos">待办 <span className="count-pill">{todos.length}</span></TabsTrigger>
       </TabsList>
