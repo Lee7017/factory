@@ -57,7 +57,8 @@ const fallbackContextStatuses:Record<string,string[]>={
 export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
   const isSalesOrderList=dept==="sales"&&["orders","orderReview","orderHistory"].includes(feature)
   const isPurchaseList=dept==="purchase"&&feature==="purchase"
-  const hasColumnStatusFilter=isSalesOrderList||isPurchaseList
+  const hasPmcStatusFilter=dept==="pmc"&&["kitting","shift","shiftPeople","orderProductStats"].includes(feature)
+  const hasColumnStatusFilter=isSalesOrderList||isPurchaseList||hasPmcStatusFilter
   const [markup,setMarkup]=useState("")
   const [status,setStatus]=useState<"loading"|"ready"|"error">("loading")
   const [error,setError]=useState("")
@@ -109,12 +110,16 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     if(!root)return
     const panel=root.querySelector<HTMLElement>(".biz-order-panel")
     const purchaseBoard=isPurchaseList?root.querySelector<HTMLElement>(".proc-purchase-board"):null
+    const pmcTable=hasPmcStatusFilter&&!panel
+      ?root.querySelector<HTMLElement>("[data-pmc-status-filter]")?.closest("table")??null:null
     const rows=purchaseBoard
       ?Array.from(purchaseBoard.querySelectorAll<HTMLElement>(".proc-order-row"))
       :panel
         ?Array.from(panel.querySelectorAll<HTMLElement>(".biz-order-row"))
-        :Array.from(root.querySelectorAll<HTMLElement>("tbody tr"))
-    if(panel||purchaseBoard){
+        :pmcTable
+          ?Array.from(pmcTable.querySelectorAll<HTMLElement>("tbody tr[data-order-status]"))
+          :Array.from(root.querySelectorAll<HTMLElement>("tbody tr"))
+    if(panel||purchaseBoard||pmcTable){
       const counts=new Map<string,number>()
       for(const row of rows){
         const group=hasColumnStatusFilter?(row.dataset.orderStatus??""):compactBusinessStatus(row.dataset.orderStatus??"")
@@ -122,7 +127,10 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
       }
       const grouped=Array.from(counts.entries()).sort((a,b)=>b[1]-a[1]).map(([name])=>name)
       const actual=hasColumnStatusFilter?grouped:grouped.slice(0,3)
-      const options=actual.length?actual:(fallbackContextStatuses[feature]??[])
+      const pmcOptions=pmcTable?Array.from(pmcTable.querySelectorAll<HTMLOptionElement>(
+        '[data-pmc-status-filter] option:not([value=""])'
+      )).map(option=>option.value):[]
+      const options=actual.length?actual:(pmcOptions.length?pmcOptions:(fallbackContextStatuses[feature]??[]))
       const countRecord=Object.fromEntries(options.map(name=>[name,counts.get(name)??0]))
       setContextStatuses(current=>current.join("\u0000")===options.join("\u0000")?current:options)
       setContextStatusCounts(current=>JSON.stringify(current)===JSON.stringify(countRecord)?current:countRecord)
@@ -153,12 +161,12 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
   useEffect(()=>{
     if(!hasColumnStatusFilter||status!=="ready")return
     const select=rootRef.current?.querySelector<HTMLSelectElement>(
-      "[data-sales-order-status-filter], [data-purchase-status-filter]"
+      "[data-sales-order-status-filter], [data-purchase-status-filter], [data-pmc-status-filter]"
     )
     if(!select)return
     if(select.value!==contextStatus)select.value=contextStatus
     select.parentElement?.classList.toggle("is-active",Boolean(contextStatus))
-    const label=isPurchaseList?"审批状态":"流程状态"
+    const label=select.dataset.statusLabel||(isPurchaseList?"审批状态":"流程状态")
     select.setAttribute("aria-label",contextStatus?"筛选"+label+"，当前："+contextStatus:"筛选"+label)
   },[dept,feature,status,markup,contextStatus,hasColumnStatusFilter,isPurchaseList])
 
@@ -201,7 +209,7 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     // Listen to their native change events directly to keep the old access matrix working.
     function handleNativeChange(event:Event){
       const el=event.target
-      if(el instanceof HTMLSelectElement&&el.matches("[data-sales-order-status-filter], [data-purchase-status-filter]")){
+      if(el instanceof HTMLSelectElement&&el.matches("[data-sales-order-status-filter], [data-purchase-status-filter], [data-pmc-status-filter]")){
         setContextStatus(el.value)
         return
       }
@@ -228,6 +236,22 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
             '.biz-order-panel[data-order-panel="orders"] [data-op-action="newOrder"]'
           )?.click()}>
           <Plus size={13}/><span className="create-label-full">新建销售订单</span><span className="create-label-short">新建</span>
+        </Button>}
+        {dept==="pmc"&&feature==="shift"&&<Button type="button" size="sm"
+          className="business-context-create" aria-label="安排岗位班次"
+          disabled={!access.has("pmc","shift","edit")||status!=="ready"}
+          onClick={()=>rootRef.current?.querySelector<HTMLButtonElement>(
+            '.mw-page[data-module-page="shift"] [data-module-action="form:roster"]'
+          )?.click()}>
+          <Plus size={13}/><span className="create-label-full">安排岗位班次</span><span className="create-label-short">排班</span>
+        </Button>}
+        {dept==="pmc"&&feature==="kitting"&&<Button type="button" size="sm"
+          className="business-context-create" aria-label="手动补货采购"
+          disabled={!access.has("pmc","kitting","execute")||status!=="ready"}
+          onClick={()=>rootRef.current?.querySelector<HTMLButtonElement>(
+            '.biz-order-panel[data-order-panel="kitting"] [data-proc-action="newDirectPurchase"]'
+          )?.click()}>
+          <Plus size={13}/><span className="create-label-full">手动补货采购</span><span className="create-label-short">补货</span>
         </Button>}
         {contextStatuses.length>0&&!hasColumnStatusFilter&&<div className="business-context-status" aria-label="当前列表状态">
           <button type="button" className={!contextStatus?"active":""} onClick={()=>setContextStatus("")}>全部</button>
