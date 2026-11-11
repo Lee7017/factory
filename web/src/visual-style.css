@@ -372,3 +372,43 @@ body {
   .feature-label{font-size:12px}
   .feature-description{font-size:10.5px;line-height:1.35}
 }
+
+/* 部门花名簿：与业务功能卡片一致的高密度布局，保留姓名、岗位、工号和私聊入口。 */
+.roster-panel{gap:10px}
+.roster-panel .roster-header{gap:10px}
+.roster-panel .roster-title{font-size:14px;line-height:1.3}
+.roster-panel .roster-description{font-size:10px;margin-top:2px;line-height:1.4}
+.roster-panel .roster-office{
+  gap:9px;padding:7px 11px;min-height:43px;border-radius:9px
+}
+.roster-panel .roster-office [data-slot="button"]{min-height:30px;height:30px;padding:0 9px;font-size:11px}
+.roster-panel .roster-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.roster-panel .person-tile{
+  min-width:0;min-height:60px;padding:9px 10px;gap:9px;border-radius:9px;
+  display:flex;align-items:center
+}
+.roster-panel .person-avatar{
+  width:30px;height:30px;flex:0 0 30px;border-radius:8px;font-size:12px
+}
+.roster-panel .person-meta{min-width:0;flex:1;gap:3px;overflow:hidden}
+.roster-panel .person-meta strong{
+  display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:12px;line-height:1.3
+}
+.roster-panel .person-meta span{
+  display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:10px;line-height:1.35
+}
+.roster-panel .person-tile > svg{flex:0 0 14px}
+.roster-panel .person-tile:focus-visible{outline:2px solid #517c5d;outline-offset:2px}
+@media(max-width:1170px){.roster-panel .roster-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){.roster-panel .roster-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){
+  .roster-panel{gap:8px}
+  .roster-panel .roster-grid{grid-template-columns:1fr;gap:7px}
+  .roster-panel .person-tile{min-height:54px;padding:8px 10px}
+  .roster-panel .person-avatar{width:28px;height:28px;flex-basis:28px}
+  .roster-panel .roster-office{gap:7px;padding:8px 9px}
+  .roster-panel .roster-header{flex-wrap:wrap;align-items:flex-start}
+  .roster-panel .roster-header > div:last-child{max-width:none;width:100%}
+}
