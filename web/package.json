@@ -20,7 +20,8 @@
     "test:outbound-prefill": "node tests/outbound-prefill.mjs",
     "test:current": "node tests/current-data.mjs",
     "test:live": "node tests/live-smoke.mjs",
-    "test:unit": "tsx --test tests/*.test.ts"
+    "test:unit": "tsx --test tests/*.test.ts && npm run test:legacy",
+    "test:legacy": "node --test ../tests/*.test.cjs"
   },
   "dependencies": {
     "react": "^19.1.0",
