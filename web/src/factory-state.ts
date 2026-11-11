@@ -29,6 +29,7 @@ export interface WorkItem {
 }
 export interface WorkspaceData {
   offices?: Record<string,string>
+  officeImages?: Record<string,string>
   orders?: Array<WorkItem & {product?:string;owner?:string}>
   tasks?: Array<WorkItem & {type?:string;line?:string;category?:string}>
   leaves?: Array<WorkItem & {person?:string;range?:string}>
@@ -60,6 +61,7 @@ export function readWorkspace(): WorkspaceData {
   for(const key of ["orders","tasks","leaves","payroll","messages"] as const)
     if(!Array.isArray(data[key]))Object.assign(data,{[key]:defaults[key]})
   data.offices=isRecord(data.offices)?data.offices as Record<string,string>:{}
+  data.officeImages=isRecord(data.officeImages)?data.officeImages as Record<string,string>:{}
   data.chatThreads=isRecord(data.chatThreads)?data.chatThreads as WorkspaceData["chatThreads"]:{}
   // Show the exact same purchase/quality seeds as the original modules before an iframe is opened.
   if(!isRecord(data.ops)||data.ops.version!==16)data.ops=clone(initialOps)
