@@ -37,6 +37,10 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: web/dist
+      # The Pages API may briefly return no artifact immediately after upload.
+      # Keep the existing upload/deploy actions and allow metadata to propagate.
+      - name: Wait for Pages artifact indexing
+        run: sleep 35
       - name: Deploy
         id: deploy
         uses: actions/deploy-pages@v4
