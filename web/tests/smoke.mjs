@@ -53,7 +53,26 @@ try{
   await page.screenshot({path:"test-results/overview.png",fullPage:true})
 
   await page.locator(".department-band-button").filter({hasText:"仓库"}).click()
-  await page.locator(".department-overview-panel").waitFor({state:"visible"})
+  await page.locator(".department-profile").waitFor({state:"visible"})
+  const profileLayout=await page.locator(".department-profile").evaluate(profile=>{
+    const photo=profile.querySelector(".department-profile-photo")?.getBoundingClientRect()
+    const title=profile.querySelector(".department-profile-heading h1")?.getBoundingClientRect()
+    const location=profile.querySelector(".department-profile-bottom")?.getBoundingClientRect()
+    const roster=document.querySelector(".roster-panel")?.getBoundingClientRect()
+    return {
+      photoLeft:photo?.left??0,titleLeft:title?.left??0,
+      titleTop:title?.top??0,locationTop:location?.top??0,
+      profileBottom:profile.getBoundingClientRect().bottom,
+      rosterTop:roster?.top??0,
+      overflow:document.documentElement.scrollWidth>innerWidth+4
+    }
+  })
+  assert.ok(profileLayout.photoLeft<profileLayout.titleLeft,"Department photo sits left of the title")
+  assert.ok(profileLayout.titleTop<profileLayout.locationTop,"Office location sits under department title")
+  assert.ok(profileLayout.rosterTop>profileLayout.profileBottom,"Roster remains separate below the department profile")
+  assert.equal(profileLayout.overflow,false,"Department profile does not overflow the desktop viewport")
+  assert.equal(await page.locator(".department-overview-panel,.office-panel").count(),0,
+    "No duplicate standalone department/office sections remain")
   assert.equal(await page.locator(".feature-band-button").count(),9,
     "Warehouse has department overview plus eight real business functions")
   assert.equal((await page.locator('.department-band-button[aria-current="page"]').textContent())?.trim(),"仓库")
@@ -124,6 +143,20 @@ try{
   await mobile.goto(base,{waitUntil:"networkidle"})
   await mobile.locator(".system-rail").waitFor({state:"visible"})
   await mobile.locator(".department-band-button").filter({hasText:"仓库"}).click()
+  await mobile.locator(".department-profile").waitFor({state:"visible"})
+  const stackedProfile=await mobile.locator(".department-profile").evaluate(profile=>{
+    const photo=profile.querySelector(".department-profile-photo")?.getBoundingClientRect()
+    const title=profile.querySelector(".department-profile-heading h1")?.getBoundingClientRect()
+    const location=profile.querySelector(".department-profile-bottom")?.getBoundingClientRect()
+    return {
+      photoTop:photo?.top??0,titleTop:title?.top??0,locationTop:location?.top??0,
+      overflow:document.documentElement.scrollWidth>innerWidth+4
+    }
+  })
+  assert.ok(stackedProfile.photoTop<stackedProfile.titleTop&&stackedProfile.titleTop<stackedProfile.locationTop,
+    "On phones the department photo stacks above title and office location")
+  assert.equal(stackedProfile.overflow,false,"Mobile department profile has no horizontal overflow")
+  await mobile.screenshot({path:"test-results/mobile-department-profile.png",fullPage:true})
   await mobile.locator(".feature-band").waitFor({state:"visible"})
   await mobile.locator(".feature-band-button").filter({hasText:"库存批次"}).click()
   await mobile.locator(".native-business .legacy-root").waitFor({state:"visible"})
