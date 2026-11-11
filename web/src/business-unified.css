@@ -2755,3 +2755,125 @@ button.department-profile-photo-slot:focus-visible,
   background:#FFFFFF!important;
   border-color:#D2D9D1!important;
 }
+
+/* Sales orders: compact flat ledger with the create action in the feature band. */
+.factory-shell-v2 .business-context-create{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  height:31px;
+  min-height:31px;
+  padding:0 11px;
+  background:#252825;
+  border-color:#252825;
+  border-radius:7px;
+  color:#FFFFFF;
+  font-size:10px;
+  font-weight:650;
+  box-shadow:none;
+}
+.factory-shell-v2 .business-context-create:hover:not(:disabled){
+  background:#171917;
+  color:#FFFFFF;
+}
+.factory-shell-v2 .business-context-create .create-label-short{display:none}
+
+/* Only the sales orders page loses the outer card, not other business workbenches. */
+.factory-shell-v2 .business-page-body:has(.biz-order-panel[data-order-panel="orders"]){
+  width:100%;
+  padding:0!important;
+  overflow:visible!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"]{
+  display:block;
+  width:100%;
+  min-height:0!important;
+  height:auto!important;
+  overflow:visible!important;
+  margin:0;
+  padding:0;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+/* The legacy creation action stays in the DOM for validation and handlers,
+   while its visible control is in the top-right feature band. */
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .biz-order-toolbar{
+  display:none!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .biz-order-table-area{
+  display:block;
+  flex:none!important;
+  min-height:0!important;
+  height:auto!important;
+  overflow-x:auto!important;
+  overflow-y:visible!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .op-table-wrap{
+  width:100%;
+  min-width:0;
+  margin:0;
+  overflow-x:auto;
+  border:0!important;
+  border-radius:0!important;
+  background:#FFFFFF!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .op-table{
+  width:100%;
+  margin:0;
+  border:0!important;
+  border-collapse:collapse;
+  border-radius:0!important;
+  background:#FFFFFF!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .op-table th{
+  height:38px;
+  background:var(--factory-page)!important;
+  border-top:1px solid var(--factory-line)!important;
+  border-bottom:1px solid var(--factory-line)!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .op-table tbody tr{
+  height:48px!important;
+  background:#FFFFFF!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .op-table td{
+  height:48px!important;
+  padding:8px 12px!important;
+  background:#FFFFFF!important;
+  border-bottom:1px solid var(--factory-line)!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .op-table tbody tr:hover td{
+  background:#F0F2EC!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="orders"] .biz-order-footer{
+  display:flex;
+  justify-content:flex-start;
+  align-items:center;
+  min-height:30px!important;
+  height:auto!important;
+  padding:6px 12px!important;
+  margin:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  color:var(--factory-muted)!important;
+  box-shadow:none!important;
+}
+@media(max-width:760px){
+  .factory-shell-v2 .business-context-create{padding:0 8px;font-size:10px}
+  .factory-shell-v2 .business-context-create .create-label-full{display:none}
+  .factory-shell-v2 .business-context-create .create-label-short{display:inline}
+}
