@@ -6,7 +6,7 @@ import {
   Clipboard, ClipboardCheck, ClipboardList, ClipboardPenLine, ClipboardSignature,
   Clock, ContactRound, Database, FileCheck, FilePenLine,
   FileSpreadsheet, FileText, FolderKanban, Factory, Gauge, GitBranch,
-  HandCoins, HardHat, History, House, IdCard, LayoutDashboard,
+  HandCoins, History, House, IdCard, LayoutDashboard,
   ListChecks, ListTodo, ListTree, LockKeyhole, Microscope,
   PackageCheck, PackageMinus, PackageOpen, PackagePlus,
   PackageSearch, ReceiptText, RotateCcw, ScanSearch,
@@ -23,7 +23,6 @@ const DEPARTMENT_ICON_MAP: Record<string, LucideIcon> = {
   warehouse: Warehouse,
   quality: ShieldCheck,
   production: Factory,
-  engineering: Wrench,
   finance: Wallet,
   it: Settings2,
   leadership: Building2
@@ -80,7 +79,6 @@ const FEATURE_ICON_MAP: Record<string, LucideIcon> = {
   templates: FolderKanban,
   bom: ListTree,
   catalog: GitBranch,
-  engineering: HardHat,
   finance: ReceiptText,
   permissions: LockKeyhole,
   approvals: ClipboardPenLine
