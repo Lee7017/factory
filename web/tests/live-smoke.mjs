@@ -190,6 +190,22 @@ try{
     publishedSalesLayout.flatSurface&&publishedSalesLayout.contentHeight&&publishedSalesLayout.footerFollowsRows&&
     !publishedSalesLayout.overflow,"Published sales order table must be flat with a top-right create action")
   assert.equal(await page.locator('.native-business .proc-purchase-board').count(),0,"Sales cannot contain procurement workbench")
+  assert.equal(await page.locator(".business-context-status").count(),0,
+    "Published sales orders have no duplicate status selector in the top band")
+  const publishedHeaderFilter=page.getByRole("button",{name:/筛选流程状态/})
+  await publishedHeaderFilter.waitFor({state:"visible"})
+  const align=await publishedHeaderFilter.evaluate(button=>{
+    const header=button.closest("th")?.getBoundingClientRect()
+    const rect=button.getBoundingClientRect()
+    return Boolean(header)&&Math.abs((header.top+header.bottom)/2-(rect.top+rect.bottom)/2)<4
+  })
+  assert.ok(align,"Published status filter aligns vertically within the flow-status table heading")
+  await publishedHeaderFilter.click()
+  const activeOption=page.locator(".sales-order-status-choices button.selected")
+  await activeOption.waitFor({state:"visible"})
+  assert.equal(await activeOption.evaluate(el=>getComputedStyle(el).backgroundColor),
+    "rgb(251, 252, 248)","Published selected status is #FBFCF8")
+  await page.keyboard.press("Escape")
   await page.screenshot({path:"test-results/live-sales-separated-from-purchasing.png"})
 
   await page.evaluate(()=>{window.location.hash="#/departments/leadership/approvals"})
