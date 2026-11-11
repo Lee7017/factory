@@ -192,20 +192,35 @@ try{
   assert.equal(await page.locator('.native-business .proc-purchase-board').count(),0,"Sales cannot contain procurement workbench")
   assert.equal(await page.locator(".business-context-status").count(),0,
     "Published sales orders have no duplicate status selector in the top band")
-  const publishedHeaderFilter=page.getByRole("button",{name:/筛选流程状态/})
-  await publishedHeaderFilter.waitFor({state:"visible"})
-  const align=await publishedHeaderFilter.evaluate(button=>{
-    const header=button.closest("th")?.getBoundingClientRect()
-    const rect=button.getBoundingClientRect()
-    return Boolean(header)&&Math.abs((header.top+header.bottom)/2-(rect.top+rect.bottom)/2)<4
+  const publishedHeaderFilter=page.locator('.biz-order-panel[data-order-panel="orders"] [data-sales-order-status-filter]')
+  await publishedHeaderFilter.waitFor({state:"attached"})
+  const visualAudit=await publishedHeaderFilter.evaluate(select=>{
+    const th=select.closest("th")
+    const control=select.closest(".sales-order-status-control")
+    const table=select.closest(".op-table")
+    const icon=control?.querySelector("svg")
+    const badge=table?.querySelector(".op-badge")
+    const actionTitle=table?.querySelector("thead th:last-child")
+    const actionButtons=table?.querySelector("tbody tr:first-child td:last-child .op-row-actions")
+    if(!th||!control||!icon||!badge||!actionTitle||!actionButtons)return null
+    const h=th.getBoundingClientRect(),t=control.getBoundingClientRect()
+    return {
+      aligned:Math.abs((h.top+h.bottom)/2-(t.top+t.bottom)/2)<5,
+      iconVisible:icon.getBoundingClientRect().width>=13,
+      badgeNeutral:getComputedStyle(badge).backgroundColor==="rgb(251, 252, 248)",
+      actionsAligned:Math.abs(actionTitle.getBoundingClientRect().left+12-actionButtons.getBoundingClientRect().left)<5
+    }
   })
-  assert.ok(align,"Published status filter aligns vertically within the flow-status table heading")
-  await publishedHeaderFilter.click()
-  const activeOption=page.locator(".sales-order-status-choices button.selected")
-  await activeOption.waitFor({state:"visible"})
-  assert.equal(await activeOption.evaluate(el=>getComputedStyle(el).backgroundColor),
-    "rgb(251, 252, 248)","Published selected status is #FBFCF8")
-  await page.keyboard.press("Escape")
+  assert.ok(visualAudit&&Object.values(visualAudit).every(Boolean),
+    "Published sales layout must have aligned status filter, neutral badges and aligned operations: "+JSON.stringify(visualAudit))
+  const allCount=await page.locator('.biz-order-panel[data-order-panel="orders"] .biz-order-row:visible').count()
+  await publishedHeaderFilter.selectOption({index:1})
+  await page.waitForTimeout(80)
+  const filteredCount=await page.locator('.biz-order-panel[data-order-panel="orders"] .biz-order-row:visible').count()
+  assert.ok(filteredCount>0&&filteredCount<=allCount,"Published header filter applies to actual order rows")
+  assert.equal(await page.locator(".sales-order-status-control").evaluate(el=>getComputedStyle(el).backgroundColor),
+    "rgb(251, 252, 248)","Published active status background uses #FBFCF8")
+  await publishedHeaderFilter.selectOption("")
   await page.screenshot({path:"test-results/live-sales-separated-from-purchasing.png"})
 
   await page.evaluate(()=>{window.location.hash="#/departments/leadership/approvals"})
