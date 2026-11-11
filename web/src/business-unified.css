@@ -2733,3 +2733,25 @@ button.department-profile-photo-slot:focus-visible,
   background:var(--factory-surface)!important;
   border-color:var(--factory-line)!important;
 }
+
+/* Neutralize remaining legacy panel and portal backgrounds. */
+.factory-shell-v2 .native-business .legacy-root :is(
+  .ops-workbench .op-panel,.mw-page .mw-panel,.mw-page .mw-section
+){
+  background:var(--factory-surface)!important;
+  border-color:var(--factory-line)!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.op-quality-link,.mw-clean-counts span,.op-shortage-table){
+  background:var(--factory-paper)!important;
+  border-color:var(--factory-line)!important;
+}
+.legacy-root:is(.legacy-modules-portal-root,.legacy-proc-portal-root) :is(.op-modal,.mw-modal,.proc-modal),
+.legacy-flow-portal-root .journey-dialog{
+  background:#FBFCF8!important;
+  border-color:#DEE3DC!important;
+}
+.legacy-root:is(.legacy-modules-portal-root,.legacy-proc-portal-root) :is(input,select,textarea){
+  background:#FFFFFF!important;
+  border-color:#D2D9D1!important;
+}
