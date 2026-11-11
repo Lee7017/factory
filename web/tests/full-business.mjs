@@ -414,6 +414,13 @@ try {
       assert.equal(await replenish.isVisible(),true,"PMC manual replenishment lives in the feature band")
       assert.equal(await panel.locator('[data-proc-action="newDirectPurchase"]').isVisible(),false,
         "PMC manual replenishment has no duplicate toolbar button")
+      await replenish.click()
+      const purchaseModal=page.locator(".proc-modal")
+      await purchaseModal.waitFor({state:"visible"})
+      assert.ok((await purchaseModal.textContent())?.includes("直接新建补货采购单"),
+        "Top-right PMC replenishment opens its existing purchase form")
+      await purchaseModal.locator('[data-proc-action="close"]').first().click()
+      await purchaseModal.waitFor({state:"hidden"})
     }
     if(feature==="shiftStats"){
       assert.equal(await panel.locator(".mw-metric").count(),4,"All shift facts remain available")
