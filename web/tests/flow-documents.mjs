@@ -118,8 +118,64 @@ try{
  assert.match(await modal.textContent(),/SUP-001/)
  await page.screenshot({path:"test-results/flow-doc-05-purchase-receipt.png"})
  await closeRecord()
+
+ // Research how multiple reports arise: a failed QC must not hide its earlier document.
+ await page.evaluate(order=>{
+  window.FactoryModules.state.cleanReports.push({
+   id:"CLQC-LINK-BLEND-FAILED",order,phase:"配制",task:"CLN-LINK-BLEND",
+   line:"L01 配制一线",status:"不合格",checkedAt:"11/11 10:05",remark:"清洗后仍有残留"
+  })
+ },id)
+ await orderFlow()
+ assert.equal(await docButton("配制线清洗执行与复核").textContent(),"查看清洗报检单（2）",
+  "Keep both reports: they are two real QC submissions linked to the same cleaning job")
+ await docButton("配制线清洗执行与复核").click()
+ await picker.waitFor({state:"visible"})
+ assert.match(await picker.locator(".journey-doc-explanation").textContent(),/同一清洗工单/)
+ assert.match(await picker.locator(".journey-doc-explanation").textContent(),/检验不合格/)
+ assert.match(await picker.locator(".journey-doc-explanation").textContent(),/重新清洗/)
+ assert.match(await picker.locator(".journey-doc-explanation").textContent(),/不是两条产线/)
+ assert.equal(await picker.locator("[data-flow-document-choice]").count(),2)
+ assert.match(await picker.textContent(),/CLQC-LINK-BLEND-FAILED/)
+ assert.match(await picker.textContent(),/L01 配制一线/)
+ assert.match(await picker.textContent(),/不合格/)
+ await page.screenshot({path:"test-results/flow-doc-06-why-two-rewashing.png"})
+ await picker.getByText("CLQC-LINK-BLEND-FAILED").click()
+ await modal.waitFor({state:"visible"})
+ assert.match(await modal.textContent(),/CLQC-LINK-BLEND-FAILED/)
+ assert.match(await modal.textContent(),/清洗后仍有残留/)
+ await closeRecord()
+
+ // Different cleaning work orders on the same line are not automatically evidence of failed QC.
+ await page.evaluate(()=>{
+  const reports=window.FactoryModules.state.cleanReports
+  const original=reports.find(r=>r.id==="CLQC-LINK-BLEND-FAILED")
+  Object.assign(original,{id:"CLQC-LINK-BLEND-OTHER",task:"CLN-LINK-OTHER",status:"合格",remark:""})
+ })
+ await orderFlow()
+ await docButton("配制线清洗执行与复核").click()
+ await picker.waitFor({state:"visible"})
+ assert.match(await picker.locator(".journey-doc-explanation").textContent(),/不同/)
+ assert.match(await picker.locator(".journey-doc-explanation").textContent(),/同一条产线/)
+ assert.match(await picker.locator(".journey-doc-explanation").textContent(),/不能认定/)
+ await page.screenshot({path:"test-results/flow-doc-07-same-line-different-task-unknown-cause.png"})
+ await picker.locator("[data-flow-document-dismiss]").click()
+
+ // Two distinct physical lines are identified from the source line, not invented from the report count.
+ await page.evaluate(()=>{
+  const report=window.FactoryModules.state.cleanReports.find(r=>r.id==="CLQC-LINK-BLEND-OTHER")
+  report.line="L02 配制二线"
+ })
+ await orderFlow()
+ await docButton("配制线清洗执行与复核").click()
+ await picker.waitFor({state:"visible"})
+ assert.match(await picker.locator(".journey-doc-explanation").textContent(),/2 条产线/)
+ assert.match(await picker.locator(".journey-doc-explanation").textContent(),/L01 配制一线/)
+ assert.match(await picker.locator(".journey-doc-explanation").textContent(),/L02 配制二线/)
+ await page.screenshot({path:"test-results/flow-doc-08-two-different-lines.png"})
+ await picker.locator("[data-flow-document-dismiss]").click()
  assert.deepEqual(errors,[],"No browser JavaScript errors")
- console.log("PASS: completed workflow cards reveal actual clean, QC, purchase, receipt, NCR, material, batch and outbound documents; duplicate shipment selection opens exact read-only record; no-document step stays 已办理")
+ console.log("PASS: all real documents retained; same-task failed QC explains rewash; different tasks on same line preserve uncertainty; different physical lines explicitly identified")
 }catch(e){failed=true;console.error(e)}
 finally{await browser?.close();server.kill("SIGTERM")}
 if(failed)process.exit(1)
