@@ -114,12 +114,9 @@ try{
   await page.evaluate(()=>{location.hash="#/overview"})
   await page.locator(".overview-kpi-grid").waitFor()
   await page.setViewportSize({width:390,height:844})
-  // Wait for the sidebar's CSS transform transition: a mid-transition
-  // screenshot incorrectly makes the closed navigation cover half the phone.
-  await page.waitForFunction(()=>{
-    const sidebar=document.querySelector(".shell-sidebar")
-    return sidebar&&sidebar.getBoundingClientRect().right<=2
-  },null,{timeout:5000})
+  // The compact system rail stays visible on phones; department navigation scrolls horizontally.
+  await page.locator(".system-rail").waitFor({state:"visible"})
+  await page.locator(".department-band").waitFor({state:"visible"})
   await page.evaluate(()=>window.scrollTo(0,0))
   assert.equal(await page.locator(".overview-kpi-card").count(),4)
   const overflow=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,viewport:innerWidth}))
