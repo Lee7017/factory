@@ -13,6 +13,7 @@
     "test:overview": "node tests/overview-dashboard.mjs",
     "test:full": "node tests/full-business.mjs",
     "test:purchase": "node tests/purchase-flow.mjs",
+    "test:receipt-modal": "node tests/receipt-modal.mjs",
     "test:production-gates": "node tests/production-gates.mjs",
     "test:clean-inspection": "node tests/clean-inspection.mjs",
     "test:flow-documents": "node tests/flow-documents.mjs",
