@@ -211,7 +211,7 @@ try {
   await salesFold.click()
   assert.equal(await salesPanel.locator(".biz-order-stats").isVisible(),true,"Stats can be expanded again")
   await page.screenshot({path:"test-results/sales-orders-table-toolbar.png",fullPage:false})
-  console.log("SALES ORDER FOLD & FILTER CHECK",JSON.stringify({realStatus}))
+  console.log("SALES ORDER FOLD & FILTER CHECK",JSON.stringify({totalSales,filteredSales,statusButtons:await statusButtons.count()}))
   const create=page.locator('.native-business [data-op-action="newOrder"]')
   await create.first().waitFor({state:"visible",timeout:10000})
   assert.equal(await create.first().getAttribute("data-slot"),"button","MES action buttons should be rendered using shadcn Button")
