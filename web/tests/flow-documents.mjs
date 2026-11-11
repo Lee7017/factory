@@ -62,6 +62,17 @@ try{
  assert.equal(await docButton("确认领料发料").textContent(),"查看领料单")
  assert.equal(await docButton("成品入库").textContent(),"查看成品库存批次")
  assert.equal(await docButton("按销售订单成品出库").textContent(),"查看成品出库单（2）")
+ assert.equal(await dialog.getByText("成品出库与客户交付",{exact:true}).count(),0,
+  "Do not repeat outbound shipment details below the order flow")
+ assert.equal(await dialog.locator(".journey-extra-line").filter({hasText:"OB-LINK-001"}).count(),0)
+ await dialog.locator("[data-flow-order-content]").first().click()
+ const orderDrawer=page.locator(".journey-order-panel")
+ await orderDrawer.waitFor({state:"visible"})
+ assert.equal(await orderDrawer.getByText("成品出库与客户交付",{exact:true}).count(),0,
+  "The order-content drawer also omits the duplicate outbound list")
+ assert.equal(await orderDrawer.locator(".journey-extra-line").filter({hasText:"OB-LINK-002"}).count(),0)
+ await orderDrawer.locator("[data-flow-order-dismiss]").click()
+ await orderDrawer.waitFor({state:"hidden"})
  assert.equal(await docButton("确认物料齐套并锁库").textContent(),"查看采购单")
  assert.equal(await card("包装开工").locator(".journey-state").textContent(),"已办理")
  await page.screenshot({path:"test-results/flow-doc-01-order-cards.png"})
