@@ -286,7 +286,7 @@ function makeCard(step,i,state,history,documents=[],kind='handoff',returns=[]){
   (docButton||(canTrack?
    `<button type="button" class="journey-card-track" data-flow-track>${state==='complete'?'查看已办结环节':'跟踪当前环节'} →</button>`:
    `<span class="journey-state">${status}</span>`));
- return `<div class="journey-card is-${state}" data-journey-step="${i}">
+ return `<div class="journey-card is-${state}" data-journey-step="${i}" data-flow-card-step="${i}" title="查看本环节的执行记录">
   <div class="journey-card-head"><span class="journey-seq">${String(i+1).padStart(2,'0')}</span>
    <div class="journey-card-head-actions">${head}</div></div>
   <div class="journey-dept">${clean(label(dept))}</div><strong class="journey-task">${clean(act)}</strong>
@@ -500,6 +500,8 @@ document.addEventListener('click',event=>{
   chooseLinkedDocuments(docs);return;
  }
  if(event.target.closest('[data-flow-track]')){const target=activeContinue?{...activeContinue}:null,ref=activeTrackRef;dismiss();if(target)window.FactoryNavigation?.trackBottleneck?.(target,ref);return;}
+ const card=event.target.closest('[data-flow-card-step]');
+ if(card){openStepHistory(Number(card.dataset.flowCardStep));return;}
  if(event.target.closest('[data-flow-close]')||(event.target.closest('#flow-transition-host')&&!event.target.closest('.journey-dialog')))dismiss();});
 document.addEventListener('keydown',event=>{
  if(event.key==='Escape'){const panel=document.querySelector('[data-flow-order-panel]');if(panel){panel.remove();return}dismiss();}
