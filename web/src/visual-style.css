@@ -1,37 +1,31 @@
-/* Factory OS · 企业后台雾灰绿皮肤。
-   Only presentation changes. Department-first navigation and MES data flows remain unchanged.
-   Palette: low-saturation sage / warm gray / slate-green text, without neon ambient hues. */
+/* Factory OS · warm neutral surfaces shared by overview and business workspaces.
+   Navigation, department structure and business behavior remain unchanged. */
 
 :root {
   --radius: .85rem;
-  --background: #e9efea;
-  --foreground: #29392f;
-  --card: #f3f7f3;
-  --card-foreground: #29392f;
-  --popover: #f6f8f5;
-  --popover-foreground: #29392f;
+  --background: #F4F4EF;
+  --foreground: #1F241F;
+  --card: #FBFCF8;
+  --card-foreground: #1F241F;
+  --popover: #FBFCF8;
+  --popover-foreground: #1F241F;
   --primary: #527b64;
   --primary-foreground: #f8faf7;
-  --secondary: #e1eae2;
-  --secondary-foreground: #334d3e;
-  --muted: #e5ebe5;
-  --muted-foreground: #6a796e;
-  --accent: #dfeadf;
-  --accent-foreground: #315340;
+  --secondary: #F0F2EC;
+  --secondary-foreground: #4F574F;
+  --muted: #EEF0EA;
+  --muted-foreground: #7B837C;
+  --accent: #E8EEE6;
+  --accent-foreground: #334638;
   --destructive: #b95f5d;
-  --border: #cbd7cd;
-  --input: #c7d4c9;
-  --ring: #718e7a;
+  --border: #DEE3DC;
+  --input: #D2D9D1;
+  --ring: #00973F;
 }
-html { background:#e9efea }
+html { background:#F4F4EF }
 body {
-  color:#29392f;
-  background:
-    radial-gradient(ellipse 54% 43% at 82% 13%,rgba(161,189,167,.28) 0%,transparent 92%),
-    radial-gradient(ellipse 43% 45% at 12% 88%,rgba(189,202,188,.27) 0%,transparent 88%),
-    radial-gradient(ellipse 32% 36% at 79% 85%,rgba(201,182,177,.075) 0%,transparent 88%),
-    linear-gradient(145deg,#edf1ec 0%,#e5ede7 53%,#eaf0ea 100%);
-  background-attachment:fixed;
+  color:#1F241F;
+  background:#F4F4EF;
 }
 ::selection { background:rgba(103,145,115,.27);color:#1f3025 }
 :focus-visible { outline-color:#759681 }
@@ -143,11 +137,11 @@ body {
 
 /* Subtle recessed group panels; surfaces are mostly opaque, not luminous white. */
 .glass-panel {
-  background:rgba(244,248,243,.83)!important;
-  border:1px solid rgba(105,140,111,.21)!important;
-  box-shadow:0 9px 28px rgba(47,78,56,.075),inset 0 1px 0 rgba(255,255,255,.66);
-  backdrop-filter:blur(16px) saturate(103%);
-  -webkit-backdrop-filter:blur(16px) saturate(103%);
+  background:#FBFCF8!important;
+  border:1px solid #DEE3DC!important;
+  box-shadow:none!important;
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
 }
 .feature-panel {
   background:rgba(221,235,224,.56)!important;
@@ -270,10 +264,10 @@ body {
   box-shadow:0 15px 34px rgba(45,71,52,.14);
 }
 .glass-dialog{
-  color:#2c4232;
-  background:rgba(243,248,242,.98)!important;
-  border:1px solid rgba(91,133,103,.24)!important;
-  box-shadow:0 20px 60px rgba(36,67,44,.23);
+  color:#1F241F;
+  background:#FBFCF8!important;
+  border:1px solid #DEE3DC!important;
+  box-shadow:0 20px 60px rgba(31,36,31,.15);
 }
 
 /* Legacy MES engine: tone down containers without altering validation or commands. */
