@@ -188,12 +188,12 @@ function linkedDocuments(entry,kind,step){
   if(name==='确认领料发料')add((modules.materialRequests||[]).filter(r=>r.order===ref&&r.type==='领料'),'material','领料单');
   if(name==='配制线清洗执行与复核'||name==='包装线清洗执行与复核'){
    const phase=name.startsWith('配制')?'配制':'包装';
+   // 一张流程卡对应当前这次清洗；同一工单因不合格重洗产生的历史报检仍在质量部留档。
+   const latestTask=window.FactoryOperations?.tasksForOrder?.(ref,'清洗',phase)?.[0];
    const reports=cleanFor(phase);
-   add(reports,'clean','清洗报检单');
-   if(!reports.length){
-    const tasks=window.FactoryOperations?.tasksForOrder?.(ref,'清洗',phase)||[];
-    add(tasks,'task','清洗工单');
-   }
+   const latestReport=latestTask?reports.find(r=>r.task===latestTask.id):reports[0];
+   if(latestReport)add([latestReport],'clean','清洗报检单');
+   else if(latestTask)add([latestTask],'task','清洗工单');
   }
   if(name==='半成品检验判定'||name==='成品检验判定并放行'){
    const phase=name.startsWith('半成品')?'半成品':'成品';
