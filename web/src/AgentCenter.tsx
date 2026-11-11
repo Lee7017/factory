@@ -9,20 +9,20 @@ const agentAsset=(name:string)=>`${import.meta.env.BASE_URL}agent-map/${name}`
 
 type DeptKind="sales"|"pmc"|"purchase"|"warehouse"|"production"|"quality"|"finance"|"hr"
 type AgentDepartment={
-  id:string; kind:DeptKind; name:string; short:string; building:string; mascot:string; mascotTone:string;
+  id:string; kind:DeptKind; name:string; short:string; building:string; pet:string; mascotTone:string;
   agent:string; instance:string; count:number; status:string; tasks:number; credit:number;
   x:number; y:number; size:number; accent:string; skills:string[]; summary:string;
 }
 
 const DEPARTMENTS:AgentDepartment[]=[
-  {id:"sales",kind:"sales",building:"sales.webp",name:"销售部",short:"销售",mascot:"🦊",mascotTone:"#ead8c7",agent:"狐狸商务助手",instance:"单实例",count:1,status:"客户需求跟进中",tasks:3,credit:18240,x:18,y:43,size:18,accent:"#6ea17a",skills:["客户需求摘要","订单风险提示","交付沟通草稿"],summary:"盯客户、订单与交付承诺，自动整理关键信息并把异常推给对应部门。"},
-  {id:"pmc",kind:"pmc",building:"pmc.webp",name:"生产计划与物料控制部",short:"PMC",mascot:"🐝",mascotTone:"#f0d77e",agent:"蜂群排程",instance:"多实例",count:3,status:"排程中",tasks:5,credit:86420,x:37,y:27,size:20,accent:"#5d986d",skills:["APS 排程建议","物料齐套分析","交期冲突模拟"],summary:"同时拆解多个订单、物料和产能约束，输出可确认的排程方案与风险解释。"},
-  {id:"purchase",kind:"purchase",building:"procurement.webp",name:"采购 / 供应链部",short:"采购",mascot:"🐜",mascotTone:"#d9b69d",agent:"蚁群寻源",instance:"多实例",count:4,status:"供应风险巡检",tasks:8,credit:46210,x:65,y:27,size:19,accent:"#7da778",skills:["缺料追踪","供应商比价","到货延期预警"],summary:"并行盯采购订单、供应商交付和关键物料缺口，把影响排程的风险提前暴露。"},
-  {id:"warehouse",kind:"warehouse",building:"warehouse.webp",name:"仓库 / 物流部",short:"仓库",mascot:"🐦",mascotTone:"#b8d6df",agent:"鸟群仓巡",instance:"多实例",count:5,status:"库存巡检",tasks:6,credit:35560,x:82,y:47,size:20,accent:"#638b76",skills:["库存异常扫描","FIFO 建议","发运准备核查"],summary:"在库存、批次、效期和出入库之间来回巡查，发现异常就把业务对象挂到消息里。"},
-  {id:"production",kind:"production",building:"production.webp",name:"生产车间",short:"生产",mascot:"🐺",mascotTone:"#d1d3cb",agent:"狼群执行",instance:"多实例",count:3,status:"任务协同中",tasks:4,credit:73380,x:30,y:69,size:20,accent:"#628a70",skills:["任务拆解","异常上报归因","工序协同提醒"],summary:"围绕生产任务并行执行检查、催办和信息归集，把现场异常快速回传给计划与质量。"},
-  {id:"quality",kind:"quality",building:"quality.webp",name:"质量部 QA / QC",short:"质量",mascot:"🦉",mascotTone:"#d9ccb2",agent:"猫头鹰质检官",instance:"单实例",count:1,status:"检验复核中",tasks:2,credit:28480,x:70,y:69,size:19,accent:"#759b82",skills:["检验结果摘要","异常批次追踪","放行证据整理"],summary:"聚合来料、过程和成品质量信息，帮助 QA/QC 快速定位异常批次和待确认事项。"},
-  {id:"finance",kind:"finance",building:"finance.webp",name:"财务部",short:"财务",mascot:"🐻",mascotTone:"#dfc5a8",agent:"小熊财务管家",instance:"单实例",count:1,status:"经营汇总中",tasks:3,credit:21460,x:52,y:82,size:17,accent:"#78946a",skills:["成本变化摘要","应收应付提醒","经营分析草稿"],summary:"把业务数据翻译成财务语言，汇总成本、结算和经营变化，给管理层准备解释材料。"},
-  {id:"hr",kind:"hr",building:"hr.webp",name:"人事行政办公室",short:"人事",mascot:"🐱",mascotTone:"#e5d9d0",agent:"小猫人事助理",instance:"单实例",count:1,status:"员工服务中",tasks:2,credit:12670,x:54,y:13,size:16,accent:"#83a17c",skills:["请假考勤问答","培训材料整理","员工事项提醒"],summary:"承担日常员工服务、制度问答和材料整理，让行政事务有一个持续在线的助手。"},
+  {id:"sales",kind:"sales",building:"sales.webp",name:"销售部",short:"销售",pet:"pets/fox.webp",mascotTone:"#ead8c7",agent:"狐狸商务助手",instance:"单实例",count:1,status:"客户需求跟进中",tasks:3,credit:18240,x:18,y:43,size:18,accent:"#6ea17a",skills:["客户需求摘要","订单风险提示","交付沟通草稿"],summary:"盯客户、订单与交付承诺，自动整理关键信息并把异常推给对应部门。"},
+  {id:"pmc",kind:"pmc",building:"pmc.webp",name:"生产计划与物料控制部",short:"PMC",pet:"pets/bees.webp",mascotTone:"#f0d77e",agent:"蜂群排程",instance:"多实例",count:3,status:"排程中",tasks:5,credit:86420,x:37,y:27,size:20,accent:"#5d986d",skills:["APS 排程建议","物料齐套分析","交期冲突模拟"],summary:"同时拆解多个订单、物料和产能约束，输出可确认的排程方案与风险解释。"},
+  {id:"purchase",kind:"purchase",building:"procurement.webp",name:"采购 / 供应链部",short:"采购",pet:"pets/ants.webp",mascotTone:"#d9b69d",agent:"蚁群寻源",instance:"多实例",count:4,status:"供应风险巡检",tasks:8,credit:46210,x:65,y:27,size:19,accent:"#7da778",skills:["缺料追踪","供应商比价","到货延期预警"],summary:"并行盯采购订单、供应商交付和关键物料缺口，把影响排程的风险提前暴露。"},
+  {id:"warehouse",kind:"warehouse",building:"warehouse.webp",name:"仓库 / 物流部",short:"仓库",pet:"pets/birds.webp",mascotTone:"#b8d6df",agent:"鸟群仓巡",instance:"多实例",count:5,status:"库存巡检",tasks:6,credit:35560,x:82,y:47,size:20,accent:"#638b76",skills:["库存异常扫描","FIFO 建议","发运准备核查"],summary:"在库存、批次、效期和出入库之间来回巡查，发现异常就把业务对象挂到消息里。"},
+  {id:"production",kind:"production",building:"production.webp",name:"生产车间",short:"生产",pet:"pets/wolves.webp",mascotTone:"#d1d3cb",agent:"狼群执行",instance:"多实例",count:3,status:"任务协同中",tasks:4,credit:73380,x:30,y:69,size:20,accent:"#628a70",skills:["任务拆解","异常上报归因","工序协同提醒"],summary:"围绕生产任务并行执行检查、催办和信息归集，把现场异常快速回传给计划与质量。"},
+  {id:"quality",kind:"quality",building:"quality.webp",name:"质量部 QA / QC",short:"质量",pet:"pets/owl.webp",mascotTone:"#d9ccb2",agent:"猫头鹰质检官",instance:"单实例",count:1,status:"检验复核中",tasks:2,credit:28480,x:70,y:69,size:19,accent:"#759b82",skills:["检验结果摘要","异常批次追踪","放行证据整理"],summary:"聚合来料、过程和成品质量信息，帮助 QA/QC 快速定位异常批次和待确认事项。"},
+  {id:"finance",kind:"finance",building:"finance.webp",name:"财务部",short:"财务",pet:"pets/bear.webp",mascotTone:"#dfc5a8",agent:"小熊财务管家",instance:"单实例",count:1,status:"经营汇总中",tasks:3,credit:21460,x:52,y:82,size:17,accent:"#78946a",skills:["成本变化摘要","应收应付提醒","经营分析草稿"],summary:"把业务数据翻译成财务语言，汇总成本、结算和经营变化，给管理层准备解释材料。"},
+  {id:"hr",kind:"hr",building:"hr.webp",name:"人事行政办公室",short:"人事",pet:"pets/cat.webp",mascotTone:"#e5d9d0",agent:"小猫人事助理",instance:"单实例",count:1,status:"员工服务中",tasks:2,credit:12670,x:54,y:13,size:16,accent:"#83a17c",skills:["请假考勤问答","培训材料整理","员工事项提醒"],summary:"承担日常员工服务、制度问答和材料整理，让行政事务有一个持续在线的助手。"},
 ]
 
 const ACTIVE_TASKS=[
@@ -81,9 +81,9 @@ function MapTerrain(){
 }
 
 function MascotSwarm({dept,large=false}:{dept:AgentDepartment;large?:boolean}){
-  const visible=dept.count>1?Math.min(dept.count,3):1
-  return <span className={"mascot-swarm "+(large?"large":"")} style={{"--mascot-bg":dept.mascotTone} as CSSProperties}>
-    {Array.from({length:visible}).map((_,i)=><i key={i} style={{"--pet-delay":`${i*-.35}s`} as CSSProperties}>{dept.mascot}</i>)}
+  return <span className={"mascot-swarm "+(large?"large":"")}>
+    <i><img src={agentAsset(dept.pet)} alt="" draggable={false}/></i>
+    {dept.count>1?<em className="pet-instance-count">×{dept.count}</em>:null}
   </span>
 }
 
@@ -119,8 +119,8 @@ export function AgentCenter({onSelect}:{onSelect:(hash:string)=>void}){
               <g className="network-flow"><path d="M550 356 L198 315"/><path d="M550 356 L410 198"/><path d="M550 356 L715 195"/><path d="M550 356 L910 345"/><path d="M550 356 L335 505"/><path d="M550 356 L748 505"/><path d="M550 356 L550 590"/><path d="M550 356 L590 95"/></g>
             </svg>
             <div className="agent-core" aria-hidden="true"><span>AI</span><i/><i/><i/></div>
-            {DEPARTMENTS.map((dept,index)=>{
-              const style={left:`${dept.x}%`,top:`${dept.y}%`,width:`${dept.size}%`,"--idle-delay":`${index*-.37}s`} as CSSProperties
+            {DEPARTMENTS.map((dept)=>{
+              const style={left:`${dept.x}%`,top:`${dept.y}%`,width:`${dept.size}%`} as CSSProperties
               return <button type="button" key={dept.id} style={style} className={`agent-map-dept ${selectedId===dept.id?"selected":""}`} onClick={()=>setSelectedId(dept.id)} aria-label={`查看${dept.name} Agent`}>
                 <img className="dept-building-image" src={agentAsset(dept.building)} alt="" draggable={false}/><MascotSwarm dept={dept}/>
                 <span className="agent-map-badge"><b>{dept.short}</b><small>{dept.agent}</small><em><i/>{dept.status}</em></span>
