@@ -1699,3 +1699,28 @@ body:has(.operations-dashboard)::after{display:none!important}
   border-top-color:#DEE3DC!important;
   color:#7B837C!important;
 }
+
+
+/* overview warm Claude palette polish v2 */
+.factory-shell:has(.operations-dashboard) .brand-title{
+  color:#FFFFFF!important;
+  font-weight:760!important;
+}
+.factory-shell:has(.operations-dashboard) .brand-caption{
+  color:rgba(255,255,255,.58)!important;
+}
+.factory-shell:has(.operations-dashboard) .department-tile{
+  background:rgba(255,255,255,.075)!important;
+  border-color:rgba(255,255,255,.12)!important;
+}
+.factory-shell:has(.operations-dashboard) .department-tile:hover{
+  background:rgba(255,255,255,.12)!important;
+  border-color:rgba(255,255,255,.18)!important;
+}
+.factory-shell:has(.operations-dashboard) .department-tile[aria-current="page"]{
+  background:rgba(255,255,255,.16)!important;
+  border-color:rgba(255,255,255,.20)!important;
+}
+.factory-shell:has(.operations-dashboard) .sidebar-foot{
+  color:rgba(255,255,255,.66)!important;
+}
