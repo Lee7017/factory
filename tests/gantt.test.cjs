@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const scheduling = require('../web/src/scheduling-definitions.json');
 const vm = require('node:vm');
 
 const original = fs.readFileSync(path.join(__dirname, '..', 'gantt.js'), 'utf8');
@@ -16,6 +17,7 @@ function boot(orders, existing = [], flows = {}) {
  const listeners = {};
  const win = {
   FactoryOperations: {state, render: () => '<div class="ops-workbench"></div>'},
+  FactorySchedulingConfig:scheduling,
   confirm: () => true, alert: () => {}
  };
  const doc = {
@@ -88,7 +90,7 @@ test('optimizing unpublished tasks resolves conflicts without moving formal sche
  assert.equal(app.api.debug.hasConflict(plan.entries[0],plan.entries[1]),false);
 });
 
-test('homepage and PMC use identical stacked tasks and a six-color legend', () => {
+test('PMC compact and full views share a six-color task renderer', () => {
  const jobs=[
   entry('X','X','配制','L01 配制一线','2026-11-11T08:00',120),
   entry('Y','Y','清洗','L01 配制一线','2026-11-11T08:15',60),
