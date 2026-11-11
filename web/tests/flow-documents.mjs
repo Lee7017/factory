@@ -14,7 +14,7 @@ try{
  const errors=[]
  page.on("pageerror",e=>errors.push(e.message))
  await page.goto(base,{waitUntil:"networkidle"})
- await page.locator(".department-tile").first().waitFor()
+ await page.locator(".department-band-button").first().waitFor()
  await page.evaluate(()=>{location.hash="#/departments/sales/orders"})
  await page.locator('.native-business [data-op-action="detailFlow"]').first().waitFor({state:"visible",timeout:15000})
  const id="SO-2026-1023-018"
