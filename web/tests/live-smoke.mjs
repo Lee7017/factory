@@ -138,6 +138,27 @@ try{
   await page.screenshot({path:"test-results/live-pmc-purchase-demand.png"})
   await page.evaluate(()=>{window.location.hash="#/departments/purchase/purchase"})
   await page.locator('.native-business .proc-purchase-board').waitFor({state:"visible",timeout:18000})
+  const purchasePalette=await page.evaluate(()=>{
+    const color=selector=>{
+      const element=document.querySelector(selector)
+      return element?getComputedStyle(element).backgroundColor:null
+    }
+    return {
+      page:color(".shell-content.is-business"),
+      panel:color(".business-page-body"),
+      heading:color(".proc-board-heading"),
+      board:color(".proc-board-content"),
+      metric:color(".proc-board-metric"),
+      tableHead:color(".proc-order-table th")
+    }
+  })
+  assert.equal(purchasePalette.page,"rgb(244, 244, 239)")
+  assert.equal(purchasePalette.panel,"rgb(251, 252, 248)")
+  assert.equal(purchasePalette.heading,"rgb(251, 252, 248)")
+  assert.equal(purchasePalette.board,"rgb(251, 252, 248)")
+  assert.equal(purchasePalette.metric,"rgb(255, 255, 255)")
+  assert.equal(purchasePalette.tableHead,"rgb(244, 244, 239)")
+
   assert.equal(await page.locator('.native-business [data-proc-action="newPurchase"]').count(),0,"No duplicate PO creation in purchasing")
   await page.screenshot({path:"test-results/live-purchase-approval-list.png"})
   assert.equal(await page.locator('.native-business .proc-purchase-board').count(),1,"Purchase screen has independent workbench")
