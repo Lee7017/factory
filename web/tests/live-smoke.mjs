@@ -223,6 +223,60 @@ try{
   await publishedHeaderFilter.selectOption("")
   await page.screenshot({path:"test-results/live-sales-separated-from-purchasing.png"})
 
+  // Online QA: both additional sales pages must match the verified flat orders layout.
+  for(const [feature,columnCount,statusIndex] of [
+    ["orderReview",5,3],["orderHistory",6,4]
+  ]){
+    await page.evaluate(name=>{window.location.hash="#/departments/sales/"+name},feature)
+    const panel=page.locator(`.biz-order-panel[data-order-panel="${feature}"]`)
+    await panel.waitFor({state:"visible",timeout:16000})
+    const select=panel.locator("[data-sales-order-status-filter]")
+    await select.waitFor({state:"attached"})
+    assert.equal(await page.locator(".business-context-status").count(),0,
+      "Published "+feature+" has no redundant status buttons above the table")
+    const geometry=await panel.evaluate(element=>{
+      const table=element.querySelector(".op-table")
+      const headers=Array.from(table?.querySelectorAll("thead th")??[])
+      const select=element.querySelector("[data-sales-order-status-filter]")
+      const heading=select?.closest("th")
+      const control=select?.closest(".sales-order-status-control")
+      const badge=element.querySelector(".op-badge")
+      const actions=element.querySelector(".op-row-actions")
+      const footer=element.querySelector(".biz-order-footer")
+      const body=document.querySelector(".business-page-body")
+      if(!table||!select||!heading||!control||!footer||!body)return null
+      const h=heading.getBoundingClientRect(),v=control.getBoundingClientRect()
+      const a=headers.at(-1)?.getBoundingClientRect(),b=actions?.getBoundingClientRect()
+      const tableBox=table.getBoundingClientRect(),footerBox=footer.getBoundingClientRect()
+      const bg=getComputedStyle(body)
+      return {
+        columns:headers.length,
+        statusIndex:headers.indexOf(heading),
+        headingAligned:Math.abs((h.top+h.bottom)/2-(v.top+v.bottom)/2)<5,
+        actionAligned:!b||!a||Math.abs(a.left+12-b.left)<5,
+        statusNeutral:!badge||getComputedStyle(badge).backgroundColor==="rgb(251, 252, 248)",
+        flatBody:bg.borderTopWidth==="0px"&&bg.backgroundColor==="rgba(0, 0, 0, 0)",
+        footerAttached:Math.abs(footerBox.top-tableBox.bottom)<3,
+        contentHeight:element.getBoundingClientRect().height<tableBox.height+100,
+        headersNeutral:headers.every(th=>getComputedStyle(th).backgroundColor==="rgb(244, 244, 239)")
+      }
+    })
+    assert.ok(geometry,feature+" published table must exist")
+    assert.equal(geometry.columns,columnCount,feature+" maintains its columns")
+    assert.equal(geometry.statusIndex,statusIndex,feature+" status filter belongs to the correct heading")
+    for(const [key,value] of Object.entries(geometry)){
+      if(typeof value==="boolean")assert.equal(value,true,feature+" live layout "+key+": "+JSON.stringify(geometry))
+    }
+    const originalRows=await panel.locator(".biz-order-row:visible").count()
+    await select.selectOption({index:1})
+    await page.waitForTimeout(80)
+    assert.ok(await panel.locator(".biz-order-row:visible").count()<=originalRows)
+    assert.equal(await panel.locator(".sales-order-status-control").evaluate(node=>getComputedStyle(node).backgroundColor),
+      "rgb(251, 252, 248)",feature+" active filter must use #FBFCF8")
+    await select.selectOption("")
+    await page.screenshot({path:`test-results/live-sales-${feature}-flat-ledger.png`,fullPage:false})
+  }
+
   await page.evaluate(()=>{window.location.hash="#/departments/leadership/approvals"})
   await page.locator('.native-business [data-proc-action="editPolicy"]').waitFor({state:"visible",timeout:18000})
   await page.screenshot({path:"test-results/live-purchase-approval-policy.png"})
