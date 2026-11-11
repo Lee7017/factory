@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import type { WorkspaceData } from "@/factory-state"
-import {layoutOverviewBars,overviewRowHeight} from "@/overview-gantt-layout"
+import {layoutOverviewBars,overviewRowHeight,PMC_LANES,resourceConflicts} from "@/overview-gantt-layout"
 import {
   dayShift,dayString,weekStart,overviewMetrics,orderStage,scheduleEntries,
   type DashboardAlert,type DonutSegment
@@ -55,7 +55,6 @@ const ganttLegend=[["clean","清洗"],["blend","配制"],["semi-qc","半成品 Q
 function GanttPanel({workspace,onSelect}:{workspace:WorkspaceData;onSelect:Props["onSelect"]}){
   const [view,setView]=useState<View>("week")
   const [day,setDay]=useState(()=>dayString(new Date()))
-  const [expanded,setExpanded]=useState(false)
   const period=useMemo(()=>periodFor(day,view),[day,view])
   const saved=scheduleEntries(workspace)
   const validIds=new Set((workspace.orders??[]).map(o=>o.id))
@@ -66,7 +65,9 @@ function GanttPanel({workspace,onSelect}:{workspace:WorkspaceData;onSelect:Props
   const visibleOrders=(workspace.orders??[]).filter(o=>orderStage(o,workspace)!=="delivered"||
     saved.some(e=>e.orderId===o.id))
   const unscheduled=visibleOrders.filter(o=>!saved.some(e=>e.orderId===o.id)).length
-  const list=expanded?visibleOrders:visibleOrders.slice(0,4)
+  const activeEntries=displayed.filter(e=>makeTypes.has(e.type)&&PMC_LANES.some(lane=>lane.id===e.lane))
+  const unassigned=displayed.length-activeEntries.length
+  const conflicts=resourceConflicts(activeEntries)
   const cellStyle={gridTemplateColumns:`repeat(${period.cells.length},minmax(0,1fr))`} as CSSProperties
   const go=(direction:number)=>{
     if(view==="month"){
@@ -78,11 +79,11 @@ function GanttPanel({workspace,onSelect}:{workspace:WorkspaceData;onSelect:Props
     <div className="overview-section-head">
       <div>
         <h2>生产排程甘特图 <span className="overview-muted-label">（{view==="day"?"当日":view==="week"?"本周":"本月"}）</span></h2>
-        <p>实际订单与排程记录 · 点击任务查看 PMC 排程</p>
+        <p>与 PMC 一致的工位、任务时间和六种工序颜色 · 点击任务打开排程</p>
       </div>
       <div className="overview-view-buttons" role="group" aria-label="排程视图">
         {([["day","日视图"],["week","周视图"],["month","月视图"]] as const).map(([id,label])=>
-          <button type="button" key={id} aria-pressed={view===id} onClick={()=>{setView(id);setExpanded(false)}}>{label}</button>)}
+          <button type="button" key={id} aria-pressed={view===id} onClick={()=>setView(id)}>{label}</button>)}
       </div>
     </div>
     <div className="overview-period-controls">
@@ -99,37 +100,38 @@ function GanttPanel({workspace,onSelect}:{workspace:WorkspaceData;onSelect:Props
     <div className="overview-gantt-scroller" role="region" aria-label="排程时间轴" tabIndex={0}>
       <div className="overview-gantt-layout" style={{minWidth:view==="month"?"1180px":view==="week"?"660px":"640px"}}>
         <div className="overview-gantt-row overview-gantt-head">
-          <div>订单 / 产品</div><div>产线</div>
+          <div>产线 / 工位</div><div>排程任务</div>
           <div className="overview-gantt-dates" style={cellStyle}>
             {period.cells.map(c=><div key={c.key} className={c.key===dayString(new Date())?"is-today":""}>
               <strong>{c.label}</strong>{c.sub&&<small>{c.sub}</small>}
             </div>)}
           </div>
         </div>
-        {list.length===0?<div className="overview-empty-gantt">
-          当前没有进行中的订单。可在销售部创建订单，再由 PMC 安排生产。
-        </div>:list.map(o=>{
-          const entries=displayed.filter(e=>e.orderId===o.id&&makeTypes.has(e.type))
-          const all=saved.filter(e=>e.orderId===o.id&&makeTypes.has(e.type))
-          const line=entries.find(e=>e.type==="配制")?.lane??entries[0]?.lane??all[0]?.lane??"待指派"
+        {PMC_LANES.map(lane=>{
+          const entries=activeEntries.filter(e=>e.lane===lane.id)
           const bars=layoutOverviewBars(entries,period)
           const rowHeight=overviewRowHeight(bars)
-          return <div className="overview-gantt-row overview-gantt-data" key={o.id} style={{minHeight:rowHeight}}>
-            <button type="button" className="overview-gantt-order" onClick={()=>onSelect("#/departments/sales/orders")}>
-              <strong title={o.id}>{o.id}</strong>
-              <small title={o.product??""}>{o.product??"未填写产品"} · {String(o.qty??"—")} {String(o.unit??"")}</small>
-            </button>
-            <div className="overview-gantt-lane" title={line}>{line}</div>
+          const orderCount=new Set(entries.map(e=>e.orderId)).size
+          return <div className="overview-gantt-row overview-gantt-data" data-gantt-lane={lane.id} key={lane.id} style={{minHeight:rowHeight}}>
+            <div className="overview-gantt-order overview-gantt-workcenter" title={lane.id}>
+              <strong>{lane.id}</strong>
+              <small>{lane.desc}</small>
+            </div>
+            <div className="overview-gantt-lane" title={`${entries.length}项任务，${orderCount}张订单`}>
+              {entries.length?`${entries.length}项 · ${orderCount}单`:"—"}
+            </div>
             <div className="overview-gantt-track" style={{"--grid-columns":period.cells.length,minHeight:rowHeight} as CSSProperties}>
-              {entries.length===0?<span className="overview-unscheduled">{all.length===0?"尚未排程":"本时间段无任务"}</span>:
+              {entries.length===0?<span className="overview-unscheduled">本时间段无任务</span>:
                 bars.map(({entry,left,width,slot,compact})=>{
                   const kind=types[entry.type]??{label:entry.type,className:"other"}
                   const draft=entry.source==="订单排程"
+                  const conflict=conflicts.has(entry.id)
                   return <button type="button" key={entry.id}
-                    className={`overview-gantt-bar ${kind.className} ${draft?"draft":""} ${compact?"is-mini":""}`}
-                    style={{left:`${left}%`,width:`${width}%`,top:`${7+slot*26}px`}} onClick={()=>onSelect("#/departments/pmc/schedule")}
-                    title={`${o.id} · ${entry.type} · ${entry.lane} · ${entry.start.replace("T"," ")}（${entry.duration}分钟）${draft?" · 系统排程草案":""}`}
-                    aria-label={`${entry.type}：${o.id}，${entry.start}，${entry.duration}分钟`}>
+                    className={`overview-gantt-bar ${kind.className} ${draft?"draft":""} ${compact?"is-mini":""} ${conflict?"is-conflict":""}`}
+                    style={{left:`${left}%`,width:`${width}%`,top:`${7+slot*26}px`}}
+                    onClick={()=>onSelect("#/departments/pmc/schedule")}
+                    title={`${entry.orderId} · ${entry.type} · ${entry.lane} · ${entry.start.replace("T"," ")}（${entry.duration}分钟）${conflict?" · 同工位时间冲突":""}${draft?" · 系统排程草案":""}`}
+                    aria-label={`${entry.type}：${entry.orderId}，${entry.lane}，${entry.start}，${entry.duration}分钟${conflict?"，同工位时间冲突":""}`}>
                     {compact?"":kind.label}
                   </button>
                 })}
@@ -139,11 +141,13 @@ function GanttPanel({workspace,onSelect}:{workspace:WorkspaceData;onSelect:Props
       </div>
     </div>
     <div className="overview-gantt-foot">
-      <span>{unscheduled>0&&<><strong>待排程 {unscheduled} 单</strong> · </>}
-        {displayed.length?<>本时间段 <strong>{displayed.length}</strong> 项排程 · {displayed.some(e=>e.source==="订单排程")?"含系统草案":"来自已保存记录"}</>:
-        "本时间段尚无已保存排程，不自动编造任务日期"}</span>
-      {visibleOrders.length>4&&<button type="button" onClick={()=>setExpanded(x=>!x)}>{expanded?"收起订单":`查看全部 ${visibleOrders.length} 单`}</button>}
-      <button type="button" className="overview-link" onClick={()=>onSelect("#/departments/pmc/schedule")}>打开排程 <ArrowRight size={13}/></button>
+      <span>{unscheduled>0&&<><strong>尚未排程 {unscheduled} 单</strong> · </>}
+        {activeEntries.length?<>本时间段 <strong>{activeEntries.length}</strong> 项任务（按实际工位）</>:
+          "本时间段暂无可显示的工位排程"}
+        {unassigned>0&&<> · <strong>{unassigned} 项工位或工序需核对</strong></>}
+        {conflicts.size>0&&<> · <strong className="overview-gantt-conflict-count">{conflicts.size} 项任务存在同工位时间冲突</strong></>}
+      </span>
+      <button type="button" className="overview-link" onClick={()=>onSelect("#/departments/pmc/schedule")}>打开 PMC 排程 <ArrowRight size={13}/></button>
     </div>
   </Card>
 }
