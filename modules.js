@@ -354,11 +354,12 @@ function globalAuditTable(){
  const deptName=dept=>ctx.access?.departments?.find?.(d=>d.id===dept)?.name||({sales:'销售部',pmc:'生产计划与物料控制部（PMC）',production:'生产车间',quality:'质量部 QA / QC',warehouse:'仓库 / 物流部',purchase:'采购 / 供应链部',hr:'人事行政办公室',finance:'财务部',it:'信息化部',tech:'信息化部',leadership:'总经办',engineering:'设备工程部',ehs:'已停用部门'}[dept]||'—');
  return grid(['时间','处理部门','操作','单据编号','操作人'],all.map(x=>row([esc(x.when||'—'),esc(deptName(x.dept)),`<strong>${esc(x.action)}</strong>`,esc(x.ref||'—'),esc(x.person||'—')])));
 }
-function overviewPage(){const stages=ops().flows||{},activeOrders=ctx.data.orders.filter(o=>stages[o.id]?.stage!=='delivered'),historyOrders=ctx.data.orders.filter(o=>stages[o.id]?.stage==='delivered');const totals=activeOrders.length,started=activeOrders.filter(o=>stagesOrder.indexOf(stages[o.id]?.stage)>=stagesOrder.indexOf('issued')).length;
+function overviewPage(){const schedulePanel=window.FactoryGantt?.renderOverview?.()||'';const stages=ops().flows||{},activeOrders=ctx.data.orders.filter(o=>stages[o.id]?.stage!=='delivered'),historyOrders=ctx.data.orders.filter(o=>stages[o.id]?.stage==='delivered');const totals=activeOrders.length,started=activeOrders.filter(o=>stagesOrder.indexOf(stages[o.id]?.stage)>=stagesOrder.indexOf('issued')).length;
  const pending=S.inspections.filter(r=>r.status==='待判定').length+S.cleanReports.filter(r=>r.status==='待判定').length;
  const ready=S.materialRequests.filter(r=>r.status==='待备料').length, gates=S.roster.filter(r=>r.gate==='已通过').length;
  const current=activeOrders.map(o=>{const f=stages[o.id];return row([esc(o.id),esc(o.product),status(f?.stage||o.status),btn('查看订单','viewOrder',o.id)])});
  const content=cards([['进行中订单',totals,'首页只显示未完结订单'],['已开始生产',started,'含执行及后续阶段'],['待检与清洗报检',pending,'质量任务'],['待备料',ready,'车间领料单'],['开工前 Gate 通过',gates,'产线 × 岗位']])+
+ schedulePanel+
  `<div class="mw-tiles mw-quick">${navButton('生产排程甘特图','pmc','schedule')}${navButton('报检判定','quality','qaQc')}${navButton('车间领料 / 退库','production','workshop')}${navButton('库存批次','warehouse','warehouseOps')}${navButton('历史订单','sales','orderHistory')}${navButton('排班编排','pmc','shift')}${navButton('流程与工艺设置','it','settings')}</div>`+
  head('进行中订单',`${historyOrders.length} 张已完结订单已自动归档到销售部 → 历史订单`)+grid(['订单号','产品','当前阶段','入口'],current)+
  head('全厂最近操作记录','全厂统一查看；每张订单的完整历史在订单流程详情')+globalAuditTable();
