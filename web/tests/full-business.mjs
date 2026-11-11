@@ -215,18 +215,40 @@ try {
   assert.equal(await salesPanel.locator(".biz-order-row:visible").count(),0,"Feature-band search filters actual order rows")
   await contextSearch.fill("")
   await page.waitForTimeout(80)
-  const statusButtons=contextTools.locator(".business-context-status button")
-  assert.ok(await statusButtons.count()>1,"Real order states are exposed as contextual status buttons")
+  assert.equal(await contextTools.locator(".business-context-status").count(),0,
+    "Status controls are removed from the right-hand feature band on sales orders")
+  const headingFilter=salesPanel.getByRole("button",{name:/筛选流程状态/})
+  await headingFilter.waitFor({state:"visible"})
+  const filterGeometry=await salesPanel.evaluate(panel=>{
+    const heading=panel.querySelector("th.sales-order-status-heading")
+    const trigger=heading?.querySelector(".sales-order-status-trigger")
+    if(!heading||!trigger)return null
+    const h=heading.getBoundingClientRect(),t=trigger.getBoundingClientRect()
+    return {aligned:Math.abs((h.top+h.bottom)/2-(t.top+t.bottom)/2)<4,
+      inside:t.left>=h.left&&t.right<=h.right,
+      inColumn:heading.querySelector("[data-sales-order-status-filter-host]")===trigger.parentElement}
+  })
+  assert.ok(filterGeometry&&Object.values(filterGeometry).every(Boolean),
+    "Sales status filter is vertically aligned inside its actual table header: "+JSON.stringify(filterGeometry))
   const totalSales=await salesPanel.locator(".biz-order-row").count()
+  await headingFilter.click()
+  const statusButtons=page.locator(".sales-order-status-choices button")
+  await statusButtons.first().waitFor({state:"visible"})
+  assert.ok(await statusButtons.count()>1,"Flow status menu contains real order states")
+  assert.equal(await statusButtons.first().evaluate(el=>getComputedStyle(el).backgroundColor),
+    "rgb(251, 252, 248)","The selected status uses #FBFCF8 instead of green")
   await statusButtons.nth(1).click()
   await page.waitForTimeout(80)
   const filteredSales=await salesPanel.locator(".biz-order-row:visible").count()
-  assert.ok(filteredSales>0&&filteredSales<=totalSales,"Context status filters actual order rows")
+  assert.ok(filteredSales>0&&filteredSales<=totalSales,"Column filter changes actual order rows")
+  assert.equal(await statusButtons.nth(1).evaluate(el=>getComputedStyle(el).backgroundColor),
+    "rgb(251, 252, 248)","An active status remains warm-white")
   await statusButtons.first().click()
   await page.waitForTimeout(80)
-  assert.equal(await salesPanel.locator(".biz-order-row:visible").count(),totalSales,"All status restores the complete order list")
+  assert.equal(await salesPanel.locator(".biz-order-row:visible").count(),totalSales,
+    "All statuses restores the complete order list")
   await page.screenshot({path:"test-results/sales-orders-table-toolbar.png",fullPage:false})
-  console.log("SALES CONTEXT FILTER CHECK",JSON.stringify({totalSales,filteredSales,statusButtons:await statusButtons.count()}))
+  console.log("SALES STATUS HEADER FILTER CHECK",JSON.stringify({totalSales,filteredSales,statusOptions:await statusButtons.count()}))
   const create=topRightCreate
   await create.waitFor({state:"visible",timeout:10000})
   assert.equal(await create.getAttribute("data-slot"),"button","Top-right creation action uses shadcn Button")

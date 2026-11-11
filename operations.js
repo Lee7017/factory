@@ -161,6 +161,7 @@ function recordTable(cols,rows,toolbar=''){return `<div class="op-table-wrap">${
  function orderPanel({key,table,stats=[],toolbar='',statuses=[],item='销售订单',placeholder='搜索单号 / 产品'}){
   const folded=Boolean(orderPanelFolded[key]);
   const opts=[...new Set(statuses.filter(Boolean))];
+  const tableMarkup=key==="orders" ? table.replace("<th>流程状态</th>", '<th class="sales-order-status-heading"><div class="sales-order-status-filter-host" data-sales-order-status-filter-host></div></th>') : table;
   const count=(table.match(/class="biz-order-row"/g)||[]).length;
   return `<section class="biz-order-panel ${folded?'is-folded':''}" data-order-panel="${esc(key)}">
    <div class="biz-order-stats" id="biz-order-stats-${esc(key)}" ${folded?'hidden':''}>${stats.map(([label,num])=>`<div class="biz-order-stat"><span>${esc(label)}</span><strong>${Number(num)||0}</strong></div>`).join('')}</div>
@@ -170,7 +171,7 @@ function recordTable(cols,rows,toolbar=''){return `<div class="op-table-wrap">${
     <select class="biz-order-status" aria-label="${esc(item)}状态筛选"><option value="">状态：全部</option>${opts.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('')}</select>
     <button type="button" class="biz-order-fold" data-op-action="orderUi:fold" data-op-id="${esc(key)}" aria-expanded="${!folded}" aria-controls="biz-order-stats-${esc(key)}"><span class="biz-fold-arrow" aria-hidden="true">${folded?'⌄':'⌃'}</span><span>${folded?'展开状态统计':'收起状态统计'}</span></button>
    </div>
-   <div class="biz-order-table-area">${table}</div>
+   <div class="biz-order-table-area">${tableMarkup}</div>
    <div class="biz-order-footer">共 <strong class="biz-order-visible-count">${count}</strong> 条${esc(item)}</div>
   </section>`;
  }
