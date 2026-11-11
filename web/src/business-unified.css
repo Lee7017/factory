@@ -2109,85 +2109,145 @@ body::before,body::after{display:none!important}
 }
 .factory-shell-v2 .shell-footer{display:none!important}
 
-/* Department overview is the only place allowed to introduce the department itself. */
-.department-overview-panel{
-  min-width:0;
-  padding:5px 0 0;
-}
-.department-overview-copy{
-  padding:3px 0 20px;
-  border-bottom:1px solid var(--factory-line-strong);
-}
-.department-overview-copy>span{
-  display:block;margin-bottom:7px;
-  color:var(--factory-soft-5);
-  font-size:9px;font-weight:760;letter-spacing:.04em;
-}
-.department-overview-copy h1{
-  margin:0;color:var(--factory-ink);
-  font-size:30px;line-height:1.08;letter-spacing:-.03em;font-weight:790;
-}
-.department-overview-copy p{
-  margin:9px 0 0;color:#747C75;
-  font-size:11px;line-height:1.6;
-}
-.office-panel{
-  margin-top:18px;
-  padding:16px 0 18px;
+/* Shared department profile: photo, identity and office location read as one unit. */
+.department-profile{
   display:grid;
-  grid-template-columns:minmax(170px,230px) minmax(0,1fr);
+  grid-template-columns:minmax(230px,36%) minmax(0,1fr);
   gap:24px;
-  align-items:center;
-  border-bottom:1px solid var(--factory-line-strong);
+  min-height:246px;
+  margin-top:6px;
+  padding:15px;
+  border:1px solid var(--factory-line-strong);
+  border-radius:12px;
+  background:linear-gradient(115deg,#F2F5EF 0%,#F8F9F5 100%);
 }
-.office-panel-header{min-width:0}
-.office-title{
+.department-profile-photo{
+  position:relative;
+  min-width:0;
+  min-height:214px;
+}
+.department-profile-photo-slot{
+  display:block;
+  width:100%;
+  height:100%;
+  min-height:214px;
+  padding:0;
+  overflow:hidden;
+  border:1px solid rgba(110,133,112,.22);
+  border-radius:8px;
+  background:#E7EDE4;
+  color:#758677;
+}
+button.department-profile-photo-slot{cursor:pointer}
+button.department-profile-photo-slot:hover{border-color:#729378}
+button.department-profile-photo-slot:focus-visible,
+.department-profile-photo-remove:focus-visible{outline:2px solid #517c5d;outline-offset:2px}
+.department-profile-photo-slot img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.department-profile-photo-empty{
+  display:flex;
+  min-height:214px;
+  height:100%;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  border:1px dashed rgba(112,143,115,.28);
+  border-radius:7px;
+  background:linear-gradient(145deg,rgba(234,239,231,.82),rgba(218,231,219,.56));
+}
+.department-profile-photo-empty strong{font-size:12px;font-weight:680;color:#657A69}
+.department-profile-photo-empty small{font-size:10px;color:#859487}
+.department-profile-photo-remove{
+  position:absolute;
+  right:10px;
+  bottom:10px;
+  display:grid;
+  place-items:center;
+  width:29px;
+  height:29px;
+  border:1px solid rgba(104,120,106,.22);
+  border-radius:7px;
+  color:#485F4C;
+  background:rgba(250,252,248,.93);
+  cursor:pointer;
+}
+.department-profile-photo-remove:hover{background:#fff;color:#A34841}
+.office-photo-input{display:none}
+.department-profile-main{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:24px;
+  padding:12px 6px 3px 0;
+}
+.department-profile-eyebrow{
+  display:block;
+  margin-bottom:8px;
+  color:var(--factory-soft-5);
+  font-size:10px;
+  font-weight:760;
+  letter-spacing:.04em;
+}
+.department-profile-heading h1{
   margin:0;
   color:var(--factory-ink);
-  font-size:13px;
-  line-height:1.35;
-  font-weight:760;
+  font-size:32px;
+  line-height:1.15;
+  letter-spacing:-.03em;
+  font-weight:790;
 }
-.office-description{
-  margin:5px 0 0;
-  color:#8A928B;
-  font-size:9.5px;
-  line-height:1.5;
+.department-profile-heading p{
+  margin:12px 0 0;
+  max-width:650px;
+  color:#747C75;
+  font-size:12px;
+  line-height:1.7;
 }
-.office-location-row{
-  min-width:0;
-  min-height:108px;
+.department-profile-bottom{
   display:flex;
-  align-items:center;
+  align-items:flex-end;
+  justify-content:space-between;
   gap:16px;
-  padding:12px;
-  border:1px solid var(--factory-line);
-  border-radius:8px;
-  background:#F0F2EC;
+  min-width:0;
+  padding-top:15px;
+  border-top:1px solid var(--factory-line-strong);
 }
-.office-photo-wrap{flex:0 0 auto}
-.office-photo-slot{
-  width:128px;height:84px;
-  display:block;
-  overflow:hidden;
-  padding:0;
-  border:1px dashed rgba(90,113,94,.35);
-  border-radius:7px;
-  background:#E7EBE3;
-  color:#778777;
+.department-profile-location{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:6px;
+  min-width:0;
 }
-button.office-photo-slot{cursor:pointer}
-button.office-photo-slot:hover{border-color:#668A6A;background:#E0E9DE}
-button.office-photo-slot:focus-visible{outline:2px solid #517c5d;outline-offset:2px}
-.office-photo-slot img{display:block;width:100%;height:100%;object-fit:cover}
-.office-photo-empty{display:flex;height:100%;flex-direction:column;align-items:center;justify-content:center;gap:5px}
-.office-photo-empty small{font-size:10px}
-.office-photo-input{display:none}
-.office-location-details{display:flex;min-width:0;flex:1;flex-direction:column;gap:8px}
-.office-location-details .office-address{font-size:12px;line-height:1.5}
-.office-location-actions{display:flex;flex-shrink:0;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-.office-location-actions [data-slot="button"]{min-height:30px;height:30px;padding:0 9px;font-size:11px}
-.office-remove-image{color:#777F77}
+.department-profile-location-label{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:10px;
+  font-weight:720;
+  color:#738376;
+}
+.department-profile-location .office-address{
+  font-size:13px;
+  font-weight:690;
+  line-height:1.5;
+  color:#354D3A;
+  overflow-wrap:anywhere;
+}
+.department-profile-edit-location{
+  flex:0 0 auto;
+  height:31px;
+  min-height:31px;
+  padding:0 10px;
+  font-size:11px;
+  background:rgba(255,255,255,.72);
+}
 .office-image-error{font-size:10px;color:#AD4B43}
 
 /* Department secondary tabs are quiet; business functions already live in the horizontal band. */
@@ -2384,16 +2444,20 @@ button.office-photo-slot:focus-visible{outline:2px solid #517c5d;outline-offset:
   .factory-shell-v2 .shell-content.is-business{padding:10px 10px 24px!important}
   .factory-shell-v2 .shell-content.is-department:not(.is-business){padding:16px 12px 28px!important}
   .factory-shell-v2 .shell-content.is-overview{padding:18px 12px 30px!important}
-  .office-panel{grid-template-columns:1fr;gap:10px;padding:14px 0 16px}
-  .office-location-row{align-items:center;gap:12px}
-  .office-location-actions{justify-content:flex-start}
+  .department-profile{grid-template-columns:minmax(190px,34%) minmax(0,1fr);gap:15px;padding:12px}
+  .department-profile-heading h1{font-size:27px}
+  .department-profile-main{padding:7px 0 1px}
 
 }
 @media(max-width:520px){
-  .office-location-row{flex-wrap:wrap}
-  .office-photo-slot{width:112px;height:78px}
-  .office-location-details{flex-basis:calc(100% - 128px)}
-  .office-location-actions{width:100%;justify-content:flex-start}
+  .department-profile{display:flex;flex-direction:column;gap:16px;padding:12px}
+  .department-profile-photo{min-height:180px;height:190px}
+  .department-profile-photo-slot,.department-profile-photo-empty{min-height:180px}
+  .department-profile-main{gap:20px;padding:0 2px 3px}
+  .department-profile-heading h1{font-size:28px}
+  .department-profile-heading p{margin-top:8px}
+  .department-profile-bottom{align-items:flex-start;flex-wrap:wrap}
+  .department-profile-edit-location{margin-left:auto}
   .business-context-search{width:122px}
   .business-context-search svg{display:none}
   .feature-band-nav{gap:13px}
@@ -2440,7 +2504,7 @@ button.office-photo-slot:focus-visible{outline:2px solid #517c5d;outline-offset:
 }
 
 
-/* Department overview refinement: department, office location, and roster are separate information sections. */
+/* Department overview refinement: the unified profile is followed by a simple people directory. */
 .factory-shell-v2 .dept-main{
   display:grid;
   gap:0;
