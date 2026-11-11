@@ -6,28 +6,8 @@ const stages=window.FactoryOrderStages;
 if(!stages||!stages.draft||!stages.blend_clean)throw Error('缺少订单状态公共配置，请刷新页面');
 const orderActions={submit:['提交评审','sales','orders','edit','draft','review'],review:['评审通过','sales','orderReview','approve','review','approved'],reject:['退回修改','sales','orderReview','approve','review','draft'],trial:['排程试算','pmc','schedule','edit','approved','trial'],formal:['发布正式排程','pmc','schedule','approve','trial','formal'],reserve:['确认齐套并锁库','pmc','kitting','execute','formal','reserved'],issue:['确认领料发料','warehouse','issue','execute','reserved','issued'],blendStart:['配制开工','production','tasks','execute','issued','blending'],blendFinish:['配制任务完成','production','tasks','execute','blending','blend_clean'],semiPass:['半成品检验合格','quality','qaQc','approve','semi_qc','semi_ok'],semiFail:['半成品不合格 / 返回配制','quality','qaQc','approve','semi_qc','blending'],packStart:['包装开工','production','tasks','execute','semi_ok','packaging'],packFinish:['包装任务完成','production','tasks','execute','packaging','pack_clean'],finalPass:['成品检验合格并放行','quality','qaQc','approve','final_qc','released'],finalFail:['成品不合格 / 返回包装','quality','qaQc','approve','final_qc','packaging'],receipt:['成品入库','warehouse','inventory','edit','released','stored'],notifyDelivery:['发起发货通知','sales','orders','edit','stored','dispatch'],confirmDelivery:['确认客户收货','sales','orders','edit','shipped','delivered']};
 const featureActions={orders:['submit','notifyDelivery','confirmDelivery'],orderReview:['review','reject'],schedule:['trial','formal'],kitting:['reserve'],issue:['issue'],tasks:['blendStart','blendFinish','packStart','packFinish'],batch:['blendStart','blendFinish','packStart','packFinish'],inspection:['semiPass','semiFail','finalPass','finalFail'],release:[],inventory:['receipt']};
-const nextWorkForStage={
- draft:{dept:'sales',feature:'orders'},
- review:{dept:'sales',feature:'orderReview'},
- approved:{dept:'pmc',feature:'schedule'},
- trial:{dept:'pmc',feature:'schedule'},
- formal:{dept:'pmc',feature:'kitting'},
- reserved:{dept:'warehouse',feature:'issue'},
- issued:{dept:'production',feature:'tasks'},
- blending:{dept:'production',feature:'tasks'},
- blend_clean:{dept:'production',feature:'nonProductionTasks'},
- semi_qc:{dept:'quality',feature:'qaQc'},
- semi_ok:{dept:'production',feature:'tasks'},
- packaging:{dept:'production',feature:'tasks'},
- pack_clean:{dept:'production',feature:'nonProductionTasks'},
- final_qc:{dept:'quality',feature:'qaQc'},
- released:{dept:'warehouse',feature:'inventory'},
- stored:{dept:'sales',feature:'orders'},
- dispatch:{dept:'warehouse',feature:'warehouseOutbound'},
- shipping:{dept:'warehouse',feature:'warehouseOutbound'},
- shipped:{dept:'sales',feature:'orders'},
- delivered:{dept:'sales',feature:'orderHistory'}
-};
+const nextWorkForStage=window.FactoryOrderWorkflow?.nextWorkForStage;
+if(!nextWorkForStage?.review)throw Error('缺少订单流转公共配置，请刷新页面');
 const catalogs={
  purchase:{title:'采购单',prefix:'PO',dept:'purchase',feature:'purchase',perm:'create',fields:[['material','采购物料','select',['RM-001','PK-001','AD-001','RM-002','PK-002']],['qty','采购数量','number'],['supplier','供应商','text']],columns:['物料编码','采购数量','供应商'],stages:['草稿','待审批','待到货','已入库'],actions:[['提交采购','草稿','待审批','create'],['审批通过','待审批','待到货','approve'],['审批驳回','待审批','草稿','approve']]},
  approvals:{title:'重大事项审批',prefix:'APR',dept:'leadership',feature:'approvals',perm:'approve',fields:[['subject','事项名称','text'],['owner','申请部门','text'],['reason','申请说明','text']],columns:['事项名称','申请部门','申请说明'],stages:['待复核','已通过','已驳回'],actions:[['审批通过','待复核','已通过','approve'],['驳回','待复核','已驳回','approve']]},
