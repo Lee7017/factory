@@ -179,6 +179,9 @@ try{
   await orderButton.click()
   const dialog=page.locator(".journey-dialog")
   await dialog.waitFor({state:"visible",timeout:10000})
+  assert.equal(await dialog.evaluate(element=>getComputedStyle(element).backgroundColor),
+    "rgb(251, 252, 248)","Order workflow dialog uses the shared warm-white panel color")
+
   // Current UX: the first two flow cards expose "订单内容"; there are no order tabs.
   assert.equal(await dialog.locator('[role="tablist"] [role="tab"]').count(),0,"Order flow must not render obsolete tabs")
   assert.equal(await dialog.locator("[data-flow-order-content]").count(),2,
