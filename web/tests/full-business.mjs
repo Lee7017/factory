@@ -226,7 +226,7 @@ try {
     const h=heading.getBoundingClientRect(),t=trigger.getBoundingClientRect()
     return {aligned:Math.abs((h.top+h.bottom)/2-(t.top+t.bottom)/2)<4,
       inside:t.left>=h.left&&t.right<=h.right,
-      inColumn:h.querySelector("[data-sales-order-status-filter-host]")===trigger.parentElement}
+      inColumn:heading.querySelector("[data-sales-order-status-filter-host]")===trigger.parentElement}
   })
   assert.ok(filterGeometry&&Object.values(filterGeometry).every(Boolean),
     "Sales status filter is vertically aligned inside its actual table header: "+JSON.stringify(filterGeometry))
