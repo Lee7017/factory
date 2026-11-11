@@ -3,28 +3,15 @@
 const $=s=>document.querySelector(s);
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ops=window.FactoryOperations;
-const lanes=[
- {id:'L01 配制一线',desc:'配制'},
- {id:'L02 配制二线',desc:'配制'},
- {id:'S03-4# 瓶装线',desc:'包装'},
- {id:'S04 包装二线',desc:'包装'},
- {id:'QC 检验位',desc:'半成品 / 成品 QAQC'}
-];
-const categories={
- '清洗':'clean','配制':'blend','半成品 QAQC':'semi-qc','调机调线':'change',
- '包装':'pack','成品 QAQC':'final-qc'
-};
-const stages=['清洗','配制','半成品 QAQC','调机调线','包装','成品 QAQC'];
-const nonProductionTypes=new Set(['清洗','调机调线']);
+// Scheduling rules are injected from the same JSON React overview imports.
+const schedule=window.FactorySchedulingConfig;
+if(!schedule?.lanes?.length||!schedule?.stages?.length)throw Error('缺少排程公共配置，请刷新页面');
+const lanes=schedule.lanes;
+const categories=schedule.categories;
+const stages=schedule.stages;
+const nonProductionTypes=new Set(schedule.nonProductionTypes);
 const taskLabel=type=>nonProductionTypes.has(type)?`非生产 · ${type}`:type;
-const defaults=[
- ['清洗','L01 配制一线',420,60],
- ['配制','L01 配制一线',480,210],
- ['半成品 QAQC','QC 检验位',690,60],
- ['调机调线','S03-4# 瓶装线',750,60],
- ['包装','S03-4# 瓶装线',810,180],
- ['成品 QAQC','QC 检验位',990,60]
-];
+const defaults=schedule.defaults;
 const pad=n=>String(n).padStart(2,'0');
 const dayString=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const parseLocal=s=>new Date(`${String(s).replace(' ','T')}:00`.replace(/:00:00$/,':00'));
@@ -35,30 +22,7 @@ let ctx=null;
 let editId=null;
 let restoreLeft=360;
 const state=()=>ops.state;
-const laneOptions={
- "清洗": [
-  "L01 配制一线",
-  "L02 配制二线"
- ],
- "配制": [
-  "L01 配制一线",
-  "L02 配制二线"
- ],
- "半成品 QAQC": [
-  "QC 检验位"
- ],
- "调机调线": [
-  "S03-4# 瓶装线",
-  "S04 包装二线"
- ],
- "包装": [
-  "S03-4# 瓶装线",
-  "S04 包装二线"
- ],
- "成品 QAQC": [
-  "QC 检验位"
- ]
-};
+const laneOptions=schedule.laneOptions;
 function taskSpan(item){
  const start=ms(item.start),duration=Number(item.duration);
  return Number.isFinite(start)&&Number.isFinite(duration)&&duration>0?{start,end:start+duration*60000}:null;
@@ -160,7 +124,7 @@ function ensure(){
  s.gantt??=[];s.ganttDay??=dayString(new Date());
  let changed=false;
  // 兼容旧排程：检验名称统一成 QAQC；“QA 放行”属于质量审批，不再生成第三项甘特任务。
- const legacyNames={'半成品 QC':'半成品 QAQC','成品 QC':'成品 QAQC'};
+ const legacyNames=schedule.legacyTypeNames;
  const oldRelease=s.gantt.filter(x=>x.type==='QA 放行');
  if(oldRelease.length){
   s.ganttArchived??=[];
@@ -189,7 +153,7 @@ function status(entry){
  const flow=state().flows[entry.orderId]?.stage||'draft';
  const order=['draft','review','approved','trial','formal','reserved','issued','blending','semi_qc','semi_ok','packaging','final_qc','inspected','released','stored'];
  const rank=order.indexOf(flow);
- const expected={'清洗':7,'配制':8,'半成品 QAQC':9,'调机调线':10,'包装':11,'成品 QAQC':12};
+ const expected=schedule.flowProgress;
  const taskType=entry.type==='清洗'||entry.type==='调机调线'?entry.type:null;
  const task=taskType&&ctx.data.tasks?.find(t=>t.type===taskType);
  if(task&&task.status!=='待开始')return task.status;
