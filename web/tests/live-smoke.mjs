@@ -14,18 +14,33 @@ try{
   for(let attempt=0;attempt<15;attempt++){
     try{
       const response=await page.goto(url,{waitUntil:"networkidle",timeout:20000})
-      await page.locator(".department-tile").first().waitFor({timeout:6500})
-      if(response?.ok()&&await page.locator(".department-tile").count()===11){loaded=true;break}
+      await page.locator(".department-band-button").first().waitFor({timeout:6500})
+      if(response?.ok()&&await page.locator(".department-band-button").count()===10){loaded=true;break}
     }catch{}
     await page.waitForTimeout(3000)
   }
-  assert.ok(loaded,"Published GitHub Pages must load React and all 11 navigation tiles")
+  assert.ok(loaded,"Published GitHub Pages must load React and all 10 departments in the horizontal band")
   assert.ok((await page.title()).includes("工厂管理系统"))
   assert.equal(await page.locator("svg.svg-bank[data-icon-library=lucide] symbol[data-lucide-icon]").count(),77)
+  assert.equal(await page.locator(".system-rail").count(),1,"Published site uses one compact system rail")
+  assert.equal(await page.locator(".shell-sidebar,.shell-topbar,.department-tile").count(),0,
+    "Old department tile sidebar and topbar must stay removed")
+  const publishedShell=await page.evaluate(()=>{
+    const rail=document.querySelector(".system-rail")?.getBoundingClientRect()
+    const dept=document.querySelector(".department-band-shell")?.getBoundingClientRect()
+    return {
+      railWidth:Math.round(rail?.width??0),
+      departmentHeight:Math.round(dept?.height??0),
+      overflow:document.documentElement.scrollWidth>innerWidth+4
+    }
+  })
+  assert.equal(publishedShell.railWidth,64)
+  assert.equal(publishedShell.departmentHeight,46)
+  assert.equal(publishedShell.overflow,false)
+
   await page.locator(".overview-kpi-grid").waitFor()
   assert.equal(await page.locator(".overview-kpi-card").count(),4,"Published cockpit has four operational KPIs")
   assert.equal(await page.locator(".overview-gantt-panel").count(),1,"Published cockpit has production Gantt")
-  // Inspect actual published DOM boxes, not just task timestamps or mock data.
   const ganttCollisions=await page.locator(".overview-gantt-data").evaluateAll(rows=>{
     const clashes=[]
     for(const row of rows){
@@ -46,33 +61,62 @@ try{
   assert.equal(await page.locator(".overview-alerts-panel").count(),1,"Published cockpit has real warnings")
   assert.equal(await page.locator(".overview-agent-card").count(),5,"Published cockpit includes five animal Agent roles")
   await page.screenshot({path:"test-results/live-overview-cockpit.png",fullPage:true})
-  await page.locator(".department-tile").filter({hasText:"仓库 / 物流部"}).click()
-  assert.equal(await page.locator(".feature-tile").count(),8,"Published warehouse department has 8 functions")
-  // Move off the clicked tile and allow its CSS background transition to finish.
-  await page.mouse.move(780,90)
-  await page.waitForFunction(()=>{
-    const selected=document.querySelector('.department-tile[aria-current="page"]')
-    return selected&&getComputedStyle(selected).backgroundColor==="rgb(180, 192, 182)"
-  },null,{timeout:5000})
-  const selectedStyle=await page.locator('.department-tile[aria-current="page"]').evaluate(el=>{
-    const style=getComputedStyle(el)
-    return {background:style.backgroundColor,color:style.color,shadow:style.boxShadow}
+
+  await page.locator(".department-band-button").filter({hasText:"仓库"}).click()
+  await page.locator(".department-overview-panel").waitFor({state:"visible",timeout:10000})
+  assert.equal(await page.locator(".feature-band-button").count(),9,
+    "Warehouse has overview plus eight real functions in the horizontal feature band")
+  const navStyle=await page.evaluate(()=>{
+    const dept=document.querySelector('.department-band-button[aria-current="page"]')
+    const feature=document.querySelector(".feature-band")
+    const active=document.querySelector(".feature-band-button.active")
+    return {
+      department:(dept?.textContent??"").trim(),
+      departmentUnderline:dept?getComputedStyle(dept,"::after").backgroundColor:"",
+      featureHeight:Math.round(feature?.getBoundingClientRect().height??0),
+      featureActive:(active?.textContent??"").trim(),
+      featureUnderline:active?getComputedStyle(active,"::after").backgroundColor:"",
+      overflow:document.documentElement.scrollWidth>innerWidth+4
+    }
   })
-  assert.equal(selectedStyle.background,"rgb(180, 192, 182)","Selected department uses matte gray-sage, not bright saturated green")
-  assert.equal(selectedStyle.color,"rgb(47, 72, 54)","Selected department uses dark ink, not glowing white")
-  assert.ok(!selectedStyle.shadow.includes("inset 3px"),"Selected department must never have a left-side stripe")
-  await page.screenshot({path:"test-results/live-sidebar-active.png",fullPage:true})
-  await page.getByRole("button",{name:"查看仓库 / 物流部介绍"}).click()
-  await page.locator('[data-slot="popover-content"]').waitFor({state:"visible"})
-  await page.getByRole("button",{name:"查看仓库 / 物流部介绍"}).click()
+  assert.equal(navStyle.department,"仓库")
+  assert.equal(navStyle.departmentUnderline,"rgb(0, 151, 63)")
+  assert.equal(navStyle.featureHeight,48)
+  assert.equal(navStyle.featureActive,"部门总览")
+  assert.equal(navStyle.featureUnderline,"rgb(0, 151, 63)")
+  assert.equal(navStyle.overflow,false)
+  await page.screenshot({path:"test-results/live-horizontal-department-band.png",fullPage:true})
+
   await page.getByRole("tab",{name:/部门花名簿/}).click()
   await page.getByText("办公位置",{exact:true}).waitFor()
-  await page.getByRole("tab",{name:/业务功能/}).click()
-  await page.locator(".feature-tile:not([disabled])").first().click()
-  await page.locator(".native-business .legacy-root").waitFor({state:"visible",timeout:15000})
+  await page.screenshot({path:"test-results/live-warehouse-roster.png",fullPage:true})
+
+  await page.evaluate(()=>{window.location.hash="#/departments/warehouse/warehouseOutbound"})
+  await page.locator('.native-business [data-module-page="warehouseOutbound"]').waitFor({state:"visible",timeout:18000})
+  await page.locator(".business-context-tools").waitFor({state:"visible",timeout:10000})
+  const warehouseLayout=await page.evaluate(()=>{
+    const feature=document.querySelector(".feature-band")?.getBoundingClientRect()
+    const tools=document.querySelector(".business-context-tools")?.getBoundingClientRect()
+    const frame=document.querySelector(".business-page-frame")?.getBoundingClientRect()
+    return {
+      featureHeight:Math.round(feature?.height??0),
+      toolsHeight:Math.round(tools?.height??0),
+      frameWidth:Math.round(frame?.width??0),
+      workspaceWidth:innerWidth-64,
+      overflow:document.documentElement.scrollWidth>innerWidth+4,
+      active:(document.querySelector('.feature-band-button[aria-current="page"]')?.textContent??"").trim()
+    }
+  })
+  assert.equal(warehouseLayout.featureHeight,48,"Live feature navigation stays one row")
+  assert.equal(warehouseLayout.toolsHeight,48,"Context tools remain vertically centered in the same row")
+  assert.equal(warehouseLayout.active,"成品出库")
+  assert.ok(warehouseLayout.frameWidth>warehouseLayout.workspaceWidth*.88,
+    "Live warehouse workbench uses the available width")
+  assert.equal(warehouseLayout.overflow,false)
   assert.equal(await page.locator("iframe").count(),0,"Production business pages must not use iframe")
   assert.deepEqual(errors,[],"Published website must not throw uncaught JavaScript errors")
-  await page.screenshot({path:"test-results/live-github-pages.png",fullPage:true})
+  await page.screenshot({path:"test-results/live-warehouse-outbound.png",fullPage:true})
+
   await page.evaluate(()=>{window.location.hash="#/departments/pmc/kitting"})
   await page.locator('.native-business .biz-order-panel[data-order-panel="kitting"]').waitFor({state:"visible",timeout:18000})
   assert.equal(await page.locator('.native-business .proc-linked-panel').count(),0,"No separate PR table on PMC")
