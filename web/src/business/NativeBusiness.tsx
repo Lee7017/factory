@@ -56,6 +56,8 @@ const fallbackContextStatuses:Record<string,string[]>={
 
 export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
   const isSalesOrderList=dept==="sales"&&["orders","orderReview","orderHistory"].includes(feature)
+  const isPurchaseList=dept==="purchase"&&feature==="purchase"
+  const hasColumnStatusFilter=isSalesOrderList||isPurchaseList
   const [markup,setMarkup]=useState("")
   const [status,setStatus]=useState<"loading"|"ready"|"error">("loading")
   const [error,setError]=useState("")
@@ -106,17 +108,20 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     const root=rootRef.current
     if(!root)return
     const panel=root.querySelector<HTMLElement>(".biz-order-panel")
-    const rows=panel
-      ?Array.from(panel.querySelectorAll<HTMLElement>(".biz-order-row"))
-      :Array.from(root.querySelectorAll<HTMLElement>("tbody tr"))
-    if(panel){
+    const purchaseBoard=isPurchaseList?root.querySelector<HTMLElement>(".proc-purchase-board"):null
+    const rows=purchaseBoard
+      ?Array.from(purchaseBoard.querySelectorAll<HTMLElement>(".proc-order-row"))
+      :panel
+        ?Array.from(panel.querySelectorAll<HTMLElement>(".biz-order-row"))
+        :Array.from(root.querySelectorAll<HTMLElement>("tbody tr"))
+    if(panel||purchaseBoard){
       const counts=new Map<string,number>()
       for(const row of rows){
-        const group=isSalesOrderList?(row.dataset.orderStatus??""):compactBusinessStatus(row.dataset.orderStatus??"")
+        const group=hasColumnStatusFilter?(row.dataset.orderStatus??""):compactBusinessStatus(row.dataset.orderStatus??"")
         if(group)counts.set(group,(counts.get(group)??0)+1)
       }
       const grouped=Array.from(counts.entries()).sort((a,b)=>b[1]-a[1]).map(([name])=>name)
-      const actual=isSalesOrderList?grouped:grouped.slice(0,3)
+      const actual=hasColumnStatusFilter?grouped:grouped.slice(0,3)
       const options=actual.length?actual:(fallbackContextStatuses[feature]??[])
       const countRecord=Object.fromEntries(options.map(name=>[name,counts.get(name)??0]))
       setContextStatuses(current=>current.join("\u0000")===options.join("\u0000")?current:options)
@@ -133,25 +138,29 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     let visible=0
     for(const row of rows){
       const raw=row.dataset.orderStatus??""
-      const statusMatch=!contextStatus||(isSalesOrderList?raw:compactBusinessStatus(raw))===contextStatus
+      const statusMatch=!contextStatus||(hasColumnStatusFilter?raw:compactBusinessStatus(raw))===contextStatus
       const searchMatch=!needle||(row.textContent??"").toLocaleLowerCase().includes(needle)
       const show=statusMatch&&searchMatch
       row.hidden=!show
       if(show)visible++
     }
     const count=panel?.querySelector<HTMLElement>(".biz-order-visible-count")
+      ??purchaseBoard?.querySelector<HTMLElement>(".proc-order-count")
     if(count)count.textContent=String(visible)
-  },[status,markup,contextQuery,contextStatus,contextStatuses.length,isSalesOrderList])
+  },[status,markup,contextQuery,contextStatus,contextStatuses.length,hasColumnStatusFilter,isPurchaseList])
 
   // Keep the native table heading's selected value in sync across MES re-renders.
   useEffect(()=>{
-    if(!isSalesOrderList||status!=="ready")return
-    const select=rootRef.current?.querySelector<HTMLSelectElement>("[data-sales-order-status-filter]")
+    if(!hasColumnStatusFilter||status!=="ready")return
+    const select=rootRef.current?.querySelector<HTMLSelectElement>(
+      "[data-sales-order-status-filter], [data-purchase-status-filter]"
+    )
     if(!select)return
     if(select.value!==contextStatus)select.value=contextStatus
     select.parentElement?.classList.toggle("is-active",Boolean(contextStatus))
-    select.setAttribute("aria-label",contextStatus?"筛选流程状态，当前："+contextStatus:"筛选流程状态")
-  },[dept,feature,status,markup,contextStatus,isSalesOrderList])
+    const label=isPurchaseList?"审批状态":"流程状态"
+    select.setAttribute("aria-label",contextStatus?"筛选"+label+"，当前："+contextStatus:"筛选"+label)
+  },[dept,feature,status,markup,contextStatus,hasColumnStatusFilter,isPurchaseList])
 
   // Track the exact document after React has committed the destination route's DOM.
   useEffect(()=>{
@@ -192,7 +201,7 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     // Listen to their native change events directly to keep the old access matrix working.
     function handleNativeChange(event:Event){
       const el=event.target
-      if(el instanceof HTMLSelectElement&&el.matches("[data-sales-order-status-filter]")){
+      if(el instanceof HTMLSelectElement&&el.matches("[data-sales-order-status-filter], [data-purchase-status-filter]")){
         setContextStatus(el.value)
         return
       }
@@ -220,7 +229,7 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
           )?.click()}>
           <Plus size={13}/><span className="create-label-full">新建销售订单</span><span className="create-label-short">新建</span>
         </Button>}
-        {contextStatuses.length>0&&!isSalesOrderList&&<div className="business-context-status" aria-label="当前列表状态">
+        {contextStatuses.length>0&&!hasColumnStatusFilter&&<div className="business-context-status" aria-label="当前列表状态">
           <button type="button" className={!contextStatus?"active":""} onClick={()=>setContextStatus("")}>全部</button>
           {contextStatuses.map(name=><button type="button" key={name} className={contextStatus===name?"active":""}
             onClick={()=>setContextStatus(name)}>{name}<span>{contextStatusCounts[name]??0}</span></button>)}
