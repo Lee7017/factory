@@ -30,6 +30,7 @@ type Route={kind:"overview"}|{kind:"department";dept:string;feature?:string}
 type TabKey="functions"|"members"|"todos"
 function parseRoute(hash:string):Route {
   const match=hash.match(/^#\/departments\/([a-z]+)(?:\/([a-zA-Z]+))?$/)
+  if(match?.[1]==="engineering")return {kind:"department",dept:"production",feature:"nonProductionTasks"}
   if(match&&getDepartment(match[1]))return {kind:"department",dept:match[1],feature:match[2]}
   return {kind:"overview"}
 }
