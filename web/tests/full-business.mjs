@@ -235,18 +235,40 @@ try {
   await runningBorder.waitFor({state:"attached",timeout:7000})
   const borderAnimation=await runningBorder.evaluate(el=>getComputedStyle(el).animationName)
   assert.ok(borderAnimation.includes("journey-border-march"),"Animated journey border must retain running animation")
-  const tracking=flow.locator('[data-flow-track]')
-  await tracking.waitFor({state:"visible",timeout:7000})
+  // Current flow UX: no order tabs; first two cards open a right-side order details drawer.
+  assert.equal(await flow.locator('[data-journey-tab]').count(),0)
+  assert.equal(await flow.locator('[data-flow-order-content]').count(),2)
+  assert.equal(await flow.locator('.journey-return-overview,.journey-step-count,.journey-step-returns').count(),0)
   await page.screenshot({path:"test-results/order-animated-journey.png",fullPage:false})
-  const sourceHash=await page.evaluate(()=>location.hash)
-  await tracking.click()
-  await page.waitForFunction(source=>location.hash!==source,sourceHash,{timeout:8000})
-  const tracked=page.locator('.native-business .bottleneck-track-highlight')
-  await tracked.first().waitFor({state:"visible",timeout:9000})
-  console.log("JOURNEY MARQUEE AND BOTTLENECK TRACKING CHECK",JSON.stringify({
-    borderAnimation,target:await page.evaluate(()=>location.hash),
-    trackedText:(await tracked.first().textContent())?.slice(0,80)
-  }))
+  await flow.locator('[data-flow-order-content]').first().click()
+  const details=flow.locator('.journey-order-panel')
+  await details.waitFor({state:"visible",timeout:7000})
+  assert.ok((await details.textContent())?.includes("订单编号"),"Order content opens in the right drawer")
+  const drawerRight=await details.evaluate(el=>({right:el.getBoundingClientRect().right,viewport:window.innerWidth}))
+  assert.ok(Math.abs(drawerRight.right-drawerRight.viewport)<40,"Order details should be aligned to the right edge")
+  await details.locator('[data-flow-order-dismiss]').click()
+  await details.waitFor({state:"detached",timeout:5000})
+  const currentCard=flow.locator('.journey-card.is-current').first()
+  await currentCard.waitFor({state:"visible",timeout:7000})
+  const tracking=currentCard.locator('[data-flow-track]')
+  if(await tracking.count()){
+    const sourceHash=await page.evaluate(()=>location.hash)
+    await tracking.click()
+    await page.waitForFunction(source=>location.hash!==source,sourceHash,{timeout:8000})
+    const tracked=page.locator('.native-business .bottleneck-track-highlight')
+    await tracked.first().waitFor({state:"visible",timeout:9000})
+    console.log("JOURNEY BOTTLENECK TRACKING",JSON.stringify({
+      borderAnimation,target:await page.evaluate(()=>location.hash),
+      trackedText:(await tracked.first().textContent())?.slice(0,80)
+    }))
+  }else{
+    // Read-only flow details may not have a navigable next step; the current card must show history.
+    await currentCard.click()
+    await details.waitFor({state:"visible",timeout:7000})
+    assert.ok((await details.textContent())?.includes("记录"))
+    await details.locator('[data-flow-order-dismiss]').click()
+    await page.evaluate(()=>window.FactoryFlowUI?.dismiss?.())
+  }
   // Inventory batches are the representative module-record page:
   // summary first, actual ledger table second, create action belongs to that ledger table.
   activeFeature="warehouse/warehouseOps"
