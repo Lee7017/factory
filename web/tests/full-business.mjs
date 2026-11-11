@@ -173,6 +173,76 @@ try {
   assert.equal(visualAudit.length,features.length,"Each business feature has a captured browser screenshot")
   assert.deepEqual(missing,[],"Every department feature must render inside its shared page family")
   assert.deepEqual(errors,[],"No uncaught errors in business modules")
+  // Sales order review and history reuse the compact ledger, but have different column counts.
+  for(const [feature,columns,statusColumn] of [
+    ["orderReview",5,3],["orderHistory",6,4]
+  ]){
+    activeFeature="sales/"+feature
+    await page.evaluate(name=>{location.hash="#/departments/sales/"+name},feature)
+    const panel=page.locator(`.native-business .biz-order-panel[data-order-panel="${feature}"]`)
+    await panel.waitFor({state:"visible",timeout:12000})
+    const filter=panel.locator("[data-sales-order-status-filter]")
+    await filter.waitFor({state:"attached"})
+    assert.equal(await page.locator(".business-context-status").count(),0,
+      feature+" must not duplicate status filters in the feature band")
+    const audit=await panel.evaluate(element=>{
+      const table=element.querySelector(".op-table")
+      const headers=Array.from(table?.querySelectorAll("thead th")??[])
+      const select=element.querySelector("[data-sales-order-status-filter]")
+      const control=select?.closest(".sales-order-status-control")
+      const header=select?.closest("th")
+      const rows=Array.from(table?.querySelectorAll("tbody tr")??[])
+      const badge=element.querySelector(".op-badge")
+      const actions=element.querySelector(".op-row-actions")
+      const body=document.querySelector(".business-page-body")
+      const footer=element.querySelector(".biz-order-footer")
+      if(!table||!select||!control||!header||!body||!footer)return null
+      const h=header.getBoundingClientRect(),t=control.getBoundingClientRect()
+      const actionTitle=headers.at(-1)
+      const actionBox=actions?.getBoundingClientRect()
+      const footerBox=footer.getBoundingClientRect()
+      const tableBox=table.getBoundingClientRect()
+      const style=getComputedStyle(body)
+      return {
+        columnCount:headers.length,
+        headerIndex:headers.indexOf(header),
+        filterAligned:Math.abs((h.top+h.bottom)/2-(t.top+t.bottom)/2)<5,
+        dropdownInHeader:select.parentElement===control&&
+          control.querySelector(".sales-order-status-caret")?.getBoundingClientRect().width>=13,
+        actionsAligned:!actionBox||!actionTitle||Math.abs(
+          actionTitle.getBoundingClientRect().left+12-actionBox.left)<5,
+        neutralBadge:!badge||getComputedStyle(badge).backgroundColor==="rgb(251, 252, 248)",
+        neutralHead:headers.every(th=>getComputedStyle(th).backgroundColor==="rgb(244, 244, 239)"),
+        noOuterCard:style.backgroundColor==="rgba(0, 0, 0, 0)"&&style.borderTopWidth==="0px",
+        naturalHeight:element.getBoundingClientRect().height<tableBox.height+100,
+        footerFollowsRows:Math.abs(footerBox.top-tableBox.bottom)<3,
+        toolbarHidden:getComputedStyle(element.querySelector(".biz-order-toolbar")).display==="none",
+        noHorizontalOverflow:document.documentElement.scrollWidth<=window.innerWidth+4,
+        dataRows:rows.filter(row=>row.classList.contains("biz-order-row")).length
+      }
+    })
+    assert.ok(audit,"Sales "+feature+" must render a flat accessible table")
+    assert.equal(audit.columnCount,columns,feature+" preserves its distinct business columns")
+    assert.equal(audit.headerIndex,statusColumn,feature+" puts status filter in correct column")
+    for(const [key,value] of Object.entries(audit)){
+      if(typeof value==="boolean")assert.equal(value,true,feature+" layout check "+key+": "+JSON.stringify(audit))
+    }
+    const options=await filter.locator("option").count()
+    assert.ok(options>1,feature+" filter must expose actual statuses even for empty history")
+    const total=await panel.locator(".biz-order-row:visible").count()
+    await filter.selectOption({index:1})
+    await page.waitForTimeout(90)
+    const visible=await panel.locator(".biz-order-row:visible").count()
+    assert.ok(visible<=total,feature+" filters rows")
+    assert.equal(await panel.locator(".sales-order-status-control").evaluate(el=>getComputedStyle(el).backgroundColor),
+      "rgb(251, 252, 248)",feature+" selected filter uses warm-white")
+    await filter.selectOption("")
+    await page.waitForTimeout(90)
+    assert.equal(await panel.locator(".biz-order-row:visible").count(),total,feature+" reset restores rows")
+    await page.screenshot({path:`test-results/sales-${feature}-flat-ledger.png`,fullPage:false})
+    console.log("SALES "+feature+" FLAT LEDGER CHECK",JSON.stringify({audit,options,total,visible}))
+  }
+
   // Exercise an actual write through the original MES engine and shared workspace.
   activeFeature="sales/orders"
   await page.evaluate(()=>{location.hash="#/departments/sales/orders"})
