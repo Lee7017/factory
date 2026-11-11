@@ -23,13 +23,13 @@ try{
  }
  async function closeFlow(){await page.evaluate(()=>window.FactoryFlowUI?.dismiss?.())}
  async function taskAction(taskId,action){
-  await route("production","tasks")
+  await route("production","nonProductionTasks")
   await page.locator(`[data-task-row="${taskId}"] [data-op-action="task:${action}"]`).click()
   await flow.waitFor({state:"visible",timeout:10000})
   await closeFlow()
  }
  async function taskReport(taskId){
-  await route("production","tasks")
+  await route("production","nonProductionTasks")
   await page.locator(`[data-task-row="${taskId}"] [data-op-action="task:qc"]`).click()
   const r=await page.evaluate(t=>window.FactoryModules.state.cleanReports.find(x=>x.task===t&&x.status==="待判定"),taskId)
   assert.ok(r,"A real pending QC report must be linked to the executed cleaning job")
