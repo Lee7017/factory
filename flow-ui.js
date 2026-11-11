@@ -337,10 +337,8 @@ function orderDetails(entry,kind){
  return '<div class="journey-extra"><div class="journey-section-head"><strong>销售订单内容</strong><small>原始订单信息</small></div>'+
  fields.map(([label,value])=>'<div class="journey-extra-line"><b>'+clean(label)+'</b><span>'+clean(value)+'</span></div>').join('')+shipment+'</div>';
 }
-function extras(entry,kind){if(entry.detailHtml)return `<div class="journey-extra">${entry.detailHtml}</div>`;if(kind==='order'){const m=window.FactoryModules?.state,ref=entry.ref;
- const outbound=m?.outbound?.filter(x=>x.order===ref)||[];
- if(outbound.length)return `<div class="journey-extra"><div class="journey-section-head"><strong>成品出库与客户交付</strong><small>${outbound.length} 次出库记录</small></div>${outbound.map(r=>`<div class="journey-extra-line"><b>${clean(r.id)}</b><span>${clean(r.qty)} 箱 · ${clean(r.destination)} · ${clean(r.status)}</span></div>`).join('')}</div>`;
- }return ''}
+// 出库单详情由流程卡片的“查看成品出库单”按钮打开，不重复展示文本清单。
+function extras(entry){return entry.detailHtml?`<div class="journey-extra">${entry.detailHtml}</div>`:''}
 function renderGraph(entry){
  const kind=inferKind(entry),history=getHistory(entry,kind),cfg=flowConfig[kind],stage=getStage(entry,kind),type=entry.docType||cfg?.title||docMeta(entry).type;
  const steps=buildSteps(entry,kind),summary=entry.summary||'';
@@ -352,13 +350,13 @@ function renderGraph(entry){
  ${returnEvents(history,kind,steps.length).length?'<button type="button" class="journey-return-link" data-flow-return-list>打回记录</button>':''}</header>
  ${blockedInfo}
  <div class="journey-steps">${snakeOfCards(steps,kind,stage,history,entry.ref,documentsByStep)}</div>
- ${extras(entry,kind)}
+ ${extras(entry)}
  </section>`;
 }
 // 订单正文、执行历史、打回记录统一在右侧栏展示，不再遮盖流程顶部。
 function openOrderContent(){
  if(!activeFlowEntry||inferKind(activeFlowEntry)!=='order')return;
- openHistoryPanel('订单内容',orderDetails(activeFlowEntry,'order')+extras(activeFlowEntry,'order'));
+ openHistoryPanel('订单内容',orderDetails(activeFlowEntry,'order')+extras(activeFlowEntry));
 }
 function openStepHistory(i){
  if(!activeFlowEntry)return;
