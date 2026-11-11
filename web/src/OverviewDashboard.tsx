@@ -112,25 +112,25 @@ function GanttPanel({workspace,onSelect}:{workspace:WorkspaceData;onSelect:Props
           const entries=displayed.filter(e=>e.orderId===o.id&&makeTypes.has(e.type))
           const all=saved.filter(e=>e.orderId===o.id&&makeTypes.has(e.type))
           const line=entries.find(e=>e.type==="配制")?.lane??entries[0]?.lane??all[0]?.lane??"待指派"
-          return <div className="overview-gantt-row overview-gantt-data" key={o.id}>
+          const bars=layoutOverviewBars(entries,period)
+          const rowHeight=overviewRowHeight(bars)
+          return <div className="overview-gantt-row overview-gantt-data" key={o.id} style={{minHeight:rowHeight}}>
             <button type="button" className="overview-gantt-order" onClick={()=>onSelect("#/departments/sales/orders")}>
               <strong title={o.id}>{o.id}</strong>
               <small title={o.product??""}>{o.product??"未填写产品"} · {String(o.qty??"—")} {String(o.unit??"")}</small>
             </button>
             <div className="overview-gantt-lane" title={line}>{line}</div>
-            <div className="overview-gantt-track" style={{"--grid-columns":period.cells.length} as CSSProperties}>
+            <div className="overview-gantt-track" style={{"--grid-columns":period.cells.length,minHeight:rowHeight} as CSSProperties}>
               {entries.length===0?<span className="overview-unscheduled">{all.length===0?"尚未排程":"本时间段无任务"}</span>:
-                entries.map((entry,i)=>{
-                  const position=chartBar(entry,period,i)
-                  if(!position)return null
+                bars.map(({entry,left,width,slot,compact})=>{
                   const kind=types[entry.type]??{label:entry.type,className:"other"}
                   const draft=entry.source==="订单排程"
                   return <button type="button" key={entry.id}
-                    className={`overview-gantt-bar ${kind.className} ${draft?"draft":""}`}
-                    style={position} onClick={()=>onSelect("#/departments/pmc/schedule")}
+                    className={`overview-gantt-bar ${kind.className} ${draft?"draft":""} ${compact?"is-mini":""}`}
+                    style={{left:`${left}%`,width:`${width}%`,top:`${7+slot*26}px`}} onClick={()=>onSelect("#/departments/pmc/schedule")}
                     title={`${o.id} · ${entry.type} · ${entry.lane} · ${entry.start.replace("T"," ")}（${entry.duration}分钟）${draft?" · 系统排程草案":""}`}
                     aria-label={`${entry.type}：${o.id}，${entry.start}，${entry.duration}分钟`}>
-                    {kind.label}
+                    {compact?"":kind.label}
                   </button>
                 })}
             </div>
