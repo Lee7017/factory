@@ -14,7 +14,7 @@ try{
  const errors=[]
  page.on("pageerror",e=>errors.push(e.message))
  await page.goto(base,{waitUntil:"networkidle"})
- await page.locator(".department-tile").first().waitFor()
+ await page.locator(".department-band-button").first().waitFor()
  const id="SO-2026-1023-018",flow=page.locator(".journey-dialog"),form=page.locator("#module-form")
  async function route(dept,feature){
   await page.evaluate(hash=>{location.hash=hash},`#/departments/${dept}/${feature}`)
