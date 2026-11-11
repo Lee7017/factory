@@ -1,0 +1,109 @@
+{
+  "nextWorkForStage": {
+    "draft": {
+      "dept": "sales",
+      "feature": "orders"
+    },
+    "review": {
+      "dept": "sales",
+      "feature": "orderReview"
+    },
+    "approved": {
+      "dept": "pmc",
+      "feature": "schedule"
+    },
+    "trial": {
+      "dept": "pmc",
+      "feature": "schedule"
+    },
+    "formal": {
+      "dept": "pmc",
+      "feature": "kitting"
+    },
+    "reserved": {
+      "dept": "warehouse",
+      "feature": "issue"
+    },
+    "issued": {
+      "dept": "production",
+      "feature": "tasks"
+    },
+    "blending": {
+      "dept": "production",
+      "feature": "tasks"
+    },
+    "blend_clean": {
+      "dept": "production",
+      "feature": "nonProductionTasks"
+    },
+    "semi_qc": {
+      "dept": "quality",
+      "feature": "qaQc"
+    },
+    "semi_ok": {
+      "dept": "production",
+      "feature": "tasks"
+    },
+    "packaging": {
+      "dept": "production",
+      "feature": "tasks"
+    },
+    "pack_clean": {
+      "dept": "production",
+      "feature": "nonProductionTasks"
+    },
+    "final_qc": {
+      "dept": "quality",
+      "feature": "qaQc"
+    },
+    "inspected": {
+      "dept": "quality",
+      "feature": "release"
+    },
+    "released": {
+      "dept": "warehouse",
+      "feature": "inventory"
+    },
+    "stored": {
+      "dept": "sales",
+      "feature": "orders"
+    },
+    "dispatch": {
+      "dept": "warehouse",
+      "feature": "warehouseOutbound"
+    },
+    "shipping": {
+      "dept": "warehouse",
+      "feature": "warehouseOutbound"
+    },
+    "shipped": {
+      "dept": "sales",
+      "feature": "orders"
+    },
+    "delivered": {
+      "dept": "sales",
+      "feature": "orderHistory"
+    }
+  },
+  "todoTitles": {
+    "review": "待评审订单",
+    "approved": "等待排程",
+    "trial": "等待发布正式排程",
+    "formal": "待齐套锁库",
+    "reserved": "待发料",
+    "issued": "待生产",
+    "blending": "生产任务待执行",
+    "blend_clean": "清洗任务待执行",
+    "semi_qc": "半成品报检待判定",
+    "semi_ok": "生产任务待执行",
+    "packaging": "生产任务待执行",
+    "pack_clean": "清洗任务待执行",
+    "final_qc": "成品报检待判定",
+    "inspected": "待质量放行",
+    "released": "待成品入库",
+    "stored": "待发货通知",
+    "dispatch": "待成品出库",
+    "shipping": "待成品出库",
+    "shipped": "待客户收货确认"
+  }
+}
