@@ -355,46 +355,48 @@ function renderGraph(entry){
  ${extras(entry,kind)}
  </section>`;
 }
+// 订单正文、执行历史、打回记录统一在右侧栏展示，不再遮盖流程顶部。
 function openOrderContent(){
  if(!activeFlowEntry||inferKind(activeFlowEntry)!=='order')return;
- const host=document.querySelector('#flow-transition-host');
- if(!host)return;
- host.querySelector('[data-flow-order-panel]')?.remove();
- host.insertAdjacentHTML('beforeend',`<div class="journey-order-panel-backdrop" data-flow-order-panel>
-  <section class="journey-order-panel" role="dialog" aria-modal="true" aria-label="订单内容">
-   <header><strong>订单内容</strong><button type="button" data-flow-order-dismiss aria-label="关闭订单内容">×</button></header>
-   <div class="journey-order-panel-body">${orderDetails(activeFlowEntry,'order')}${extras(activeFlowEntry,'order')}</div>
-  </section></div>`);
- host.querySelector('[data-flow-order-dismiss]')?.focus();
+ openHistoryPanel('订单内容',orderDetails(activeFlowEntry,'order')+extras(activeFlowEntry,'order'));
 }
 function openStepHistory(i){
  if(!activeFlowEntry)return;
- const kind=inferKind(activeFlowEntry),steps=buildSteps(activeFlowEntry,kind),step=steps[i];if(!step)return;
- const history=getHistory(activeFlowEntry,kind),records=history.filter(x=>step[2]?.test(String(x.action||'')));
- const rows=records.length?records.map((x,j)=>
-  `<div class="journey-history-row"><strong>第 ${j+1} 次 · ${clean(x.action||step[1])}</strong><span>${clean(x.at||x.time||'时间未登记')} · ${clean(x.person||x.by||'员工未登记')}</span>${x.reason||x.detail?`<small>${clean(x.reason||x.detail)}</small>`:''}</div>`
- ).join(''):'<p class="journey-detail-empty">当前环节没有可核对的执行历史记录。</p>';
- openHistoryPanel(step[1]+' · 执行记录',rows);
+ const kind=inferKind(activeFlowEntry),steps=buildSteps(activeFlowEntry,kind),step=steps[i];
+ if(!step)return;
+ const history=getHistory(activeFlowEntry,kind);
+ const records=history.filter(x=>step[2]?.test(String(x.action||'')));
+ const returns=returnEvents(history,kind,steps.length).filter(x=>x.from>=i&&x.to<=i);
+ const rows=records.length?records.map(x=>
+  '<div class="journey-history-row"><strong>'+clean(x.action||step[1])+'</strong><span>'+clean(x.at||x.time||'时间未登记')+' · '+clean(x.person||x.by||'员工未登记')+'</span>'+
+  (x.reason||x.detail?'<small>'+clean(x.reason||x.detail)+'</small>':'')+'</div>'
+ ).join(''):'<p class="journey-detail-empty">这个环节暂无执行记录。</p>';
+ const returned=returns.length?'<h3 class="journey-side-subtitle">相关打回记录</h3>'+returns.map(x=>
+  '<div class="journey-history-row is-return"><strong>'+clean(x.action)+'</strong><span>'+clean(steps[x.from]?.[1]||'原环节')+' → '+clean(steps[x.to]?.[1]||'返回环节')+'</span>'+
+  '<span>'+clean(x.at)+' · '+clean(x.person)+'</span><small>原因：'+clean(x.reason||'未记录具体原因')+'</small></div>'
+ ).join(''):'';
+ openHistoryPanel(step[1]+' · 记录',rows+returned);
 }
-function openReturnHistory(number,fromStep){
+function openReturnHistory(){
  if(!activeFlowEntry)return;
  const kind=inferKind(activeFlowEntry),steps=buildSteps(activeFlowEntry,kind);
  const events=returnEvents(getHistory(activeFlowEntry,kind),kind,steps.length);
- const list=Number.isInteger(fromStep)?events.filter(x=>x.from===fromStep):events.filter(x=>x.number===number+1);
- if(!list.length)return;
- const content=list.map(h=>`<div class="journey-history-row is-return"><strong>第 ${h.number} 次打回 · ${clean(h.action)}</strong>
-  <span>${clean(steps[h.from]?.[1]||'原环节')} → ${clean(steps[h.to]?.[1]||'返回环节')}</span>
-  <span>${clean(h.at)} · ${clean(h.person)}</span>
-  <small>原因：${clean(h.reason||'未记录具体原因')}</small></div>`).join('');
- openHistoryPanel('打回记录',content);
+ const body=events.length?events.map(h=>
+  '<div class="journey-history-row is-return"><strong>'+clean(h.action)+'</strong>'+
+  '<span>'+clean(steps[h.from]?.[1]||'原环节')+' → '+clean(steps[h.to]?.[1]||'返回环节')+'</span>'+
+  '<span>'+clean(h.at)+' · '+clean(h.person)+'</span>'+
+  '<small>原因：'+clean(h.reason||'未记录具体原因')+'</small></div>'
+ ).join(''):'<p class="journey-detail-empty">没有打回记录。</p>';
+ openHistoryPanel('打回记录',body);
 }
 function openHistoryPanel(title,body){
  const host=document.querySelector('#flow-transition-host');if(!host)return;
  host.querySelector('[data-flow-order-panel]')?.remove();
  host.insertAdjacentHTML('beforeend',`<div class="journey-order-panel-backdrop" data-flow-order-panel>
-  <section class="journey-order-panel" role="dialog" aria-modal="true" aria-label="${clean(title)}">
-   <header><strong>${clean(title)}</strong><button type="button" data-flow-order-dismiss aria-label="关闭记录">×</button></header>
-   <div class="journey-order-panel-body">${body}</div></section></div>`);
+  <aside class="journey-order-panel" role="dialog" aria-modal="true" aria-label="${clean(title)}">
+   <header><strong>${clean(title)}</strong><button type="button" data-flow-order-dismiss aria-label="关闭侧栏">×</button></header>
+   <div class="journey-order-panel-body">${body}</div>
+  </aside></div>`);
  host.querySelector('[data-flow-order-dismiss]')?.focus();
 }
 function openDialog(entry){const host=document.querySelector('#flow-transition-host');if(!host||!entry)return;
