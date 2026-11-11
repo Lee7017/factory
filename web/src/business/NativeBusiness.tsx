@@ -1,14 +1,32 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react"
 import { createPortal } from "react-dom"
-import { AlertCircle, LoaderCircle, RotateCcw } from "lucide-react"
+import { AlertCircle, LoaderCircle, RotateCcw, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { FactoryAccessAPI } from "@/factory-state"
 import { getBusinessRuntime } from "@/business/runtime"
 import { BusinessMarkup } from "@/business/BusinessMarkup"
+import { FEATURE_NAMES } from "@/catalog"
 
 type Props={
   dept:string;feature:string;access:FactoryAccessAPI
   onRoute:(hash:string)=>void;onRefresh:()=>void
+}
+
+function compactBusinessStatus(value:string){
+  const text=value.trim().replace(/\s+/g," ")
+  if(!text)return ""
+  if(text.includes("部分发货"))return "部分发货"
+  if(text.includes("部分出库"))return "部分出库"
+  if(text.includes("库存不足"))return "库存不足"
+  if(text.includes("待出库"))return "待出库"
+  if(text.includes("已发货"))return "已发货"
+  if(text.includes("已交付"))return "已交付"
+  if(text.includes("已完成"))return "已完成"
+  if(text.includes("待审批"))return "待审批"
+  if(text.includes("待质检"))return "待质检"
+  if(text.includes("待登记"))return "待登记"
+  const bracket=text.indexOf("（")
+  return (bracket>0?text.slice(0,bracket):text).slice(0,12)
 }
 export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
   const [markup,setMarkup]=useState("")
@@ -16,6 +34,10 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
   const [error,setError]=useState("")
   const [toast,setToast]=useState("")
   const [reload,setReload]=useState(0)
+  const [contextQuery,setContextQuery]=useState("")
+  const [contextStatus,setContextStatus]=useState("")
+  const [contextStatuses,setContextStatuses]=useState<string[]>([])
+  const [toolHost,setToolHost]=useState<HTMLElement|null>(null)
   const rootRef=useRef<HTMLDivElement>(null)
   const render=useCallback(async()=>{
     const runtime=await getBusinessRuntime()
@@ -43,6 +65,48 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     })
     return ()=>{disposed=true}
   },[dept,feature,access,onRoute,onRefresh,render,reload])
+  useEffect(()=>{
+    setContextQuery("")
+    setContextStatus("")
+    setContextStatuses([])
+    setToolHost(document.getElementById("business-context-tools-host"))
+  },[dept,feature])
+
+  useEffect(()=>{
+    if(status!=="ready")return
+    const root=rootRef.current
+    if(!root)return
+    const panel=root.querySelector<HTMLElement>(".biz-order-panel")
+    const rows=panel
+      ?Array.from(panel.querySelectorAll<HTMLElement>(".biz-order-row"))
+      :Array.from(root.querySelectorAll<HTMLElement>("tbody tr"))
+    if(panel){
+      const counts=new Map<string,number>()
+      for(const row of rows){
+        const group=compactBusinessStatus(row.dataset.orderStatus??"")
+        if(group)counts.set(group,(counts.get(group)??0)+1)
+      }
+      const options=Array.from(counts.entries()).sort((a,b)=>b[1]-a[1]).map(([name])=>name).slice(0,3)
+      setContextStatuses(current=>current.join("\u0000")===options.join("\u0000")?current:options)
+      if(contextStatus&&!options.includes(contextStatus))setContextStatus("")
+    }else if(contextStatuses.length){
+      setContextStatuses([])
+      if(contextStatus)setContextStatus("")
+    }
+    const needle=contextQuery.trim().toLocaleLowerCase()
+    let visible=0
+    for(const row of rows){
+      const raw=row.dataset.orderStatus??""
+      const statusMatch=!contextStatus||compactBusinessStatus(raw)===contextStatus
+      const searchMatch=!needle||(row.textContent??"").toLocaleLowerCase().includes(needle)
+      const show=statusMatch&&searchMatch
+      row.hidden=!show
+      if(show)visible++
+    }
+    const count=panel?.querySelector<HTMLElement>(".biz-order-visible-count")
+    if(count)count.textContent=String(visible)
+  },[status,markup,contextQuery,contextStatus,contextStatuses.length])
+
   // Track the exact document after React has committed the destination route's DOM.
   useEffect(()=>{
     if(status!=="ready")return
@@ -94,7 +158,22 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     // immediately avoids a navigation before any async runtime resolution.
     void getBusinessRuntime().then(runtime=>runtime.submit(event.nativeEvent))
   }
+  const contextPlaceholder="搜索"+(FEATURE_NAMES[feature]??"当前列表")
   return <section className="native-business" aria-label="业务工作区">
+    {toolHost&&createPortal(
+      <div className="business-context-tools">
+        {contextStatuses.length>0&&<div className="business-context-status" aria-label="当前列表状态">
+          <button type="button" className={!contextStatus?"active":""} onClick={()=>setContextStatus("")}>全部</button>
+          {contextStatuses.map(name=><button type="button" key={name} className={contextStatus===name?"active":""}
+            onClick={()=>setContextStatus(name)}>{name}</button>)}
+        </div>}
+        <label className="business-context-search">
+          <Search size={14}/><input type="search" value={contextQuery} onChange={event=>setContextQuery(event.target.value)}
+            placeholder={contextPlaceholder} aria-label={contextPlaceholder}/>
+        </label>
+      </div>,
+      toolHost
+    )}
     {status==="loading"&&<div className="glass-panel flex items-center gap-3 rounded-xl p-5 text-sm text-muted-foreground" role="status">
       <LoaderCircle className="size-4 animate-spin"/>正在加载业务表单和原有权限规则…
     </div>}
