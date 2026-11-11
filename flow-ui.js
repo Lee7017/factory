@@ -234,8 +234,50 @@ function linkedDocuments(entry,kind,step){
  }
  return documents.filter((d,i)=>documents.findIndex(x=>x.type===d.type&&x.ref===d.ref)===i);
 }
-function makeCard(step,i,state,history,documents=[],kind='handoff'){
+function returnEvents(history,kind,length){
+ const events=[];
+ for(const row of history||[]){
+  const action=String(row.action||'');
+  if(!/驳回|退回|打回|不合格|返洗|返工|复检/.test(action))continue;
+  const from=Math.min(length-1,Math.max(1,stepForReturn(action,kind,length))),to=Math.max(0,Math.min(length-1,returnTarget(action,kind,length)));
+  if(from<=to)continue;
+  const reason=[row.reason,row.detail,row.remark,row.failureReason].map(x=>String(x||'').trim()).find(Boolean)||'';
+  events.push({number:events.length+1,from,to,action,reason,at:String(row.at||row.time||'—'),person:String(row.person||row.by||'未注明')});
+ }
+ return events;
+}
+function renderReturnSegments(events,pos,cardW,cardH){
+ const edges=new Map();
+ for(const event of events){
+  for(let i=event.from;i>event.to;i--){
+   const list=edges.get(i)||[];list.push(event);edges.set(i,list);
+  }
+ }
+ return [...edges].sort((a,b)=>a[0]-b[0]).map(([i,eventsOnEdge])=>{
+  const from=pos[i],to=pos[i-1];if(!from||!to)return '';
+  let d;
+  if(from.row===to.row){
+   const goingRight=to.x>from.x;
+   const x1=goingRight?from.x+cardW:from.x;
+   const x2=goingRight?to.x:to.x+cardW;
+   const y=from.y+cardH/2+17;
+   d=`M${x1} ${y} L${x2} ${y}`;
+  }else{
+   const x=from.x+cardW/2-16;
+   const y1=from.y,y2=to.y+cardH;
+   d=`M${x} ${y1} V${y2}`;
+  }
+  const title=eventsOnEdge.map(x=>'第'+x.number+'次打回：'+x.action+(x.reason?'；原因：'+x.reason:'')).join('；');
+  return `<path class="journey-snake-return" d="${d}" marker-end="url(#journey-return-tip)"><title>${clean(title)}</title></path>`;
+ }).join('');
+}
+function makeCard(step,i,state,history,documents=[],kind='handoff',returns=[]){
  const [dept,act]=step,record=lastStepRecord(step,history),done=['done','complete'].includes(state);
+ const records=(history||[]).filter(row=>step[2]?.test(String(row.action||'')));
+ const returnCount=returns.filter(x=>x.from===i).length;
+ const countLabel=(records.length>1?'<button type="button" class="journey-step-count" data-flow-step-history="'+i+'" title="查看每次执行时间与员工">'+records.length+'次执行</button>':'')+
+  (returnCount?'<button type="button" class="journey-step-returns" data-flow-step-returns="'+i+'" title="查看打回原因">退回'+returnCount+'次</button>':'');
+
  const operator=record?.person||record?.by||(done?'历史记录未注明':'待分配'),time=record?.at||record?.time||'—';
  const canTrack=Boolean(activeContinue)&&['current','complete'].includes(state);
  const title=!documents.length?'':documents.length===1?documents[0].title:
@@ -250,7 +292,7 @@ function makeCard(step,i,state,history,documents=[],kind='handoff'){
    `<button type="button" class="journey-card-track" data-flow-track>${state==='complete'?'查看已办结环节':'跟踪当前环节'} →</button>`:
    `<span class="journey-state">${status}</span>`));
  return `<div class="journey-card is-${state}" data-journey-step="${i}">
-  <div class="journey-card-head"><span class="journey-seq">${String(i+1).padStart(2,'0')}</span>
+  <div class="journey-card-head"><div class="journey-head-labels"><span class="journey-seq">${String(i+1).padStart(2,'0')}</span>${countLabel}</div>
    <div class="journey-card-head-actions">${head}</div></div>
   <div class="journey-dept">${clean(label(dept))}</div><strong class="journey-task">${clean(act)}</strong>
   <div class="journey-person"><time class="journey-time">${clean(time)}</time>
@@ -271,14 +313,13 @@ function snakeOfCards(steps,kind,stage,history,ref,documentsByStep){
   return `M${x} ${y1} V${y2}`;
  };
  const arrows=steps.slice(0,-1).map((_,i)=>{const cls=i===arrivalConnector?'is-arrival':i<arrivalConnector?'is-past':'is-future',d=connector(pos[i],pos[i+1]);return `<path class="journey-snake-arrow ${cls}" ${i===arrivalConnector?'pathLength="1"':''} d="${d}" ${i===arrivalConnector?'':'marker-end="url(#journey-arrow-tip)"'}/>${i===arrivalConnector?`<path class="journey-snake-arrival-tip" d="${d}" marker-end="url(#journey-arrow-tip)"/>`:''}`}).join('');
- const returns=(history||[]).filter(h=>/驳回|退回|不合格|返洗|返工|复检/.test(h.action||''));
- const returnLines=returns.slice(-3).map((h,i)=>{
-  const action=String(h.action||'退回'),fromIndex=Math.min(steps.length-1,Math.max(1,stepForReturn(action,kind,steps.length))),toIndex=Math.max(0,Math.min(steps.length-1,returnTarget(action,kind,steps.length))),a=pos[fromIndex],b=pos[toIndex];
-  const x1=a.x+cardW/2,y1=a.y+cardH/2,x2=b.x+cardW/2,y2=b.y+cardH/2,lift=42+i*18,cy=Math.min(y1,y2)-lift;
-  return `<path class="journey-snake-return" d="M${x1} ${y1} C${x1} ${cy} ${x2} ${cy} ${x2} ${y2}" marker-end="url(#journey-return-tip)"/>`;
- }).join('');
- const cards=steps.map((step,i)=>`<div class="journey-snake-position" style="left:${pos[i].x}px;top:${pos[i].y}px;width:${cardW}px;height:${cardH}px">${makeCard(step,i,states[i],history,documentsByStep?.[i]||[],kind)}</div>`).join('');
- return `<div class="journey-snake-scroll" role="region" aria-label="连续折返流程图" tabindex="0" data-arrival-index="${currentIndex}"><div class="journey-snake" style="width:${width}px;height:${height}px"><svg viewBox="0 0 ${width} ${height}" class="journey-snake-paths" aria-hidden="true"><defs><marker id="journey-arrow-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#62758a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="journey-return-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#b76b44" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>${arrows}${returnLines}</svg>${cards}</div></div>`;
+ const returns=returnEvents(history,kind,steps.length);
+ const returnLines=renderReturnSegments(returns,pos,cardW,cardH);
+ const returnSummary=returns.length?'<div class="journey-return-overview" aria-label="打回记录">'+returns.map(h=>
+  '<button type="button" class="journey-return-event" data-flow-return-event="'+(h.number-1)+'" title="查看打回详情"><strong>第'+h.number+'次打回</strong><span>'+clean(steps[h.from][1])+' → '+clean(steps[h.to][1])+'</span><small>'+clean(h.reason||h.action||'原因未记录')+'</small></button>'
+ ).join('')+'</div>':'';
+ const cards=steps.map((step,i)=>`<div class="journey-snake-position" style="left:${pos[i].x}px;top:${pos[i].y}px;width:${cardW}px;height:${cardH}px">${makeCard(step,i,states[i],history,documentsByStep?.[i]||[],kind,returns)}</div>`).join('');
+ return returnSummary+`<div class="journey-snake-scroll" role="region" aria-label="连续折返流程图" tabindex="0" data-arrival-index="${currentIndex}"><div class="journey-snake" style="width:${width}px;height:${height}px"><svg viewBox="0 0 ${width} ${height}" class="journey-snake-paths" aria-hidden="true"><defs><marker id="journey-arrow-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#62758a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="journey-return-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#d34445" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>${arrows}${returnLines}</svg>${cards}</div></div>`;
 }
 
 function stepForReturn(action,kind,n){if(kind==='order'&&/物料不齐套|退回排程/.test(action))return 4;if(/审批|评审/.test(action))return 1;if(/QC|检验|复检|不合格/.test(action))return kind==='order'?(/半成品/.test(action)?9:14):kind==='purchase'?3:1;return Math.max(1,n-3)}
