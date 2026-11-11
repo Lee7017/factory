@@ -297,3 +297,17 @@
 .overview-gantt-bar.is-mini{padding:0;font-size:0;box-shadow:none}
 .overview-gantt-bar:focus-visible{outline:2px solid #1d4d80;outline-offset:1px;z-index:3}
 @media(max-width:700px){.overview-gantt-legend{justify-content:flex-start}.overview-gantt-scroller{max-height:min(58vh,520px)}}
+
+/* 总览严格按 PMC 工位行展示，绝不把不同工位混入同一订单行。 */
+.overview-gantt-workcenter{cursor:default;justify-content:center}
+.overview-gantt-workcenter strong{font-size:10px}
+.overview-gantt-workcenter small{white-space:normal;overflow:visible}
+.overview-gantt-lane{font-variant-numeric:tabular-nums;white-space:nowrap}
+.overview-gantt-bar.is-conflict{
+ border:2px solid #d54d43!important;
+ box-shadow:0 0 0 1px rgba(207,67,59,.52),0 2px 5px rgba(154,55,47,.15)!important;
+ z-index:2;
+}
+.overview-gantt-bar.is-conflict.is-mini{box-shadow:0 0 0 2px #d54d43!important}
+.overview-gantt-conflict-count{color:#b43f39!important}
+.overview-gantt-track{isolation:isolate}
