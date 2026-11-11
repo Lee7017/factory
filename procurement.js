@@ -128,7 +128,20 @@ function renderPurchases(){
    <td><div class="proc-actions">${actions}</div></td>
   </tr>`;
  }).join('');
- const options=[...new Set(all.map(p=>p.status).filter(Boolean))].map(status=>`<option value="${esc(status)}">${esc(status)}</option>`).join('');
+ const availableStatuses=[...new Set(all.map(p=>p.status).filter(Boolean))];
+ const choices=availableStatuses.length?availableStatuses:['待采购填写','待采购主管审批','待到货','已入库'];
+ const options=choices.map(status=>`<option value="${esc(status)}">${esc(status)}</option>`).join('');
+ // The React business shell owns searching and selection; the old toolbar is retained for
+ // the standalone legacy page, while React renders a native filter in the actual column.
+ const nativeStatusHeading=typeof document!=='undefined'&&document.querySelector('.factory-shell-v2')
+   ?`<th class="proc-status-heading"><div class="sales-order-status-control">
+       <span>审批状态</span>
+       <svg class="sales-order-status-caret" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 7h16M7 12h10M10 17h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+       <select class="sales-order-status-select" data-purchase-status-filter aria-label="筛选审批状态" title="筛选审批状态">
+         <option value="">全部状态</option>${options}
+       </select>
+     </div></th>`
+   :'<th>审批状态</th>';
  const create='';
  const guidance='';
  return `<section class="proc-page proc-purchase-board" aria-label="采购单独立工作台" data-proc-purchase-board>
@@ -144,7 +157,7 @@ function renderPurchases(){
       <select class="proc-order-status" aria-label="采购单状态筛选"><option value="">全部状态</option>${options}</select>
     </div>
     <div class="proc-order-grid"><table class="proc-order-table">
-     <thead><tr><th>采购单号 / 需求</th><th>采购物料</th><th>数量</th><th>供应商</th><th>单价 / 总额</th><th>审批状态</th><th>已入库 / 采购量</th><th>操作</th></tr></thead>
+     <thead><tr><th>采购单号 / 需求</th><th>采购物料</th><th>数量</th><th>供应商</th><th>单价 / 总额</th>${nativeStatusHeading}<th>已入库 / 采购量</th><th>操作</th></tr></thead>
      <tbody>${rows||'<tr><td colspan="8" class="proc-board-empty">暂无采购单，请先完成 PMC 采购需求确认。</td></tr>'}</tbody>
     </table></div>
     <footer class="proc-board-footer">共 <strong class="proc-order-count">${all.length}</strong> 条采购单</footer>
