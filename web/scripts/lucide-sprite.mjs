@@ -56,13 +56,13 @@ const source = await readFile(ICONS_SOURCE,"utf8")
 const featureMap = parseMap(source,"FEATURE_ICON_MAP")
 const departmentMap = parseMap(source,"DEPARTMENT_ICON_MAP")
 if(Object.keys(featureMap).length!==53)throw new Error("Expected all 53 feature icon mappings")
-if(Object.keys(departmentMap).length!==11)throw new Error("Expected all 11 department icon mappings")
+if(Object.keys(departmentMap).length!==10)throw new Error("Expected all 10 department icon mappings")
 
 // Keep React and legacy department symbols consistent.
 const departments={
   hr:"users",sales:"sales",pmc:"pmc",purchase:"purchase",
   warehouse:"warehouse",quality:"quality",production:"production",
-  engineering:"engineering",finance:"finance",it:"it",leadership:"leadership"
+  finance:"finance",it:"it",leadership:"leadership"
 }
 for(const [dept,legacyId] of Object.entries(departments)){
   if(departmentMap[dept]!==COMMON[legacyId])throw new Error(`Department icon drift: ${dept}`)
