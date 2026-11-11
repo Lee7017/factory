@@ -374,6 +374,36 @@ function openOrderContent(){
   </section></div>`);
  host.querySelector('[data-flow-order-dismiss]')?.focus();
 }
+function openStepHistory(i){
+ if(!activeFlowEntry)return;
+ const kind=inferKind(activeFlowEntry),steps=buildSteps(activeFlowEntry,kind),step=steps[i];if(!step)return;
+ const history=getHistory(activeFlowEntry,kind),records=history.filter(x=>step[2]?.test(String(x.action||'')));
+ const rows=records.length?records.map((x,j)=>
+  `<div class="journey-history-row"><strong>第 ${j+1} 次 · ${clean(x.action||step[1])}</strong><span>${clean(x.at||x.time||'时间未登记')} · ${clean(x.person||x.by||'员工未登记')}</span>${x.reason||x.detail?`<small>${clean(x.reason||x.detail)}</small>`:''}</div>`
+ ).join(''):'<p class="journey-detail-empty">当前环节没有可核对的执行历史记录。</p>';
+ openHistoryPanel(step[1]+' · 执行记录',rows);
+}
+function openReturnHistory(number,fromStep){
+ if(!activeFlowEntry)return;
+ const kind=inferKind(activeFlowEntry),steps=buildSteps(activeFlowEntry,kind);
+ const events=returnEvents(getHistory(activeFlowEntry,kind),kind,steps.length);
+ const list=Number.isInteger(fromStep)?events.filter(x=>x.from===fromStep):events.filter(x=>x.number===number+1);
+ if(!list.length)return;
+ const content=list.map(h=>`<div class="journey-history-row is-return"><strong>第 ${h.number} 次打回 · ${clean(h.action)}</strong>
+  <span>${clean(steps[h.from]?.[1]||'原环节')} → ${clean(steps[h.to]?.[1]||'返回环节')}</span>
+  <span>${clean(h.at)} · ${clean(h.person)}</span>
+  <small>原因：${clean(h.reason||'未记录具体原因')}</small></div>`).join('');
+ openHistoryPanel('打回记录',content);
+}
+function openHistoryPanel(title,body){
+ const host=document.querySelector('#flow-transition-host');if(!host)return;
+ host.querySelector('[data-flow-order-panel]')?.remove();
+ host.insertAdjacentHTML('beforeend',`<div class="journey-order-panel-backdrop" data-flow-order-panel>
+  <section class="journey-order-panel" role="dialog" aria-modal="true" aria-label="${clean(title)}">
+   <header><strong>${clean(title)}</strong><button type="button" data-flow-order-dismiss aria-label="关闭记录">×</button></header>
+   <div class="journey-order-panel-body">${body}</div></section></div>`);
+ host.querySelector('[data-flow-order-dismiss]')?.focus();
+}
 function openDialog(entry){const host=document.querySelector('#flow-transition-host');if(!host||!entry)return;
  clearTimeout(dismissTimer);
  const liveStage=(entry.kind==='order'||/^SO-/.test(String(entry.ref||'')))?window.FactoryOperations?.state?.flows?.[entry.ref]?.stage:null;
@@ -458,6 +488,12 @@ function fromAudit(row,history,defaultDept){const rule=routes[row.type]||Object.
  show({ref:row.ref,action:row.type,from,to,status:row.detail||'已记录',summary:row.detail||'',operator:row.by||'当前用户',at:row.time||'',history,next:rule?.[2]||'查看单据状态',nextOpen:nextTargets[row.type]||Object.entries(nextTargets).find(([k])=>String(row.type).includes(k))?.[1]});}
 document.addEventListener('click',event=>{
  if(event.target.closest('[data-flow-order-content]')){openOrderContent();return;}
+ const stepHistory=event.target.closest('[data-flow-step-history]');
+ if(stepHistory){openStepHistory(Number(stepHistory.dataset.flowStepHistory));return;}
+ const returnStep=event.target.closest('[data-flow-step-returns]');
+ if(returnStep){openReturnHistory(-1,Number(returnStep.dataset.flowStepReturns));return;}
+ const returnEvent=event.target.closest('[data-flow-return-event]');
+ if(returnEvent){openReturnHistory(Number(returnEvent.dataset.flowReturnEvent));return;}
  if(event.target.closest('[data-flow-order-dismiss]')||(event.target.matches?.('[data-flow-order-panel]'))){
   document.querySelector('[data-flow-order-panel]')?.remove();return;
  }
