@@ -105,7 +105,7 @@ test('PMC compact and full views share a six-color task renderer', () => {
  assert.deepEqual(positions(home),positions(pmc));
  const classes=['clean','blend','semi-qc','change','pack','final-qc'];
  assert.ok(classes.every(x=>home.includes('category-'+x)),'six legend categories required');
- const css=fs.readFileSync(path.join(__dirname,'..','gantt.css'),'utf8');
+ const css=fs.readFileSync(path.join(__dirname,'..','web/src/gantt-palette.css'),'utf8');
  const palette=classes.map(x=>{
   const result=css.match(new RegExp('--gantt-'+x+':(#[0-9a-fA-F]{6})'));
   assert.ok(result,x+' color token missing');
