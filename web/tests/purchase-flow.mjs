@@ -24,7 +24,7 @@ try {
     },id)
     // Reinitialize React's access hook and business engine permission state via focus.
     await page.evaluate(()=>window.dispatchEvent(new Event("focus")))
-    await page.getByRole("button",{name:"切换当前员工"}).getByText(employee.name).waitFor()
+    await page.waitForFunction(name=>document.querySelector('button[aria-label="切换当前员工"]')?.getAttribute("title")?.startsWith(name),employee.name,{timeout:6000})
     return employee
   }
   async function navigate(dept,feature){
