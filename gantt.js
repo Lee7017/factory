@@ -8,24 +8,22 @@ const lanes=[
  {id:'L02 配制二线',desc:'配制'},
  {id:'S03-4# 瓶装线',desc:'包装'},
  {id:'S04 包装二线',desc:'包装'},
- {id:'QC 检验位',desc:'QA / QC 检验'},
- {id:'QA 放行',desc:'质量审核'}
+ {id:'QC 检验位',desc:'半成品 / 成品 QAQC'}
 ];
 const categories={
- '清洗':'clean','配制':'blend','半成品 QC':'semi-qc','调机调线':'change',
- '包装':'pack','成品 QC':'final-qc','QA 放行':'qa'
+ '清洗':'clean','配制':'blend','半成品 QAQC':'semi-qc','调机调线':'change',
+ '包装':'pack','成品 QAQC':'final-qc'
 };
-const stages=['清洗','配制','半成品 QC','调机调线','包装','成品 QC','QA 放行'];
+const stages=['清洗','配制','半成品 QAQC','调机调线','包装','成品 QAQC'];
 const nonProductionTypes=new Set(['清洗','调机调线']);
 const taskLabel=type=>nonProductionTypes.has(type)?`非生产 · ${type}`:type;
 const defaults=[
  ['清洗','L01 配制一线',420,60],
  ['配制','L01 配制一线',480,210],
- ['半成品 QC','QC 检验位',690,60],
+ ['半成品 QAQC','QC 检验位',690,60],
  ['调机调线','S03-4# 瓶装线',750,60],
  ['包装','S03-4# 瓶装线',810,180],
- ['成品 QC','QC 检验位',990,60],
- ['QA 放行','QA 放行',1050,45]
+ ['成品 QAQC','QC 检验位',990,60]
 ];
 const pad=n=>String(n).padStart(2,'0');
 const dayString=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -46,7 +44,7 @@ const laneOptions={
   "L01 配制一线",
   "L02 配制二线"
  ],
- "半成品 QC": [
+ "半成品 QAQC": [
   "QC 检验位"
  ],
  "调机调线": [
@@ -57,11 +55,8 @@ const laneOptions={
   "S03-4# 瓶装线",
   "S04 包装二线"
  ],
- "成品 QC": [
+ "成品 QAQC": [
   "QC 检验位"
- ],
- "QA 放行": [
-  "QA 放行"
  ]
 };
 function taskSpan(item){
@@ -164,6 +159,19 @@ function ensure(){
  const s=state();if(!s)return;
  s.gantt??=[];s.ganttDay??=dayString(new Date());
  let changed=false;
+ // 兼容旧排程：检验名称统一成 QAQC；“QA 放行”属于质量审批，不再生成第三项甘特任务。
+ const legacyNames={'半成品 QC':'半成品 QAQC','成品 QC':'成品 QAQC'};
+ const oldRelease=s.gantt.filter(x=>x.type==='QA 放行');
+ if(oldRelease.length){
+  s.ganttArchived??=[];
+  const known=new Set(s.ganttArchived.map(x=>x.id));
+  for(const item of oldRelease)if(!known.has(item.id))s.ganttArchived.push({...item,archivedReason:'QA 放行由订单质量审批处理'});
+  s.gantt=s.gantt.filter(x=>x.type!=='QA 放行');
+  changed=true;
+ }
+ for(const item of s.gantt){
+  if(legacyNames[item.type]){item.type=legacyNames[item.type];changed=true;}
+ }
  for(const order of ctx?.data?.orders||[]){
   if(s.flows?.[order.id]?.stage==='delivered')continue;
   if(s.gantt.some(x=>x.orderId===order.id))continue;
@@ -181,7 +189,7 @@ function status(entry){
  const flow=state().flows[entry.orderId]?.stage||'draft';
  const order=['draft','review','approved','trial','formal','reserved','issued','blending','semi_qc','semi_ok','packaging','final_qc','inspected','released','stored'];
  const rank=order.indexOf(flow);
- const expected={'清洗':7,'配制':8,'半成品 QC':9,'调机调线':10,'包装':11,'成品 QC':12,'QA 放行':13};
+ const expected={'清洗':7,'配制':8,'半成品 QAQC':9,'调机调线':10,'包装':11,'成品 QAQC':12};
  const taskType=entry.type==='清洗'||entry.type==='调机调线'?entry.type:null;
  const task=taskType&&ctx.data.tasks?.find(t=>t.type===taskType);
  if(task&&task.status!=='待开始')return task.status;
@@ -209,7 +217,7 @@ function render(options={}){
    return `<button class="gantt-bar category-${categories[item.type]||'blend'}${conflict?' is-conflict':''}${sizeClass}" style="left:${pos.left.toFixed(4)}%;width:${pos.width.toFixed(4)}%;top:${11+pos.track*48}px" type="button" data-gantt="edit" data-gantt-id="${safe(item.id)}" aria-label="${safe(summary)}" title="${safe(summary)}"><strong>${safe(item.type)}</strong><small>${safe(item.orderId)} · ${time(start)}${conflict?' · 时间冲突':''}</small></button>`;
   }).join('');
   const n=layout.placements.filter(x=>view.conflictIds.has(x.item.id)).length;
-  return `<div class="gantt-row" style="--gantt-row-height:${layout.height}px"><div class="gantt-lane"><strong>${safe(lane.id)}</strong><small>${safe(lane.desc)}${n?' · '+n+' 项冲突':''}</small></div><div class="gantt-track">${bars}</div></div>`;
+  return `<div class="gantt-row" style="--gantt-row-height:${layout.height}px"><div class="gantt-lane"><strong>${safe(lane.id==='QC 检验位'?'QAQC 检验位':lane.id)}</strong><small>${safe(lane.desc)}${n?' · '+n+' 项冲突':''}</small></div><div class="gantt-track">${bars}</div></div>`;
  }).join('');
  const legend=types.map(([name,type])=>`<span class="gantt-legend-item"><i class="category-${type}"></i>${name}</span>`).join('');
  const n=lanes.reduce((sum,lane)=>sum+view.rows[lane.id].placements.length,0);
@@ -226,7 +234,7 @@ function render(options={}){
    <div class="gantt-legend">${legend}<span class="gantt-count">当天 ${n} 项任务${conflictCount?' · '+conflictCount+' 对冲突':''}</span></div>
    ${warning}
    <div class="gantt-scroll" tabindex="0" aria-label="可左右滚动的排产甘特图"><div class="gantt-canvas"><div class="gantt-head"><div class="gantt-lane gantt-lane-title">产线 / 工位</div><div class="gantt-hours">${times}</div></div>${rows}</div></div>
-   <div class="gantt-foot"><strong>排程规则：</strong>同一工位不能同时执行两项任务；自动试排暂按 07:00–22:00 寻找空闲工位，依次安排清洗、配制、检验、调机调线、包装与放行（实际班次须由 PMC 确认）。整理仅调整未发布订单，正式排程及已开工任务不会自动移动。</div>
+   <div class="gantt-foot"><strong>排程规则：</strong>同一工位不能同时执行两项任务；自动试排暂按 07:00–22:00 寻找空闲工位，依次安排清洗、配制、半成品 QAQC、调机调线、包装、成品 QAQC（实际班次须由 PMC 确认；质量放行仍走订单审批流程）。整理仅调整未发布订单，正式排程及已开工任务不会自动移动。</div>
  </section>`;
 }
 function showError(msg){const el=$('#gantt-error');if(el){el.textContent=msg;el.hidden=false;}}
@@ -254,8 +262,7 @@ function validate(candidate){
  if(!Number.isFinite(start)||!Number.isFinite(end)||duration<15||duration>1440)return '开始时间或任务时长无效。';
  if(!lanes.some(x=>x.id===candidate.lane))return '请选择有效产线或检验工位。';
  if(!ctx.data.orders.some(o=>o.id===candidate.orderId))return '关联订单不存在。';
- const allowedLanes={'清洗':['L01 配制一线','L02 配制二线'],'配制':['L01 配制一线','L02 配制二线'],'半成品 QC':['QC 检验位'],'调机调线':['S03-4# 瓶装线','S04 包装二线'],'包装':['S03-4# 瓶装线','S04 包装二线'],'成品 QC':['QC 检验位'],'QA 放行':['QA 放行']};
- if(!allowedLanes[candidate.type]?.includes(candidate.lane))return `${candidate.type} 不能排到这个工位。`;
+ if(!laneOptions[candidate.type]?.includes(candidate.lane))return `${candidate.type} 不能排到这个工位。`;
  if(new Date(candidate.start).getDate()!==new Date(end-1).getDate())return '当前按自然日排程：请把跨零点任务拆成两段。';
  const others=state().gantt.filter(x=>x.id!==candidate.id);
  if(others.some(x=>x.lane===candidate.lane&&start<ms(x.start)+Number(x.duration)*60000&&end>ms(x.start)))return `「${candidate.lane}」存在时间冲突，需调整开始时间或工位。`;
