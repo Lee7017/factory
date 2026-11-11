@@ -49,28 +49,50 @@ try{
   await page.goto(base,{waitUntil:"networkidle"})
   await page.locator(".overview-kpi-grid").waitFor()
   assert.equal(await page.locator(".overview-gantt-bar").count(),8,"Weekly view draws all saved entries including crowded days")
+  const expectedLanes=[
+    "L01 配制一线","L02 配制二线","S03-4# 瓶装线","S04 包装二线","QC 检验位"
+  ]
+  const actualLanes=await page.locator(".overview-gantt-data").evaluateAll(rows=>rows.map(row=>row.dataset.ganttLane))
+  assert.deepEqual(actualLanes,expectedLanes,"Homepage uses the exact five PMC workcenters, not order rows")
+  const taskLanes=await page.locator(".overview-gantt-data").evaluateAll(rows=>
+    rows.flatMap(row=>Array.from(row.querySelectorAll(".overview-gantt-bar")).map(bar=>({
+      id:bar.getAttribute("data-gantt-task"),lane:row.dataset.ganttLane,title:bar.title
+    })))
+  )
+  const expectedTasks=new Map(workspace.ops.gantt.map(entry=>[entry.id,entry.lane]))
+  assert.equal(taskLanes.length,8,"Eight saved tasks appear once each under their assigned lane")
+  for(const item of taskLanes){
+    assert.equal(item.lane,expectedTasks.get(item.id),item.id+" must render under its PMC-assigned lane")
+    assert.ok(item.title.includes(item.lane),"Tooltip must reflect the displayed workcenter")
+  }
   async function assertNoPaintedOverlap(label){
-    const result=await page.locator(".overview-gantt-data").first().evaluate(row=>{
-      const elements=Array.from(row.querySelectorAll(".overview-gantt-bar"))
-      const boxes=elements.map(el=>({id:el.getAttribute("aria-label"),r:el.getBoundingClientRect()}))
-      const collisions=[]
-      for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++){
-        const a=boxes[i].r,b=boxes[j].r
+    const rows=await page.locator(".overview-gantt-data").evaluateAll(elements=>elements.map(row=>{
+      const track=row.querySelector(".overview-gantt-track")
+      const bounds=track.getBoundingClientRect()
+      const bars=Array.from(row.querySelectorAll(".overview-gantt-bar"))
+        .map(el=>({id:el.getAttribute("data-gantt-task"),r:el.getBoundingClientRect()}))
+      const collisions=[],outside=[]
+      for(const bar of bars)if(bar.r.top<bounds.top-1||bar.r.bottom>bounds.bottom+1)outside.push(bar.id)
+      for(let i=0;i<bars.length;i++)for(let j=i+1;j<bars.length;j++){
+        const a=bars[i].r,b=bars[j].r
         if(Math.min(a.right,b.right)-Math.max(a.left,b.left)>0.5&&
-          Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>0.5)collisions.push([boxes[i].id,boxes[j].id])
+          Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>0.5)collisions.push([bars[i].id,bars[j].id])
       }
-      return {count:boxes.length,collisions,height:row.getBoundingClientRect().height}
-    })
-    assert.equal(result.collisions.length,0,label+" tasks physically overlap: "+JSON.stringify(result))
-    assert.ok(result.height>=57,label+" order height must fit all stacked tasks")
+      return {lane:row.dataset.ganttLane,collisions,outside,height:row.getBoundingClientRect().height}
+    }))
+    assert.equal(rows.length,5,label+" must keep five PMC workcenter lanes")
+    assert.ok(rows.every(row=>row.collisions.length===0&&row.outside.length===0),
+      label+" task rectangles overlap/escape workcenter: "+JSON.stringify(rows))
   }
   await assertNoPaintedOverlap("week")
-  const colors=await page.locator(".overview-gantt-data").first().locator(".overview-gantt-bar")
+  const colors=await page.locator(".overview-gantt-bar")
     .evaluateAll(nodes=>[...new Set(nodes.map(n=>getComputedStyle(n).backgroundColor))])
-  assert.equal(colors.length,6,"Homepage must use six distinct PMC operation colors")
-  assert.equal(await page.locator(".overview-gantt-legend span").count(),6,"Six-stage legend must match PMC")
+  assert.equal(colors.length,6,"Homepage uses six distinct PMC colors across all workcenters")
+  assert.equal(await page.locator(".overview-gantt-legend span").count(),6,"Six-stage legend matches PMC")
   assert.equal(await page.locator(".overview-gantt-bar.is-mini").count()>0,true,
-    "Short tasks display colored mini-bars instead of illegible text")
+    "Short tasks display color blocks without illegible text")
+  assert.equal(await page.locator(".overview-gantt-bar.is-conflict").count(),2,
+    "Real overlapping workcenter time is highlighted, not silently hidden by visual stacking")
   assert.equal(await page.locator(".overview-donut-legend button").count(),4)
   const donutLabel=await page.locator(".overview-donut-chart svg").getAttribute("aria-label")
   assert.ok(donutLabel?.includes("生产中 / 待检1单"))
