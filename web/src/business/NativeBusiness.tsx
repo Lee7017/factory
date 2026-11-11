@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react"
 import { createPortal } from "react-dom"
-import { AlertCircle, Check, ListFilter, LoaderCircle, Plus, RotateCcw, Search } from "lucide-react"
+import { AlertCircle, LoaderCircle, Plus, RotateCcw, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import type { FactoryAccessAPI } from "@/factory-state"
 import { getBusinessRuntime } from "@/business/runtime"
 import { BusinessMarkup } from "@/business/BusinessMarkup"
@@ -66,7 +65,6 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
   const [contextStatuses,setContextStatuses]=useState<string[]>([])
   const [contextStatusCounts,setContextStatusCounts]=useState<Record<string,number>>({})
   const [toolHost,setToolHost]=useState<HTMLElement|null>(null)
-  const [salesStatusHost,setSalesStatusHost]=useState<HTMLElement|null>(null)
   const rootRef=useRef<HTMLDivElement>(null)
   const render=useCallback(async()=>{
     const runtime=await getBusinessRuntime()
@@ -113,7 +111,7 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     if(panel){
       const counts=new Map<string,number>()
       for(const row of rows){
-        const group=compactBusinessStatus(row.dataset.orderStatus??"")
+        const group=dept==="sales"&&feature==="orders"?(row.dataset.orderStatus??""):compactBusinessStatus(row.dataset.orderStatus??"")
         if(group)counts.set(group,(counts.get(group)??0)+1)
       }
       const grouped=Array.from(counts.entries()).sort((a,b)=>b[1]-a[1]).map(([name])=>name)
@@ -134,7 +132,7 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     let visible=0
     for(const row of rows){
       const raw=row.dataset.orderStatus??""
-      const statusMatch=!contextStatus||compactBusinessStatus(raw)===contextStatus
+      const statusMatch=!contextStatus||(dept==="sales"&&feature==="orders"?raw:compactBusinessStatus(raw))===contextStatus
       const searchMatch=!needle||(row.textContent??"").toLocaleLowerCase().includes(needle)
       const show=statusMatch&&searchMatch
       row.hidden=!show
@@ -144,14 +142,15 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     if(count)count.textContent=String(visible)
   },[status,markup,contextQuery,contextStatus,contextStatuses.length])
 
-  // The sales filter lives inside the actual status column heading, not the feature band.
-  // The legacy table is replaced when the MES markup refreshes, so re-bind to its new host.
+  // Keep the native table heading's selected value in sync across MES re-renders.
   useEffect(()=>{
-    const target=dept==="sales"&&feature==="orders"&&status==="ready"
-      ?rootRef.current?.querySelector<HTMLElement>("[data-sales-order-status-filter-host]")??null
-      :null
-    setSalesStatusHost(current=>current===target?current:target)
-  },[dept,feature,status,markup])
+    if(dept!=="sales"||feature!=="orders"||status!=="ready")return
+    const select=rootRef.current?.querySelector<HTMLSelectElement>("[data-sales-order-status-filter]")
+    if(!select)return
+    if(select.value!==contextStatus)select.value=contextStatus
+    select.parentElement?.classList.toggle("is-active",Boolean(contextStatus))
+    select.setAttribute("aria-label",contextStatus?"筛选流程状态，当前："+contextStatus:"筛选流程状态")
+  },[dept,feature,status,markup,contextStatus])
 
   // Track the exact document after React has committed the destination route's DOM.
   useEffect(()=>{
@@ -192,6 +191,10 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     // Listen to their native change events directly to keep the old access matrix working.
     function handleNativeChange(event:Event){
       const el=event.target
+      if(el instanceof HTMLSelectElement&&el.matches("[data-sales-order-status-filter]")){
+        setContextStatus(el.value)
+        return
+      }
       if(el instanceof HTMLSelectElement&&["perm-employee","perm-position","perm-dept"].includes(el.id))
         void getBusinessRuntime().then(runtime=>runtime.change(el.id,el.value))
     }
@@ -227,30 +230,6 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
         </label>
       </div>,
       toolHost
-    )}
-    {salesStatusHost&&dept==="sales"&&feature==="orders"&&createPortal(
-      <Popover>
-        <PopoverTrigger asChild>
-          <button type="button" className={"sales-order-status-trigger"+(contextStatus?" is-filtered":"")}
-            aria-label={"筛选流程状态"+(contextStatus?"，当前："+contextStatus:"")}>
-            <span>流程状态</span><ListFilter size={13} aria-hidden="true"/>
-          </button>
-        </PopoverTrigger>
-        <PopoverContent align="start" sideOffset={4} className="sales-order-status-popover">
-          <div className="sales-order-status-choices" role="group" aria-label="按流程状态筛选">
-            <button type="button" aria-pressed={!contextStatus} className={!contextStatus?"selected":""}
-              onClick={()=>setContextStatus("")}>
-              <span>全部状态</span><span>{Object.values(contextStatusCounts).reduce((a,b)=>a+b,0)}</span>
-              {!contextStatus&&<Check size={13} aria-hidden="true"/>}
-            </button>
-            {contextStatuses.map(name=><button type="button" key={name} aria-pressed={contextStatus===name}
-              className={contextStatus===name?"selected":""} onClick={()=>setContextStatus(name)}>
-              <span>{name}</span><span>{contextStatusCounts[name]??0}</span>
-              {contextStatus===name&&<Check size={13} aria-hidden="true"/>}
-            </button>)}
-          </div>
-        </PopoverContent>
-      </Popover>,salesStatusHost
     )}
     {status==="loading"&&<div className="glass-panel flex items-center gap-3 rounded-xl p-5 text-sm text-muted-foreground" role="status">
       <LoaderCircle className="size-4 animate-spin"/>正在加载业务表单和原有权限规则…

@@ -161,7 +161,17 @@ function recordTable(cols,rows,toolbar=''){return `<div class="op-table-wrap">${
  function orderPanel({key,table,stats=[],toolbar='',statuses=[],item='销售订单',placeholder='搜索单号 / 产品'}){
   const folded=Boolean(orderPanelFolded[key]);
   const opts=[...new Set(statuses.filter(Boolean))];
-  const tableMarkup=key==="orders" ? table.replace("<th>流程状态</th>", '<th class="sales-order-status-heading"><div class="sales-order-status-filter-host" data-sales-order-status-filter-host></div></th>') : table;
+  // Render the selector in the real table, avoiding a cross-root React portal.
+  const statusHeader=key==="orders"
+    ?`<th class="sales-order-status-heading"><div class="sales-order-status-control">
+        <span>流程状态</span>
+        <svg class="sales-order-status-caret" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 7h16M7 12h10M10 17h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <select class="sales-order-status-select" data-sales-order-status-filter aria-label="筛选流程状态" title="筛选流程状态">
+          <option value="">全部状态</option>${opts.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('')}
+        </select>
+      </div></th>`
+    :"";
+  const tableMarkup=key==="orders"?table.replace("<th>流程状态</th>",statusHeader):table;
   const count=(table.match(/class="biz-order-row"/g)||[]).length;
   return `<section class="biz-order-panel ${folded?'is-folded':''}" data-order-panel="${esc(key)}">
    <div class="biz-order-stats" id="biz-order-stats-${esc(key)}" ${folded?'hidden':''}>${stats.map(([label,num])=>`<div class="biz-order-stat"><span>${esc(label)}</span><strong>${Number(num)||0}</strong></div>`).join('')}</div>

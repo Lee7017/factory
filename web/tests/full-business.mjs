@@ -217,38 +217,51 @@ try {
   await page.waitForTimeout(80)
   assert.equal(await contextTools.locator(".business-context-status").count(),0,
     "Status controls are removed from the right-hand feature band on sales orders")
-  const headingFilter=salesPanel.getByRole("button",{name:/筛选流程状态/})
-  await headingFilter.waitFor({state:"visible"})
+  const headingFilter=salesPanel.getByRole("combobox",{name:/筛选流程状态/})
+  await headingFilter.waitFor({state:"attached"})
   const filterGeometry=await salesPanel.evaluate(panel=>{
     const heading=panel.querySelector("th.sales-order-status-heading")
-    const trigger=heading?.querySelector(".sales-order-status-trigger")
-    if(!heading||!trigger)return null
-    const h=heading.getBoundingClientRect(),t=trigger.getBoundingClientRect()
-    return {aligned:Math.abs((h.top+h.bottom)/2-(t.top+t.bottom)/2)<4,
-      inside:t.left>=h.left&&t.right<=h.right,
-      inColumn:heading.querySelector("[data-sales-order-status-filter-host]")===trigger.parentElement}
+    const control=heading?.querySelector(".sales-order-status-control")
+    const select=heading?.querySelector("[data-sales-order-status-filter]")
+    const icon=heading?.querySelector(".sales-order-status-caret")
+    const actionHeading=panel.querySelector(".op-table thead th:last-child")
+    const actionCell=panel.querySelector(".op-table tbody tr:first-child td:last-child .op-row-actions")
+    const cols=panel.querySelectorAll(".op-table thead th")
+    const statusBadge=panel.querySelector(".op-table .op-badge")
+    if(!heading||!control||!select||!icon||!actionHeading||!actionCell||!statusBadge)return null
+    const h=heading.getBoundingClientRect(),t=control.getBoundingClientRect()
+    const actionX=actionHeading.getBoundingClientRect().left+12
+    return {
+      aligned:Math.abs((h.top+h.bottom)/2-(t.top+t.bottom)/2)<5,
+      inColumn:t.left>=h.left&&t.right<=h.right,
+      actualNativeControl:select.parentElement===control&&getComputedStyle(select).cursor==="pointer",
+      arrowVisible:icon.getBoundingClientRect().width>=13,
+      compactStatusGap:cols[3].getBoundingClientRect().left-cols[2].getBoundingClientRect().left<245,
+      actionsAlign:Math.abs(actionCell.getBoundingClientRect().left-actionX)<5,
+      neutralBadge:getComputedStyle(statusBadge).backgroundColor==="rgb(251, 252, 248)"
+    }
   })
   assert.ok(filterGeometry&&Object.values(filterGeometry).every(Boolean),
-    "Sales status filter is vertically aligned inside its actual table header: "+JSON.stringify(filterGeometry))
+    "Real sales header filter, compact column widths, action alignment and #FBFCF8 badges: "+JSON.stringify(filterGeometry))
   const totalSales=await salesPanel.locator(".biz-order-row").count()
-  await headingFilter.click()
-  const statusButtons=page.locator(".sales-order-status-choices button")
-  await statusButtons.first().waitFor({state:"visible"})
-  assert.ok(await statusButtons.count()>1,"Flow status menu contains real order states")
-  assert.equal(await statusButtons.first().evaluate(el=>getComputedStyle(el).backgroundColor),
-    "rgb(251, 252, 248)","The selected status uses #FBFCF8 instead of green")
-  await statusButtons.nth(1).click()
+  const options=await headingFilter.locator("option").count()
+  assert.ok(options>1,"Real order statuses are options inside the flow-status header")
+  await headingFilter.selectOption({index:1})
   await page.waitForTimeout(80)
   const filteredSales=await salesPanel.locator(".biz-order-row:visible").count()
-  assert.ok(filteredSales>0&&filteredSales<=totalSales,"Column filter changes actual order rows")
-  assert.equal(await statusButtons.nth(1).evaluate(el=>getComputedStyle(el).backgroundColor),
-    "rgb(251, 252, 248)","An active status remains warm-white")
-  await statusButtons.first().click()
+  assert.ok(filteredSales>0&&filteredSales<=totalSales,"Native header select filters the actual rows")
+  const activeStyle=await salesPanel.locator(".sales-order-status-control").evaluate(el=>({
+    active:el.classList.contains("is-active"),
+    background:getComputedStyle(el).backgroundColor
+  }))
+  assert.equal(activeStyle.active,true,"Filter header shows its active selection")
+  assert.equal(activeStyle.background,"rgb(251, 252, 248)","Active status uses #FBFCF8")
+  await headingFilter.selectOption("")
   await page.waitForTimeout(80)
   assert.equal(await salesPanel.locator(".biz-order-row:visible").count(),totalSales,
     "All statuses restores the complete order list")
   await page.screenshot({path:"test-results/sales-orders-table-toolbar.png",fullPage:false})
-  console.log("SALES STATUS HEADER FILTER CHECK",JSON.stringify({totalSales,filteredSales,statusOptions:await statusButtons.count()}))
+  console.log("SALES STATUS HEADER CHECK",JSON.stringify({totalSales,filteredSales,options,filterGeometry}))
   const create=topRightCreate
   await create.waitFor({state:"visible",timeout:10000})
   assert.equal(await create.getAttribute("data-slot"),"button","Top-right creation action uses shadcn Button")
