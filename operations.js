@@ -248,7 +248,8 @@ function flowActionsFor(feature){const names={orders:'销售订单',orderReview:
   return shell(names[feature],'',`<section class="op-subsection"><header><h3>当前库存</h3><div class="op-tools">${stockToolbar}</div></header>${stock}</section><section class="op-subsection"><header><h3>待入库生产订单</h3></header>${receipt}</section>`,intro);
  }
  if(feature==='tasks'){
-  return shell(names[feature],'',orderPanel({key:feature,table:flow,stats:salesOrderStats(),statuses:activeOrders.map(stageForOrder),item:'关联销售订单'}),intro);
+  const productionOrders=activeOrders.filter(o=>['issued','blending','semi_ok','packaging'].includes(stageOf(o)));
+  return shell(names[feature],'',orderPanel({key:feature,table:recordTable(['订单号','产品','数量','流程状态','当前操作'],orderRows(productionOrders)),stats:salesOrderStats(),statuses:productionOrders.map(stageForOrder),item:'生产订单'}),intro);
  }
  if(feature==='batch'){
   const productionStages=new Set(['issued','blending','blend_clean','semi_qc','semi_ok','packaging','pack_clean','final_qc','released','stored']);
