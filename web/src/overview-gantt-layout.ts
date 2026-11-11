@@ -1,4 +1,5 @@
 import type { GanttEntry } from "./overview-data"
+import schedulingDefinitions from "./scheduling-definitions.json"
 
 export type OverviewRange = {startMs:number;endMs:number;days:number}
 export type OverviewBar = {
@@ -39,14 +40,8 @@ export function layoutOverviewBars(entries:GanttEntry[],range:OverviewRange):Ove
 export const overviewRowHeight=(bars:OverviewBar[]):number=>
   Math.max(57,14+(bars.length?Math.max(...bars.map(bar=>bar.slot))+1:1)*26)
 
-/** 工位名称与 gantt.js 的 PMC 正式排程表保持一致。 */
-export const PMC_LANES=[
- {id:"L01 配制一线",desc:"配制"},
- {id:"L02 配制二线",desc:"配制"},
- {id:"S03-4# 瓶装线",desc:"包装"},
- {id:"S04 包装二线",desc:"包装"},
- {id:"QC 检验位",desc:"半成品 / 成品 QAQC"}
-] as const
+/** React and PMC both use exactly the same workcenter identifiers. */
+export const PMC_LANES=schedulingDefinitions.lanes
 
 /**
  * 真正的产能冲突：仅当同一工位上的任务实际起止时间相交。
