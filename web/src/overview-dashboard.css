@@ -278,10 +278,6 @@
 }
 
 /* 首页和 PMC 共用工序颜色；每个实际绘制的任务按碰撞分配独立高度。 */
-.overview-gantt-panel{
-  --gantt-clean:#19B7A5;--gantt-blend:#387CF1;--gantt-semi-qc:#F1C644;
-  --gantt-change:#986DF0;--gantt-pack:#F38A48;--gantt-final-qc:#E86AA6;
-}
 .overview-gantt-legend{flex-wrap:wrap;justify-content:flex-end;gap:5px 10px}
 .overview-gantt-legend i.clean,.overview-gantt-bar.clean{background:var(--gantt-clean);border-color:#168f83;color:#123d39}
 .overview-gantt-legend i.blend,.overview-gantt-bar.blend{background:var(--gantt-blend);border-color:#2462d2;color:white}
