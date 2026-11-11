@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import type { WorkspaceData } from "@/factory-state"
+import {layoutOverviewBars,overviewRowHeight} from "@/overview-gantt-layout"
 import {
   dayShift,dayString,weekStart,overviewMetrics,orderStage,scheduleEntries,
   type GanttEntry,type DashboardAlert,type DonutSegment
@@ -40,25 +41,17 @@ function periodFor(day:string,view:View){
     endMs:new Date(end+"T00:00:00").getTime()}
 }
 const types:Record<string,{label:string;className:string}>={
-  "配制":{label:"配制",className:"make"},
-  "包装":{label:"包装",className:"pack"},
   "清洗":{label:"清洗",className:"clean"},
-  "调机调线":{label:"调线",className:"change"},
-  "半成品 QC":{label:"半成品 QC",className:"quality"},
-  "成品 QC":{label:"成品 QC",className:"quality"},
-  "QA 放行":{label:"QA 放行",className:"quality"}
+  "配制":{label:"配制",className:"blend"},
+  "半成品 QAQC":{label:"半成品 QAQC",className:"semi-qc"},
+  "半成品 QC":{label:"半成品 QAQC",className:"semi-qc"},
+  "调机调线":{label:"调机调线",className:"change"},
+  "包装":{label:"包装",className:"pack"},
+  "成品 QAQC":{label:"成品 QAQC",className:"final-qc"},
+  "成品 QC":{label:"成品 QAQC",className:"final-qc"}
 }
-function chartBar(entry:GanttEntry,period:ReturnType<typeof periodFor>,index:number){
-  const start=new Date(entry.start).getTime()
-  const end=start+entry.duration*60000
-  if(end<=period.startMs||start>=period.endMs)return null
-  const len=period.endMs-period.startMs
-  const left=Math.max(0,(start-period.startMs)/len)*100
-  const physicalWidth=(Math.min(end,period.endMs)-Math.max(start,period.startMs))/len*100
-  const minWidth=period.days===1?5:period.days===7?7.5:1.45
-  return {left:`${left}%`,width:`${Math.min(100-left,Math.max(physicalWidth,minWidth))}%`,
-    top:index%2===0?"7px":"29px"}
-}
+const ganttLegend=[["clean","清洗"],["blend","配制"],["semi-qc","半成品 QAQC"],
+  ["change","调机调线"],["pack","包装"],["final-qc","成品 QAQC"]] as const
 function GanttPanel({workspace,onSelect}:{workspace:WorkspaceData;onSelect:Props["onSelect"]}){
   const [view,setView]=useState<View>("week")
   const [day,setDay]=useState(()=>dayString(new Date()))
@@ -69,7 +62,7 @@ function GanttPanel({workspace,onSelect}:{workspace:WorkspaceData;onSelect:Props
   const displayed=saved.filter(e=>validIds.has(e.orderId)&&
     new Date(e.start).getTime()<period.endMs&&
     new Date(e.start).getTime()+e.duration*60000>period.startMs)
-  const makeTypes=new Set(["配制","包装","清洗","调机调线","半成品 QC","成品 QC","QA 放行"])
+  const makeTypes=new Set(Object.keys(types))
   const visibleOrders=(workspace.orders??[]).filter(o=>orderStage(o,workspace)!=="delivered"||
     saved.some(e=>e.orderId===o.id))
   const unscheduled=visibleOrders.filter(o=>!saved.some(e=>e.orderId===o.id)).length
@@ -100,7 +93,7 @@ function GanttPanel({workspace,onSelect}:{workspace:WorkspaceData;onSelect:Props
         <button type="button" className="overview-today" onClick={()=>setDay(dayString(new Date()))}>今天</button>
       </div>
       <div className="overview-gantt-legend">
-        <span><i className="make"/>配制</span><span><i className="pack"/>包装</span><span><i className="quality"/>质检</span>
+        {ganttLegend.map(([kind,label])=><span key={kind}><i className={kind}/>{label}</span>)}
       </div>
     </div>
     <div className="overview-gantt-scroller" role="region" aria-label="排程时间轴" tabIndex={0}>
