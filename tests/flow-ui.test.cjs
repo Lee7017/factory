@@ -36,25 +36,61 @@ test('first two order cards open Order Content directly, with no tabs',()=>{
  assert.equal((html.match(/data-flow-order-content/g)||[]).length,2);
  assert.doesNotMatch(html,/data-journey-tab/);
 });
-test('each return is numbered with reason and routed through adjacent gaps only',()=>{
+test('red return segments show a single arrowhead at each final destination',()=>{
  const api=boot(history),html=api.debug.renderGraph({ref:'SO-TEST',kind:'order'});
  const events=api.debug.returnEvents(history,'order',19);
  assert.equal(events.length,2);
- assert.equal(events[0].number,1);assert.equal(events[0].from,9);assert.equal(events[0].to,6);
- assert.equal(events[1].number,2);assert.equal(events[1].from,14);assert.equal(events[1].to,11);
- assert.match(html,/第1次打回/);assert.match(html,/第2次打回/);
- assert.match(html,/粘度不合格/);assert.match(html,/封口不良/);
- const paths=[...html.matchAll(/<path class="journey-snake-return" d="([^"]+)"/g)].map(x=>x[1]);
- assert.equal(paths.length,6); // 10 → 9 → 8 → 7 and 15 → 14 → 13 → 12.
- assert.ok(paths.every(d=>/^(M\d+ \d+ (?:L\d+ \d+|V\d+))$/.test(d)));
+ assert.equal(events[0].from,9);assert.equal(events[0].to,6);
+ assert.equal(events[1].from,14);assert.equal(events[1].to,11);
+ assert.doesNotMatch(html,/journey-return-overview|第1次打回|第2次打回/);
+ assert.match(html,/data-flow-return-list/);
+ const paths=[...html.matchAll(/<path class="journey-snake-return" d="([^"]+)"([^>]*)>/g)];
+ assert.equal(paths.length,6); // 10→9→8→7 and 15→14→13→12
+ assert.equal(paths.filter(x=>x[2].includes('marker-end=')).length,2);
+ assert.ok(paths.every(x=>/^(M\d+ \d+ (?:L\d+ \d+|V\d+))$/.test(x[1])));
+ const finalPaths=paths.filter(x=>x[2].includes('marker-end=')).map(x=>x[1]);
+ assert.ok(finalPaths.some(x=>x.includes('L')));
+ assert.ok(finalPaths.some(x=>x.includes('V')));
 });
-test('repeated execution stays on fixed-size cards and opens actual operator history',()=>{
+test('fixed-height cards have no attempt or return counts and open the side drawer',()=>{
  const api=boot(history),html=api.debug.renderGraph({ref:'SO-TEST',kind:'order'});
- assert.match(html,/data-flow-step-history="6"[^>]*>2次执行/);
- assert.match(html,/data-flow-step-returns="9"[^>]*>退回1次/);
- assert.match(html,/--gantt-row-height|journey-snake-position/);
- assert.doesNotMatch(html,/journey-tab-panel/);
+ assert.doesNotMatch(html,/次执行|次打回|data-flow-step-history|data-flow-step-returns/);
+ assert.doesNotMatch(html,/journey-return-overview|journey-tab-panel/);
+ assert.match(html,/data-flow-step-open="6"/);
+ assert.match(html,/data-flow-card-step="6"/);
  const css=fs.readFileSync(path.join(__dirname,'..','flow-ui.css'),'utf8');
- assert.match(css,/\.journey-history-row/);
  assert.match(css,/\.journey-order-panel-backdrop/);
+ assert.match(css,/justify-content:flex-end/);
+ assert.match(css,/\.journey-history-row/);
+});
+
+test('clicking a flow card opens operator history and return details in a right-side drawer',()=>{
+ const original=fs.readFileSync(path.join(__dirname,'..','flow-ui.js'),'utf8');
+ const listeners={},host={
+  innerHTML:'',classList:{add(){},remove(){}},querySelector(){return null},
+  insertAdjacentHTML(_,html){this.lastPanel=html}
+ };
+ const document={
+  querySelector:q=>q==='#flow-transition-host'?host:null,
+  addEventListener:(type,fn)=>{listeners[type]=fn}
+ };
+ const window={
+  FactoryOperations:{state:{flows:{'SO-TEST':{stage:'packaging',audit:history}},purchases:[]},
+   getOrder:()=>({id:'SO-TEST',product:'测试品',spec:'5L × 4桶',qty:100})}
+ };
+ vm.runInNewContext(original,{window,document,setTimeout(){},clearTimeout(){},requestAnimationFrame(){},console});
+ window.FactoryFlowUI.show({ref:'SO-TEST',kind:'order'});
+ assert.ok(!host.innerHTML.includes('journey-return-overview'));
+ const click=(selector,dataset={})=>listeners.click({
+  target:{closest:q=>q===selector?{dataset}:null,matches:()=>false}
+ });
+ click('[data-flow-card-step]',{flowCardStep:'6'});
+ assert.match(host.lastPanel,/journey-order-panel/);
+ assert.match(host.lastPanel,/11\/11 09:00/);
+ assert.match(host.lastPanel,/11\/11 11:00/);
+ assert.match(host.lastPanel,/粘度不合格/);
+ assert.doesNotMatch(host.lastPanel,/第\s*\d+\s*次/);
+ click('[data-flow-return-list]');
+ assert.match(host.lastPanel,/封口不良/);
+ assert.match(host.lastPanel,/打回记录/);
 });
