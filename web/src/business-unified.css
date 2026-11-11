@@ -2563,3 +2563,173 @@ button.department-profile-photo-slot:focus-visible,
 .feature-band.is-system-settings .feature-band-nav{
   padding-left:2px;
 }
+
+/* Business function palette: warm page, warm-white panels, white data surfaces. */
+/* Use the same neutral layers as the home cockpit. Keep business-specific
+   status colors, Gantt task colors and action/focus colors unchanged. */
+:root{--factory-paper:#FFFFFF}
+.factory-shell-v2 .business-page-frame{
+  --biz-surface:var(--factory-surface);
+  --biz-glass:var(--factory-surface);
+  --biz-glass-soft:var(--factory-surface);
+  --biz-glass-row:var(--factory-paper);
+  --biz-head:var(--factory-page);
+  --biz-hover:#F0F2EC;
+  --biz-line:var(--factory-line);
+  --biz-line-soft:var(--factory-line);
+  --biz-text:var(--factory-ink-2);
+  --biz-muted:var(--factory-muted);
+}
+.factory-shell-v2 .business-page-body{
+  background:var(--factory-surface)!important;
+  border:1px solid var(--factory-line)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+/* Content planes inside the main panel are white, not another green glass. */
+.factory-shell-v2 .native-business .legacy-root :is(.op-table-wrap,.mw-table-scroll,.proc-scroll),
+.factory-shell-v2 .business-page-body :is(.business-native-list,.biz-order-table-area,.op-task-inbox){
+  background:var(--factory-paper)!important;
+  border-color:var(--factory-line)!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .business-page-body :is(.business-native-list [data-slot="table"],.biz-order-table,.proc-order-table),
+.factory-shell-v2 .native-business .legacy-root :is(.op-table,.mw-table,.proc-table){
+  background:var(--factory-paper)!important;
+}
+.factory-shell-v2 .business-page-body :is(.business-native-list [data-slot="table-row"],.biz-order-table tbody tr,.proc-order-table tbody tr){
+  background:var(--factory-paper);
+}
+.factory-shell-v2 .business-page-body :is(.business-native-list [data-slot="table-row"],.biz-order-table tbody tr,.proc-order-table tbody tr):hover{
+  background:#F0F2EC;
+}
+/* Table headers use the page tint; body rows remain white. */
+.factory-shell-v2 .native-business .legacy-root :is(.op-table,.mw-table,.proc-table) th,
+.factory-shell-v2 .business-page-body :is([data-slot="table-header"],[data-slot="table-head"],.biz-order-table th,.proc-order-table th){
+  background:var(--factory-page)!important;
+  border-color:var(--factory-line)!important;
+  color:var(--factory-ink-2)!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.op-table,.mw-table,.proc-table) td,
+.factory-shell-v2 .business-page-body :is([data-slot="table-cell"],.biz-order-table td,.proc-order-table td){
+  border-bottom-color:var(--factory-line)!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.op-table,.mw-table,.proc-table) tbody tr:hover td{
+  background:#F0F2EC!important;
+}
+/* Compact statistics and toolbar strips should not add a second colored panel. */
+.factory-shell-v2 .native-business .legacy-root :is(.mw-metrics,.mw-stock-snapshot){
+  background:var(--factory-paper)!important;
+  border:1px solid var(--factory-line)!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(
+  .op-table-toolbar,.mw-table-toolbar,.mw-data-section-head,.mw-ledger-head,
+  .mw-stock-overview-head,.mw-quality-command,.op-subsection > header
+),
+.factory-shell-v2 .business-page-body :is(.business-native-list-toolbar,.business-native-list-footer){
+  background:var(--factory-surface)!important;
+  border-color:var(--factory-line)!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.mw-quality-surface,.mw-data-section,.mw-ledger-panel,.mw-stock-overview,.op-subsection){
+  background:transparent!important;
+  box-shadow:none!important;
+}
+/* Purchasing has its own independent board markup. */
+.factory-shell-v2 .native-business .legacy-root :is(.proc-board-heading,.proc-board-content,.proc-pmc-inbox .mw-data-section){
+  background:var(--factory-surface)!important;
+  border-color:var(--factory-line)!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.proc-board-metric,.proc-po-source){
+  background:var(--factory-paper)!important;
+  border-color:var(--factory-line)!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.proc-order-table,.proc-order-table td){
+  background:var(--factory-paper)!important;
+}
+.factory-shell-v2 .native-business .legacy-root .proc-order-table th{
+  background:var(--factory-page)!important;
+  border-color:var(--factory-line)!important;
+}
+.factory-shell-v2 .native-business .legacy-root .proc-order-table tbody tr:hover td{
+  background:#F0F2EC!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.proc-order-notice,.mw-outbound-summary,.mw-clean-head,.mw-simple-clean-context,.mw-record-id){
+  background:var(--factory-surface)!important;
+  border-color:var(--factory-line)!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.mw-outbound-numbers span,.mw-record-field){
+  background:var(--factory-paper)!important;
+  border-color:var(--factory-line)!important;
+}
+/* Permission/configuration pages currently have multiple sage-tinted subpanels. */
+.factory-shell-v2 .native-business .legacy-root .access-workbench .panel{
+  background:var(--factory-surface)!important;
+  border-color:var(--factory-line)!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(
+  .access-side .access-side-head,.access-main .access-main-head,
+  .access-tools,.access-description,.access-footer-hint
+){
+  background:var(--factory-page)!important;
+  border-color:var(--factory-line)!important;
+}
+.factory-shell-v2 .native-business .legacy-root .access-table th{
+  background:var(--factory-page)!important;
+  border-color:var(--factory-line)!important;
+}
+.factory-shell-v2 .native-business .legacy-root .access-table td,
+.factory-shell-v2 .native-business .legacy-root :is(.access-assigned-list button,.access-role-options button:not(.selected)){
+  background:var(--factory-paper)!important;
+  border-color:var(--factory-line)!important;
+}
+/* Form fields, ordinary secondary controls and dialogs use white paper. */
+.factory-shell-v2 .native-business .legacy-root :is(input,select,textarea),
+.factory-shell-v2 .business-native-page :is([data-slot="input"],[data-slot="select-trigger"],[data-slot="textarea"]),
+.factory-shell-v2 .business-page-body :is([data-slot="input"],[data-slot="select-trigger"],[data-slot="textarea"]){
+  background:var(--factory-paper)!important;
+  border-color:var(--factory-line-strong)!important;
+  color:var(--factory-ink)!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.op-button,.mw-btn,.proc-btn):not(.primary):not(.active):not(:disabled){
+  background:var(--factory-paper)!important;
+  border-color:var(--factory-line-strong)!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.op-modal,.mw-modal,.proc-modal),
+.factory-shell-v2 .business-page-body .glass-dialog{
+  background:var(--factory-surface)!important;
+  border-color:var(--factory-line)!important;
+}
+.factory-shell-v2 .business-native-notice,
+.factory-shell-v2 .native-business .legacy-root .business-help p{
+  background:var(--factory-page)!important;
+  border-color:var(--factory-line)!important;
+  color:var(--factory-ink-2)!important;
+}
+/* PMC timeline keeps the distinct process colors, with neutral scaffolding. */
+.factory-shell-v2 .native-business .legacy-root .gantt-panel{
+  background:var(--factory-surface)!important;
+  border-color:var(--factory-line)!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.gantt-canvas,.gantt-lane){
+  background:var(--factory-paper)!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.gantt-head,.gantt-head .gantt-lane,.gantt-hours){
+  background:var(--factory-page)!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.gantt-panel-head,.gantt-legend,.gantt-foot){
+  border-color:var(--factory-line)!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.gantt-controls button:not(.gantt-add):not(.gantt-optimize),.gantt-controls input){
+  background:var(--factory-paper)!important;
+  border-color:var(--factory-line)!important;
+}
+.factory-shell-v2 .native-business .legacy-root .gantt-dialog{
+  background:var(--factory-surface)!important;
+  border-color:var(--factory-line)!important;
+}
