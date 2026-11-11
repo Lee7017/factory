@@ -38,7 +38,7 @@ try{
   await close()
  }
  async function cleanTask(taskId){
-  await route("production","tasks")
+  await route("production","nonProductionTasks")
   const row=taskRow(taskId)
   if(await row.locator('[data-op-action="task:start"]').count()){await row.locator('[data-op-action="task:start"]').click();await close()}
   if(await row.locator('[data-op-action="task:finish"]').count()){await row.locator('[data-op-action="task:finish"]').click();await close()}
@@ -57,7 +57,7 @@ try{
   await qcForm.locator('button[type="submit"]').click()
   await dialog.waitFor({state:"visible"})
   await close()
-  await route("production","tasks")
+  await route("production","nonProductionTasks")
   await taskRow(taskId).locator('[data-op-action="task:verify"]').click()
   await dialog.waitFor({state:"visible"})
  }
@@ -96,6 +96,7 @@ try{
  await page.screenshot({path:"test-results/production-02-blending-clean-after-task.png"})
  await dialog.locator(".journey-card.is-current [data-flow-track]").click()
  await page.locator('.native-business .op-task-inbox').waitFor({state:"visible",timeout:14000})
+ assert.match(new URL(page.url()).hash,/#\/departments\/production\/nonProductionTasks$/,"Tracking must open workshop nonproduction task list")
  assert.equal(await taskRow(blendTask.id).count(),1)
  assert.equal(await taskRow(blendTask.id).locator('[data-op-action="task:start"]').count(),1,
   "New post-blending cleaning must begin with execution, not skip to QC or review")
@@ -125,6 +126,7 @@ try{
  await page.screenshot({path:"test-results/production-05-packaging-setup-before-start.png"})
  await dialog.locator(".journey-card.is-current [data-flow-track]").click()
  await page.locator('.native-business .op-task-inbox').waitFor({state:"visible",timeout:14000})
+ assert.match(new URL(page.url()).hash,/#\/departments\/production\/nonProductionTasks$/,"Tracking must open workshop nonproduction task list")
  for(const mode of ["start","finish","verify"]){
   await taskRow(setupTask.id).locator(`[data-op-action="task:${mode}"]`).click()
   await dialog.waitFor({state:"visible"})
