@@ -2,7 +2,7 @@
 (()=>{'use strict';
 const actionNames={view:'查看',create:'创建',edit:'修改',approve:'审批',execute:'执行',config:'配置'};
 const capabilities={
- overview:['view'],hours:['view','create'],sop:['view','create','edit','approve','execute'],qaQc:['view','create','approve'],workshop:['view','create','execute','approve'],warehouseOps:['view','create','execute','approve'],settings:['view','config'],leave:['view','create'],leaveApproval:['view','approve'],employees:['view','edit'],skills:['view','edit'],payroll:['view','create','approve'],orders:['view','create','edit'],orderReview:['view','approve'],orderHistory:['view'],schedule:['view','edit','approve'],kitting:['view','execute','approve'],shift:['view','edit','approve'],purchase:['view','create','edit','approve'],inventory:['view','edit'],issue:['view','execute'],inspection:['view','execute'],release:['view','approve'],tasks:['view','execute'],batch:['view','execute'],incentive:['view','create','approve'],templates:['view','edit','approve'],bom:['view','edit'],catalog:['view','edit'],engineering:['view','execute','approve'],finance:['view','approve'],permissions:['view','config'],approvals:['view','approve'],hoursAppeal:['view'],qaSampling:['view'],qaCleanInspection:['view'],qaNcr:['view'],qaQualityStock:['view'],workshopReceive:['view'],workshopDispute:['view'],workshopRework:['view'],warehouseIncoming:['view'],warehousePick:['view'],warehouseOutbound:['view'],warehouseReturns:['view'],warehouseLedger:['view'],shiftPeople:['view'],shiftStats:['view'],orderProductStats:['view'],orderDailyReport:['view'],sopExecutions:['view'],productSettings:['view'],dictionarySettings:['view']
+ overview:['view'],hours:['view','create'],sop:['view','create','edit','approve','execute'],qaQc:['view','create','approve'],workshop:['view','create','execute','approve'],warehouseOps:['view','create','execute','approve'],settings:['view','config'],leave:['view','create'],leaveApproval:['view','approve'],employees:['view','edit'],skills:['view','edit'],payroll:['view','create','approve'],orders:['view','create','edit'],orderReview:['view','approve'],orderHistory:['view'],schedule:['view','edit','approve'],kitting:['view','execute','approve'],shift:['view','edit','approve'],purchase:['view','create','edit','approve'],inventory:['view','edit'],issue:['view','execute'],inspection:['view','execute'],release:['view','approve'],tasks:['view','execute'],nonProductionTasks:['view','execute'],batch:['view','execute'],incentive:['view','create','approve'],templates:['view','edit','approve'],bom:['view','edit'],catalog:['view','edit'],finance:['view','approve'],permissions:['view','config'],approvals:['view','approve'],hoursAppeal:['view'],qaSampling:['view'],qaCleanInspection:['view'],qaNcr:['view'],qaQualityStock:['view'],workshopReceive:['view'],workshopDispute:['view'],workshopRework:['view'],warehouseIncoming:['view'],warehousePick:['view'],warehouseOutbound:['view'],warehouseReturns:['view'],warehouseLedger:['view'],shiftPeople:['view'],shiftStats:['view'],orderProductStats:['view'],orderDailyReport:['view'],sopExecutions:['view'],productSettings:['view'],dictionarySettings:['view']
 };
 const positions=[
  {id:'employee',name:'普通员工',dept:'hr',features:['hr.leave']},
@@ -15,10 +15,10 @@ const positions=[
  {id:'purchase_manager',name:'采购主管',dept:'purchase',features:['purchase.purchase','hr.leave']},
  {id:'warehouse',name:'仓库管理员',dept:'warehouse',features:['warehouse.warehouseOps','warehouse.warehouseIncoming','warehouse.warehousePick','warehouse.warehouseOutbound','warehouse.warehouseReturns','warehouse.warehouseLedger','warehouse.inventory','warehouse.issue','hr.leave']},
  {id:'quality',name:'质量专员',dept:'quality',features:['quality.qaQc','quality.qaSampling','quality.qaCleanInspection','quality.qaNcr','quality.qaQualityStock','quality.release','hr.leave']},
- {id:'production',name:'生产操作员',dept:'production',features:['production.workshop','production.workshopReceive','production.workshopDispute','production.workshopRework','production.tasks','production.batch','hr.leave']},
- {id:'production_lead',name:'生产班组长',dept:'production',features:['production.workshop','production.workshopReceive','production.workshopDispute','production.workshopRework','production.tasks','production.batch','production.shift','production.skills','production.incentive','hr.leave']},
+ {id:'production',name:'生产操作员',dept:'production',features:['production.workshop','production.workshopReceive','production.workshopDispute','production.workshopRework','production.tasks','production.nonProductionTasks','production.batch','hr.leave']},
+ {id:'production_lead',name:'生产班组长',dept:'production',features:['production.workshop','production.workshopReceive','production.workshopDispute','production.workshopRework','production.tasks','production.nonProductionTasks','production.batch','production.shift','production.skills','production.incentive','hr.leave']},
  {id:'tech',name:'工艺技术员',dept:'it',features:['it.sop','it.sopExecutions','it.templates','it.bom','it.catalog','hr.leave']},
- {id:'engineering',name:'设备工程师',dept:'engineering',features:['engineering.engineering','hr.leave']},
+ {id:'engineering',name:'设备工程师',dept:'production',features:['production.nonProductionTasks','hr.leave']},
  {id:'finance',name:'财务专员',dept:'finance',features:['finance.payroll','finance.finance','hr.leave']},
  {id:'it',name:'信息化管理员',dept:'it',features:['it.settings','it.productSettings','it.dictionarySettings','it.permissions','it.employees','it.catalog','it.sop','it.sopExecutions','it.templates','it.bom','hr.leave']},
  {id:'executive',name:'总经办',dept:'leadership',features:['leadership.approvals','hr.leave']},
@@ -35,7 +35,7 @@ const staff=[
  {id:'E006',name:'刘洋',dept:'质量部',title:'QA 检验员',positions:['quality']},
  {id:'E007',name:'周琳',dept:'生产计划与物料控制部（PMC）',title:'计划员',positions:['pmc']},
  {id:'E022',name:'高宁',dept:'生产计划与物料控制部（PMC）',title:'PMC 主管',positions:['pmc_manager']},
- {id:'E008',name:'吴建',dept:'设备工程部',title:'设备工程师',positions:['engineering']},
+ {id:'E008',name:'吴建',dept:'生产车间',title:'设备工程师',positions:['engineering']},
  {id:'E009',name:'孙浩',dept:'仓库 / 物流部',title:'仓管员',positions:['warehouse']},
  {id:'E010',name:'林静',dept:'信息化部',title:'信息化管理员',positions:['it']},
  {id:'E011',name:'许宁',dept:'人事行政办公室',title:'普通员工',positions:['employee']},
@@ -57,7 +57,7 @@ let state=fresh();
 try{const read=JSON.parse(localStorage.getItem(storage)||'null');if(read&&typeof read==='object'){
   state.current=staff.some(p=>p.id===read.current)?read.current:state.current;
   // 持久化既有权限迁移标记，避免刷新页面后重新添加管理员已撤销的权限。
-  for(const flag of ['orderHistoryMigrated','splitFeatureRightsMigrated','modulesRightsMigrated','mergedTechIntoItV1','purchaseEditPermissionMigratedV1'])if(read[flag]===true)state[flag]=true;
+  for(const flag of ['orderHistoryMigrated','splitFeatureRightsMigrated','modulesRightsMigrated','mergedTechIntoItV1','purchaseEditPermissionMigratedV1','workshopTasksSplitV1'])if(read[flag]===true)state[flag]=true;
   for(const p of staff){const assigned=read.assigned?.[p.id];if(Array.isArray(assigned))state.assigned[p.id]=assigned.filter(id=>positions.some(r=>r.id===id));const extra=read.extra?.[p.id];if(Array.isArray(extra))state.extra[p.id]=extra.filter(v=>typeof v==='string')}
   for(const p of positions.filter(x=>x.id!=='developer')){const rights=read.positionRights?.[p.id];if(Array.isArray(rights))state.positionRights[p.id]=rights.filter(v=>typeof v==='string')}
 }}catch{}
@@ -111,6 +111,23 @@ if(!state.mergedTechIntoItV1){
 if(!state.purchaseEditPermissionMigratedV1){
  for(const role of ['purchase','purchase_manager']){const rights=state.positionRights[role]||[];if(rights.includes('purchase.purchase.create')&&!rights.includes('purchase.purchase.edit'))rights.push('purchase.purchase.edit');state.positionRights[role]=rights}
  state.purchaseEditPermissionMigratedV1=true;try{localStorage.setItem(storage,JSON.stringify(state))}catch{}
+}
+// 设备工程部合并到生产车间后，兼容旧浏览器中已保存的岗位及个人操作权限。
+if(!state.workshopTasksSplitV1){
+ const oldBase={production:'production.tasks',production_lead:'production.tasks',engineering:'engineering.engineering'};
+ for(const [role,base] of Object.entries(oldBase)){
+  const rights=state.positionRights[role]||[];
+  for(const action of ['view','execute']){
+   if(rights.includes(base+'.'+action)&&!rights.includes('production.nonProductionTasks.'+action))
+    rights.push('production.nonProductionTasks.'+action);
+  }
+  state.positionRights[role]=rights.filter(key=>!key.startsWith('engineering.engineering.'));
+ }
+ for(const [id,rights] of Object.entries(state.extra)){
+  const moved=rights.map(key=>key.replace(/^engineering\.engineering\./,'production.nonProductionTasks.'));
+  state.extra[id]=[...new Set(moved)];
+ }
+ state.workshopTasksSplitV1=true;try{localStorage.setItem(storage,JSON.stringify(state))}catch{}
 }
 // 预置开发人员岗位固定存在；历史浏览器里的岗位保存值不能覆盖小明。
 state.assigned.E012=[...new Set([...(state.assigned.E012||[]),'developer'])];
