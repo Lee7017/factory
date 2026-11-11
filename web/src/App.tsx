@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react"
 import {
-  ArrowRight, Bell, Check, CheckCheck, Factory, Home, ListTodo,
+  ArrowRight, Bell, Check, CheckCheck, Factory, Home,
   LockKeyhole, MessageCircle, Pencil, Search, Settings, Sparkles
 } from "lucide-react"
 import { DEPARTMENTS, FEATURE_HINTS, FEATURE_NAMES, getDepartment, type Department } from "@/catalog"
 import {
-  useFactoryState, readWorkspace, updateWorkspace, getTodos, todoLane, type Employee, type Todo
+  useFactoryState, readWorkspace, updateWorkspace, getTodos, type Employee
 } from "@/factory-state"
 import { NativeBusiness } from "@/business/NativeBusiness"
 import { businessFamily } from "@/business/layout"
@@ -18,17 +18,16 @@ import { DataBackup } from "@/components/DataBackup"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog"
 
 type Route={kind:"overview"}|{kind:"department";dept:string;feature?:string}
-type TabKey="functions"|"members"|"todos"
 function parseRoute(hash:string):Route {
   const match=hash.match(/^#\/departments\/([a-z]+)(?:\/([a-zA-Z]+))?$/)
   if(match?.[1]==="engineering")return {kind:"department",dept:"production",feature:"nonProductionTasks"}
+  if(match?.[1]==="it"&&!match[2])return {kind:"department",dept:"it",feature:"settings"}
   if(match&&getDepartment(match[1]))return {kind:"department",dept:match[1],feature:match[2]}
   return {kind:"overview"}
 }
@@ -44,30 +43,36 @@ const SHORT_DEPARTMENT_NAMES:Record<string,string>={
   quality:"质量部",production:"生产车间",finance:"财务部",it:"信息化",leadership:"总经办"
 }
 function shortDepartmentName(dept:Department){return SHORT_DEPARTMENT_NAMES[dept.id]??dept.name}
-const DEPARTMENT_BAND_ORDER=["sales","pmc","purchase","warehouse","quality","production","finance","hr","it","leadership"]
+const DEPARTMENT_BAND_ORDER=["sales","pmc","purchase","warehouse","quality","production","finance","hr","leadership"]
 function departmentsForBand(){
-  return [...DEPARTMENTS].sort((a,b)=>DEPARTMENT_BAND_ORDER.indexOf(a.id)-DEPARTMENT_BAND_ORDER.indexOf(b.id))
+  return DEPARTMENTS.filter(dept=>dept.id!=="it")
+    .sort((a,b)=>DEPARTMENT_BAND_ORDER.indexOf(a.id)-DEPARTMENT_BAND_ORDER.indexOf(b.id))
 }
+const systemDepartment=DEPARTMENTS.find(dept=>dept.id==="it")!
 
-function SystemRail({route,onSelect,employee,staff,onSwitch,messages,onRead,onReadAll,workspace}:{
+function SystemRail({route,onSelect,employee,staff,onSwitch,messages,onRead,onReadAll}:{
   route:Route;onSelect:(hash:string)=>void;employee?:Employee;staff:Employee[];onSwitch:(id:string)=>void;
   onRead:(id:string|number)=>void;onReadAll:()=>void;
   messages:Array<{id:string|number;title:string;text:string;date?:string;unread?:boolean;dept?:string;feature?:string}>;
-  workspace:ReturnType<typeof useFactoryState>["workspace"]
 }) {
   const [query,setQuery]=useState("")
   const unread=messages.filter(m=>m.unread).length
-  const todos=DEPARTMENTS.flatMap(dept=>getTodos(dept.id,workspace).map(todo=>({dept,todo})))
   const searchItems=[
     {label:"首页总览",hint:"工厂运行总览",hash:"#/overview"},
-    ...DEPARTMENTS.flatMap(dept=>[
+    ...departmentsForBand().flatMap(dept=>[
       {label:shortDepartmentName(dept),hint:dept.description,hash:"#/departments/"+dept.id},
       ...dept.features.map(feature=>({
         label:FEATURE_NAMES[feature]??feature,
         hint:shortDepartmentName(dept)+" · "+(FEATURE_HINTS[feature]??"业务功能"),
         hash:"#/departments/"+dept.id+"/"+feature
       }))
-    ])
+    ]),
+    {label:"系统设置",hint:"权限、主数据、工艺标准、模板和基础配置",hash:"#/departments/it/settings"},
+    ...systemDepartment.features.map(feature=>({
+      label:FEATURE_NAMES[feature]??feature,
+      hint:"系统设置 · "+(FEATURE_HINTS[feature]??"系统功能"),
+      hash:"#/departments/it/"+feature
+    }))
   ]
   const normalized=query.trim().toLocaleLowerCase()
   const results=(normalized?searchItems.filter(item=>(item.label+" "+item.hint).toLocaleLowerCase().includes(normalized)):searchItems.slice(0,9)).slice(0,16)
@@ -96,21 +101,6 @@ function SystemRail({route,onSelect,employee,staff,onSwitch,messages,onRead,onRe
               </button>
             </DialogClose>)}
             {results.length===0&&<p className="empty-note">没有找到匹配入口</p>}
-          </div>
-        </DialogContent>
-      </Dialog>
-      <Dialog>
-        <DialogTrigger asChild>
-          <button type="button" className="rail-button" title="待办" aria-label={"待办，"+todos.length+" 项"}><ListTodo size={18}/>{todos.length>0&&<i className="rail-badge">{Math.min(todos.length,99)}</i>}</button>
-        </DialogTrigger>
-        <DialogContent className="glass-dialog">
-          <DialogHeader><DialogTitle>跨部门待办</DialogTitle><DialogDescription>按当前浏览器里的业务状态汇总。</DialogDescription></DialogHeader>
-          <div className="rail-list-dialog">
-            {todos.length===0?<p className="empty-note">暂无待办</p>:todos.slice(0,18).map(({dept,todo})=><DialogClose asChild key={dept.id+":"+todo.kind+":"+todo.id}>
-              <button type="button" className="rail-list-row" onClick={()=>onSelect("#/departments/"+dept.id+"/"+todo.feature)}>
-                <span><strong>{todo.title}</strong><small>{shortDepartmentName(dept)} · {todo.id}</small></span><em>{todo.status}</em>
-              </button>
-            </DialogClose>)}
           </div>
         </DialogContent>
       </Dialog>
@@ -186,21 +176,29 @@ function DepartmentBand({route,onSelect}:{route:Route;onSelect:(hash:string)=>vo
   </div>
 }
 
-function FeatureBand({route,onSelect,can}:{route:Route;onSelect:(hash:string)=>void;can:(dept:string,feature:string,action?:string)=>boolean}) {
+function FeatureBand({route,onSelect,can,workspace}:{
+  route:Route;onSelect:(hash:string)=>void;
+  can:(dept:string,feature:string,action?:string)=>boolean;
+  workspace:ReturnType<typeof useFactoryState>["workspace"]
+}) {
   if(route.kind!=="department")return null
   const dept=getDepartment(route.dept)
   if(!dept)return null
-  return <div className="feature-band">
-    <nav className="feature-band-nav" aria-label={dept.name+"业务功能"}>
-      <button type="button" className={"feature-band-button "+(!route.feature?"active":"")}
-        aria-current={!route.feature?"page":undefined} onClick={()=>onSelect("#/departments/"+dept.id)}>部门总览</button>
+  const isSystem=dept.id==="it"
+  const todos=isSystem?[]:getTodos(dept.id,workspace)
+  const countFor=(feature:string)=>todos.filter(todo=>todo.feature===feature).length
+  return <div className={"feature-band "+(isSystem?"is-system-settings":"")}>
+    <nav className="feature-band-nav" aria-label={isSystem?"系统设置":dept.name+"业务功能"}>
+      {!isSystem&&<button type="button" className={"feature-band-button "+(!route.feature?"active":"")}
+        aria-current={!route.feature?"page":undefined} onClick={()=>onSelect("#/departments/"+dept.id)}>部门总览</button>}
       {dept.features.map(feature=>{
-        const allowed=can(dept.id,feature),active=route.feature===feature
+        const allowed=can(dept.id,feature),active=route.feature===feature,count=countFor(feature)
         return <button type="button" key={feature} className={"feature-band-button "+(active?"active":"")}
           disabled={!allowed} aria-current={active?"page":undefined}
           title={allowed?(FEATURE_HINTS[feature]??"业务功能"):"当前员工无访问权限"}
           onClick={()=>onSelect("#/departments/"+dept.id+"/"+feature)}>
-          {FEATURE_NAMES[feature]??feature}
+          <span>{FEATURE_NAMES[feature]??feature}</span>
+          {count>0&&<b className="feature-pending-count" aria-label={count+"项待处理"}>{count}</b>}
         </button>
       })}
     </nav>
@@ -264,7 +262,7 @@ function Roster({dept,staff,employee,can,office,onUpdate}:{
     })
     setDraft("");setChatVersion(v=>v+1);onUpdate()
   }
-  return <Card className="glass-panel roster-panel gap-3 p-3">
+  return <section className="roster-panel">
     <div className="roster-header">
       <div><h2 className="roster-title">部门花名簿</h2>
         <p className="roster-description">可按姓名、岗位或工号查找，点击成员进入私聊</p></div>
@@ -327,34 +325,11 @@ function Roster({dept,staff,employee,can,office,onUpdate}:{
         </form>
       </DialogContent>
     </Dialog>
-  </Card>
+  </section>
 }
 function readChat(key:string) {
   try {return readWorkspace().chatThreads?.[key]??[]}
   catch{return []}
-}
-
-function TodoBoard({todos,onSelect,dept}:{
-  todos:Todo[];onSelect:(hash:string)=>void;dept:string
-}) {
-  const columns:[string,string][]=[["waiting","待处理"],["doing","进行中"],["review","待审核 / 复核"]]
-  return <div className="todo-grid">
-    {columns.map(([key,label])=>{
-      const entries=todos.filter(t=>todoLane(t.status)===key)
-      return <Card key={key} className="glass-panel todo-lane gap-0 py-0">
-        <h3 className="todo-title">
-          <span className="size-1.5 rounded-full bg-green-700"/>
-          {label}<span className="todo-count">{entries.length}</span>
-        </h3>
-        {entries.length===0?<p className="empty-note">暂无此类待办</p>:entries.map(task=>
-          <button type="button" key={`${task.kind}:${task.feature}:${task.id}`} className="todo-card" onClick={()=>onSelect(`#/departments/${dept}/${task.feature}`)}>
-            <small className="font-mono">{task.id}</small>
-            <strong>{task.title}</strong>
-            <small>{task.status} · 查看业务单据 →</small>
-          </button>)}
-      </Card>
-    })}
-  </div>
 }
 
 function DepartmentPage({dept,staff,employee,workspace,can,onSelect,onRefresh}:{
@@ -363,22 +338,10 @@ function DepartmentPage({dept,staff,employee,workspace,can,onSelect,onRefresh}:{
   can:(dept:string,feat:string,action?:string)=>boolean;
   onSelect:(hash:string)=>void;onRefresh:()=>void
 }) {
-  const [tab,setTab]=useState<TabKey>("functions")
-  useEffect(()=>setTab("functions"),[dept.id])
-  const todos=getTodos(dept.id,workspace),members=staff.filter(p=>p.dept===dept.name||(dept.id==="it"&&p.dept==="开发人员")||(dept.id==="quality"&&p.dept==="质量部"))
   return <div className="dept-main">
-    <Tabs value={tab} onValueChange={value=>setTab(value as TabKey)} className="dept-tabs">
-      <TabsList>
-        <TabsTrigger value="functions">部门概况</TabsTrigger>
-        <TabsTrigger value="members">部门花名簿 <span className="count-pill">{members.length}</span></TabsTrigger>
-        <TabsTrigger value="todos">待办 <span className="count-pill">{todos.length}</span></TabsTrigger>
-      </TabsList>
-      <TabsContent value="functions"><FeatureGrid dept={dept} can={can} onSelect={onSelect}/></TabsContent>
-      <TabsContent value="members">
-        <Roster dept={dept} staff={staff} employee={employee} can={can} office={workspace.offices?.[dept.id]??""} onUpdate={onRefresh}/>
-      </TabsContent>
-      <TabsContent value="todos"><TodoBoard dept={dept.id} todos={todos} onSelect={onSelect}/></TabsContent>
-    </Tabs>
+    <FeatureGrid dept={dept} can={can} onSelect={onSelect}/>
+    <Roster dept={dept} staff={staff} employee={employee} can={can}
+      office={workspace.offices?.[dept.id]??""} onUpdate={onRefresh}/>
   </div>
 }
 
@@ -419,10 +382,10 @@ export default function App() {
     <div aria-hidden="true" style={{position:"absolute",width:0,height:0,overflow:"hidden"}} dangerouslySetInnerHTML={{__html:SVG_SPRITE}}/>
     <div className="factory-shell factory-shell-v2">
       <SystemRail route={route} onSelect={navigate} employee={employee} staff={staff} onSwitch={switchEmployee}
-        messages={messages} onRead={readMessage} onReadAll={readAllMessages} workspace={workspace}/>
+        messages={messages} onRead={readMessage} onReadAll={readAllMessages}/>
       <div className="shell-workspace">
         <DepartmentBand route={route} onSelect={navigate}/>
-        <FeatureBand route={route} onSelect={navigate} can={can}/>
+        <FeatureBand route={route} onSelect={navigate} can={can} workspace={workspace}/>
         <main className={"shell-content "+(route.kind==="overview"?"is-overview":"is-department")+" "+(currentFeature?"is-business":"")} id="main-content">
           {route.kind==="overview"?<OverviewDashboard workspace={workspace} onSelect={navigate} onRefresh={refresh}/>:
             currentDept&&(!currentFeature||!validFeature)?
