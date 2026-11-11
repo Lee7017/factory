@@ -10,7 +10,7 @@ import type { WorkspaceData } from "@/factory-state"
 import {layoutOverviewBars,overviewRowHeight} from "@/overview-gantt-layout"
 import {
   dayShift,dayString,weekStart,overviewMetrics,orderStage,scheduleEntries,
-  type GanttEntry,type DashboardAlert,type DonutSegment
+  type DashboardAlert,type DonutSegment
 } from "@/overview-data"
 
 type Props={workspace:WorkspaceData;onSelect:(hash:string)=>void;onRefresh:()=>void}
