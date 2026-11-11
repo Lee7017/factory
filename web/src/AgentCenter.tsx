@@ -120,7 +120,7 @@ export function AgentCenter({onSelect}:{onSelect:(hash:string)=>void}){
             </svg>
             <div className="agent-core" aria-hidden="true"><span>AI</span><i/><i/><i/></div>
             {DEPARTMENTS.map((dept)=>{
-              const style={left:`${dept.x}%`,top:`${dept.y}%`,width:`${dept.size}%`} as CSSProperties
+              const heightPct=dept.size*1100/733\n              const style={left:`${dept.x-dept.size/2}%`,top:`${dept.y-heightPct/2}%`,width:`${dept.size}%`} as CSSProperties
               return <button type="button" key={dept.id} style={style} className={`agent-map-dept ${selectedId===dept.id?"selected":""}`} onClick={()=>setSelectedId(dept.id)} aria-label={`查看${dept.name} Agent`}>
                 <img className="dept-building-image" src={agentAsset(dept.building)} alt="" draggable={false}/><MascotSwarm dept={dept}/>
                 <span className="agent-map-badge"><b>{dept.short}</b><small>{dept.agent}</small><em><i/>{dept.status}</em></span>
