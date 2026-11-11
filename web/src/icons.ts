@@ -74,6 +74,7 @@ const FEATURE_ICON_MAP: Record<string, LucideIcon> = {
   inspection: ClipboardList,
   release: CircleCheck,
   tasks: ListTodo,
+  nonProductionTasks: Wrench,
   batch: FileText,
   incentive: HandCoins,
   templates: FolderKanban,
