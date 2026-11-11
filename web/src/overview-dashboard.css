@@ -276,3 +276,24 @@
   .overview-kpi-card{min-height:106px!important}
   .overview-kpi-card>button{min-height:106px;padding:10px;gap:8px}
 }
+
+/* 首页和 PMC 共用工序颜色；每个实际绘制的任务按碰撞分配独立高度。 */
+.overview-gantt-panel{
+  --gantt-clean:#19B7A5;--gantt-blend:#387CF1;--gantt-semi-qc:#F1C644;
+  --gantt-change:#986DF0;--gantt-pack:#F38A48;--gantt-final-qc:#E86AA6;
+}
+.overview-gantt-legend{flex-wrap:wrap;justify-content:flex-end;gap:5px 10px}
+.overview-gantt-legend i.clean,.overview-gantt-bar.clean{background:var(--gantt-clean);border-color:#168f83;color:#123d39}
+.overview-gantt-legend i.blend,.overview-gantt-bar.blend{background:var(--gantt-blend);border-color:#2462d2;color:white}
+.overview-gantt-legend i.semi-qc,.overview-gantt-bar.semi-qc{background:var(--gantt-semi-qc);border-color:#cba32a;color:#493b0e}
+.overview-gantt-legend i.change,.overview-gantt-bar.change{background:var(--gantt-change);border-color:#8158d6;color:white}
+.overview-gantt-legend i.pack,.overview-gantt-bar.pack{background:var(--gantt-pack);border-color:#d87033;color:#4c250c}
+.overview-gantt-legend i.final-qc,.overview-gantt-bar.final-qc{background:var(--gantt-final-qc);border-color:#c9568d;color:#4b1932}
+.overview-gantt-scroller{overflow-x:auto;overflow-y:auto;max-height:min(60vh,680px)}
+.overview-gantt-data{align-items:stretch}
+.overview-gantt-track{overflow:hidden}
+.overview-gantt-bar{height:20px;box-sizing:border-box;max-width:none;min-width:0;z-index:1;
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.overview-gantt-bar.is-mini{padding:0;font-size:0;box-shadow:none}
+.overview-gantt-bar:focus-visible{outline:2px solid #1d4d80;outline-offset:1px;z-index:3}
+@media(max-width:700px){.overview-gantt-legend{justify-content:flex-start}.overview-gantt-scroller{max-height:min(58vh,520px)}}
