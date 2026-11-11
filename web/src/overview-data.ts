@@ -171,14 +171,17 @@ export function dashboardAlerts(workspace:WorkspaceData,today=dayString(new Date
     id:"equipment-due",severity:"medium",kind:"设备",
     title:`设备维护临期 ${dueMaintenance.length} 项`,
     detail:dueMaintenance.slice(0,2).map(x=>text(x.line||x.id)).join("、"),
-    route:"#/departments/engineering/engineering"
+    route:"#/departments/production/nonProductionTasks"
   })
   const tasks=(workspace.tasks??[]).filter(x=>x.status==="待复核")
-  if(tasks.length)alerts.push({
-    id:"task-review",severity:"low",kind:"生产",
-    title:`任务等待复核 ${tasks.length} 项`,
-    detail:tasks.slice(0,2).map(x=>`${x.id} ${text(x.type)}`).join("、"),
-    route:"#/departments/production/tasks"
+  for(const [label,selected,route] of [
+    ["生产",tasks.filter(x=>["配制","包装"].includes(text(x.type))),"#/departments/production/tasks"],
+    ["非生产",tasks.filter(x=>["清洗","调机调线","设备点检"].includes(text(x.type))),"#/departments/production/nonProductionTasks"]
+  ] as const)if(selected.length)alerts.push({
+    id:label==="生产"?"task-review":"nonproduction-task-review",severity:"low",kind:label,
+    title:`${label}任务等待复核 ${selected.length} 项`,
+    detail:selected.slice(0,2).map(x=>`${x.id} ${text(x.type)}`).join("、"),
+    route
   })
   const weight={high:0,medium:1,low:2}
   return alerts.sort((a,b)=>weight[a.severity]-weight[b.severity])
