@@ -2400,3 +2400,71 @@ body::before,body::after{display:none!important}
   background:#E7EBE3;
   color:#596459;
 }
+
+
+/* Department overview refinement: members are part of the overview, not a separate tab/card. */
+.factory-shell-v2 .dept-main{
+  display:grid;
+  gap:0;
+}
+.factory-shell-v2 .roster-panel{
+  margin-top:22px;
+  padding:18px 0 0;
+  border:0;
+  border-top:1px solid var(--factory-line-strong);
+  border-radius:0;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .roster-header{
+  margin-bottom:12px;
+}
+.factory-shell-v2 .roster-title{
+  font-size:13px;
+  color:var(--factory-ink);
+}
+.factory-shell-v2 .roster-description{
+  font-size:9.5px;
+  color:#8A928B;
+}
+.factory-shell-v2 .roster-office{
+  margin-bottom:10px;
+  border-radius:8px;
+  background:#F0F2EC;
+  border-color:var(--factory-line);
+}
+.factory-shell-v2 .person-tile{
+  min-height:52px;
+  border-radius:8px;
+  background:transparent;
+  border-color:var(--factory-line);
+}
+.factory-shell-v2 .person-tile:hover{
+  background:var(--factory-surface);
+}
+
+/* Todo is not a destination anymore: each business function carries its own pending count. */
+.feature-band-button .feature-pending-count{
+  min-width:16px;
+  height:16px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-left:5px;
+  padding:0 4px;
+  border:1px solid rgba(120,140,93,.24);
+  border-radius:8px;
+  background:rgba(120,140,93,.08);
+  color:#697760;
+  font-size:7.5px;
+  line-height:1;
+  font-weight:760;
+  font-variant-numeric:tabular-nums;
+}
+.feature-band-button.active .feature-pending-count{
+  background:#E9ECE5;
+  color:#505B50;
+}
+.feature-band.is-system-settings .feature-band-nav{
+  padding-left:2px;
+}
