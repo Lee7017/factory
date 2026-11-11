@@ -80,9 +80,61 @@ function MapTerrain(){
   </svg>
 }
 
+function MapPetAvatar({kind}:{kind:DeptKind}){
+  const cfg={
+    sales:{head:"#f28a35",light:"#fff1dc",dark:"#7a3a1f"},
+    pmc:{head:"#f6c945",light:"#fff3c9",dark:"#74451e"},
+    purchase:{head:"#e86f3b",light:"#ffe1ca",dark:"#743a27"},
+    warehouse:{head:"#7388cc",light:"#eef1ff",dark:"#39456f"},
+    production:{head:"#7f817f",light:"#f1eeee",dark:"#3e4141"},
+    quality:{head:"#a86539",light:"#f5e7d2",dark:"#60381f"},
+    finance:{head:"#c98546",light:"#f4dfc4",dark:"#704122"},
+    hr:{head:"#f0c79b",light:"#fff1df",dark:"#9d6538"},
+  }[kind]
+  const gid="map-pet-"+kind
+  const pointy=kind==="sales"||kind==="production"||kind==="hr"
+  const antenna=kind==="pmc"||kind==="purchase"
+  const bird=kind==="warehouse"
+  const owl=kind==="quality"
+  const bear=kind==="finance"
+  return <svg className={"map-pet-avatar pet-"+kind} viewBox="0 0 72 72" aria-hidden="true">
+    <defs>
+      <linearGradient id={gid+"-h"} x1="0" y1="0" x2="0" y2="1"><stop stopColor={cfg.head}/><stop offset="1" stopColor={cfg.dark}/></linearGradient>
+      <linearGradient id={gid+"-g"} x1="0" y1="0" x2="1" y2="1"><stop stopColor="#ffe878"/><stop offset=".55" stopColor="#f6b91f"/><stop offset="1" stopColor="#c88408"/></linearGradient>
+    </defs>
+    <ellipse cx="36" cy="66" rx="21" ry="3" fill="#294532" opacity=".15"/>
+    {pointy&&<g fill={"url(#"+gid+"-h)"} stroke={cfg.dark} strokeWidth="1.4"><path d="M18 29 12 10 29 20Z"/><path d="M54 29 60 10 43 20Z"/></g>}
+    {antenna&&<g fill="none" stroke={cfg.dark} strokeWidth="2.5" strokeLinecap="round"><path d="M27 20C25 11 21 8 18 7"/><path d="M45 20C47 11 51 8 54 7"/><circle cx="17" cy="6" r="3" fill={cfg.head} stroke="none"/><circle cx="55" cy="6" r="3" fill={cfg.head} stroke="none"/></g>}
+    {bear&&<g fill={"url(#"+gid+"-h)"} stroke={cfg.dark} strokeWidth="1.3"><circle cx="17" cy="25" r="8"/><circle cx="55" cy="25" r="8"/></g>}
+    {owl&&<g fill={"url(#"+gid+"-h)"} stroke={cfg.dark} strokeWidth="1.3"><path d="M15 29 13 13 29 22Z"/><path d="M57 29 59 13 43 22Z"/></g>}
+    <path d="M16 31C16 20 24 15 36 15s20 5 20 16v14c0 12-8 20-20 20s-20-8-20-20Z" fill={"url(#"+gid+"-h)"} stroke={cfg.dark} strokeWidth="1.5"/>
+    {kind==="hr"&&<g stroke="#b36f37" strokeWidth="2" strokeLinecap="round"><path d="M29 19l1 5"/><path d="M36 18v6"/><path d="M43 19l-1 5"/></g>}
+    {bird&&<path d="M20 40c7-8 25-8 32 0v7c-4 10-28 10-32 0Z" fill={cfg.light}/>}
+    {!bird&&!owl&&<ellipse cx="36" cy="46" rx="13" ry="10" fill={cfg.light}/>}
+    {owl&&<path d="M17 29 25 18 36 25 47 18 55 29 52 43 20 43Z" fill={cfg.light} opacity=".92"/>}
+    <g fill="#fff" stroke="#34251e" strokeWidth="1.2"><ellipse cx="28" cy="36" rx={owl?8:6.5} ry={owl?9:7.5}/><ellipse cx="44" cy="36" rx={owl?8:6.5} ry={owl?9:7.5}/></g>
+    <g fill="#442817"><ellipse cx="29" cy="37" rx="3.2" ry="4.5"/><ellipse cx="43" cy="37" rx="3.2" ry="4.5"/><circle cx="30" cy="35.5" r="1" fill="#fff"/><circle cx="44" cy="35.5" r="1" fill="#fff"/></g>
+    {owl&&<g fill="none" stroke="#d69d19" strokeWidth="2"><circle cx="28" cy="36" r="9"/><circle cx="44" cy="36" r="9"/></g>}
+    {bird?<path d="M31 44 36 40 42 44 36 49Z" fill="#f6bd24" stroke="#b76b0b" strokeWidth="1"/>:owl?<path d="M33 44 36 40 39 44 36 48Z" fill="#efad1e"/>:<g><ellipse cx="36" cy="43.5" rx="3.2" ry="2.3" fill={cfg.dark}/><path d="M32 49q4 4 8 0" fill="none" stroke="#702d29" strokeWidth="1.8" strokeLinecap="round"/></g>}
+    <path d="M18 25C23 18 29 15 36 15s13 3 18 10l-2 5H20Z" fill="#356f3d" stroke="#e8b72d" strokeWidth="2"/>
+    <circle cx="36" cy="22" r="5" fill={"url(#"+gid+"-g)"}/>
+    {kind==="pmc"&&<g stroke="#56682d" strokeWidth="1" fill="none"><rect x="33.5" y="19.5" width="5" height="4" rx=".6"/><path d="M34.5 21.5h3"/></g>}
+    {kind==="purchase"&&<path d="M33 21h5l-.7 2.5h-3.2L33 19.5h-1.2" fill="none" stroke="#674018" strokeWidth="1"/>}
+    {kind==="warehouse"&&<path d="M33 21 36 19.5 39 21v3l-3 1.5-3-1.5Z" fill="none" stroke="#51461e" strokeWidth="1"/>}
+    {kind==="production"&&<path d="m33 20 2 2 4-3 1 1-3 4 2 2-1 1-2-2-2 2-1-1 2-2-3-3Z" fill="#62471a"/>}
+    {kind==="quality"&&<path d="m33 22 2 2 4-4" fill="none" stroke="#416c2a" strokeWidth="1.5" strokeLinecap="round"/>}
+    {kind==="finance"&&<path d="M33 20h6M36 19v6M34 22h4" fill="none" stroke="#684019" strokeWidth="1.1" strokeLinecap="round"/>}
+    {kind==="hr"&&<g fill="#56743a"><circle cx="36" cy="21" r="1.3"/><path d="M33.5 24q2.5-3 5 0Z"/></g>}
+    {kind==="sales"&&<path d="M34 20h4l1 5h-6Z" fill="none" stroke="#684019" strokeWidth="1"/>}
+    <path d="M18 30c-4 1-5 7-4 12" fill="none" stroke="#332823" strokeWidth="3.2" strokeLinecap="round"/>
+    <rect x="11" y="38" width="6" height="9" rx="2.5" fill="#2f6840" stroke="#e7b429" strokeWidth="1.5"/>
+    <path d="M14 46c2 5 7 7 12 7" fill="none" stroke="#332823" strokeWidth="2.4" strokeLinecap="round"/><circle cx="26" cy="53" r="2.2" fill="#e7b429"/>
+  </svg>
+}
+
 function MascotSwarm({dept,large=false}:{dept:AgentDepartment;large?:boolean}){
   return <span className={"mascot-swarm "+(large?"large":"")}>
-    <i><img src={agentAsset(dept.pet)} alt="" draggable={false}/></i>
+    <i>{large?<img src={agentAsset(dept.pet)} alt="" draggable={false}/>:<MapPetAvatar kind={dept.kind}/>}</i>
     {dept.count>1?<em className="pet-instance-count">×{dept.count}</em>:null}
   </span>
 }
