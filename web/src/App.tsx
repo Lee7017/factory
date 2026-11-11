@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react"
 import {
-  ArrowRight, Bell, Check, CheckCheck, Factory, Home,
+  Bell, Check, CheckCheck, Factory, Home,
   LockKeyhole, MessageCircle, Pencil, Search, Settings, Sparkles
 } from "lucide-react"
 import { DEPARTMENTS, FEATURE_HINTS, FEATURE_NAMES, getDepartment, type Department } from "@/catalog"
@@ -206,73 +206,34 @@ function FeatureBand({route,onSelect,can,workspace}:{
   </div>
 }
 
-function FeatureGrid({dept,can,onSelect}:{
-  dept:Department;can:(dept:string,feature:string,action?:string)=>boolean;
-  onSelect:(hash:string)=>void
-}) {
-  const available=dept.features.filter(feature=>can(dept.id,feature))
+function FeatureGrid({dept}:{dept:Department}) {
   return <section className="department-overview-panel">
     <div className="department-overview-copy">
       <span>部门工作台</span><h1>{shortDepartmentName(dept)}</h1><p>{dept.description}</p>
     </div>
-    <div className="department-overview-strip">
-      <div><span>可用业务功能</span><strong>{available.length}</strong></div>
-      <div><span>部门全部功能</span><strong>{dept.features.length}</strong></div>
-      <div><span>导航方式</span><strong>顶部功能带</strong></div>
-    </div>
-    <div className="department-overview-links">
-      {dept.features.map(feature=>{
-        const allowed=can(dept.id,feature)
-        return <button key={feature} type="button" disabled={!allowed}
-          onClick={()=>onSelect("#/departments/"+dept.id+"/"+feature)}>
-          <span>{FEATURE_NAMES[feature]??feature}</span><ArrowRight size={14}/>
-        </button>
-      })}
-    </div>
   </section>
 }
 
-function Roster({dept,staff,employee,can,office,onUpdate}:{
-  dept:Department;staff:Employee[];employee?:Employee;
+function OfficeLocation({dept,can,office,onUpdate}:{
+  dept:Department;
   can:(dept:string,feat:string,action?:string)=>boolean;
   office:string;onUpdate:()=>void
 }) {
-  const [search,setSearch]=useState("")
   const [editing,setEditing]=useState(false)
   const [address,setAddress]=useState(office)
-  const [peer,setPeer]=useState<Employee|null>(null)
-  const [draft,setDraft]=useState("")
-  const [chatVersion,setChatVersion]=useState(0)
-  const people=staff.filter(p=>p.dept===dept.name||(dept.id==="quality"&&p.dept==="质量部")||(dept.id==="it"&&p.dept==="开发人员"))
-  const visible=people.filter(p=>[p.name,p.id,p.title,p.dept].join(" ").toLowerCase().includes(search.toLowerCase()))
   const canEdit=can("it","employees","edit")||can("it","permissions","config")
-  const conversation=peer&&employee?[peer.id,employee.id].sort().join("::"):null
-  const messages=conversation?readChat(conversation):[]
-  void chatVersion
   function saveOffice(event:FormEvent) {
     event.preventDefault()
     updateWorkspace(data=>{(data.offices??={})[dept.id]=address.trim().slice(0,140)})
     setEditing(false);onUpdate()
   }
-  function sendChat(event:FormEvent) {
-    event.preventDefault()
-    if(!conversation||!employee||!draft.trim())return
-    updateWorkspace(data=>{(data.chatThreads??={})[conversation]??=[]
-      data.chatThreads[conversation].push({from:employee.id,text:draft.trim(),time:new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"})})
-    })
-    setDraft("");setChatVersion(v=>v+1);onUpdate()
-  }
-  return <section className="roster-panel">
-    <div className="roster-header">
-      <div><h2 className="roster-title">部门花名簿</h2>
-        <p className="roster-description">可按姓名、岗位或工号查找，点击成员进入私聊</p></div>
-      <div className="relative w-full max-w-60">
-        <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/>
-        <Input value={search} onChange={event=>setSearch(event.target.value)} placeholder="搜索成员 / 岗位 / 工号" className="bg-white/60 pl-9 text-xs" aria-label="搜索部门花名簿"/>
-      </div>
+  return <section className="office-panel" aria-labelledby={`office-${dept.id}`}>
+    <div className="office-panel-header">
+      <h2 id={`office-${dept.id}`} className="office-title">办公位置</h2>
+      <p className="office-description">记录部门实际厂区、楼栋、楼层和房间号</p>
     </div>
-    <div className="roster-office">
-      <span className="office-label">办公位置</span>
+    <div className="office-location-row">
+      <span className="office-label">当前位置</span>
       <strong className="office-address">{office||"尚未登记，请填写实际办公位置"}</strong>
       {canEdit&&<Button variant="outline" size="sm" className="shrink-0 bg-white/70" onClick={()=>{setAddress(office);setEditing(true)}}>
         <Pencil size={13}/>{office?"修改位置":"填写位置"}
@@ -293,6 +254,38 @@ function Roster({dept,staff,employee,can,office,onUpdate}:{
         </form>
       </DialogContent>
     </Dialog>
+  </section>
+}
+
+function Roster({dept,staff,employee,onUpdate}:{
+  dept:Department;staff:Employee[];employee?:Employee;onUpdate:()=>void
+}) {
+  const [search,setSearch]=useState("")
+  const [peer,setPeer]=useState<Employee|null>(null)
+  const [draft,setDraft]=useState("")
+  const [chatVersion,setChatVersion]=useState(0)
+  const people=staff.filter(p=>p.dept===dept.name||(dept.id==="quality"&&p.dept==="质量部")||(dept.id==="it"&&p.dept==="开发人员"))
+  const visible=people.filter(p=>[p.name,p.id,p.title,p.dept].join(" ").toLowerCase().includes(search.toLowerCase()))
+  const conversation=peer&&employee?[peer.id,employee.id].sort().join("::"):null
+  const messages=conversation?readChat(conversation):[]
+  void chatVersion
+  function sendChat(event:FormEvent) {
+    event.preventDefault()
+    if(!conversation||!employee||!draft.trim())return
+    updateWorkspace(data=>{(data.chatThreads??={})[conversation]??=[]
+      data.chatThreads[conversation].push({from:employee.id,text:draft.trim(),time:new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"})})
+    })
+    setDraft("");setChatVersion(v=>v+1);onUpdate()
+  }
+  return <section className="roster-panel" aria-labelledby={`roster-${dept.id}`}>
+    <div className="roster-header">
+      <div><h2 id={`roster-${dept.id}`} className="roster-title">部门花名簿</h2>
+        <p className="roster-description">可按姓名、岗位或工号查找，点击成员进入私聊</p></div>
+      <div className="relative w-full max-w-60">
+        <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/>
+        <Input value={search} onChange={event=>setSearch(event.target.value)} placeholder="搜索成员 / 岗位 / 工号" className="bg-white/60 pl-9 text-xs" aria-label="搜索部门花名簿"/>
+      </div>
+    </div>
     <div className="roster-grid">
       {visible.map(person=><button key={person.id} className="person-tile hover:bg-white/75" type="button"
         title={`${person.name} · ${person.title} · ${person.id}`}
@@ -332,16 +325,16 @@ function readChat(key:string) {
   catch{return []}
 }
 
-function DepartmentPage({dept,staff,employee,workspace,can,onSelect,onRefresh}:{
+function DepartmentPage({dept,staff,employee,workspace,can,onRefresh}:{
   dept:Department;staff:Employee[];employee?:Employee;
   workspace:ReturnType<typeof useFactoryState>["workspace"];
   can:(dept:string,feat:string,action?:string)=>boolean;
-  onSelect:(hash:string)=>void;onRefresh:()=>void
+  onRefresh:()=>void
 }) {
   return <div className="dept-main">
-    <FeatureGrid dept={dept} can={can} onSelect={onSelect}/>
-    <Roster dept={dept} staff={staff} employee={employee} can={can}
-      office={workspace.offices?.[dept.id]??""} onUpdate={onRefresh}/>
+    <FeatureGrid dept={dept}/>
+    <OfficeLocation dept={dept} can={can} office={workspace.offices?.[dept.id]??""} onUpdate={onRefresh}/>
+    <Roster dept={dept} staff={staff} employee={employee} onUpdate={onRefresh}/>
   </div>
 }
 
@@ -390,7 +383,7 @@ export default function App() {
           {route.kind==="overview"?<OverviewDashboard workspace={workspace} onSelect={navigate} onRefresh={refresh}/>:
             currentDept&&(!currentFeature||!validFeature)?
               <DepartmentPage key={currentDept.id} dept={currentDept} staff={staff} employee={employee}
-                workspace={workspace} can={can} onSelect={navigate} onRefresh={refresh}/>
+                workspace={workspace} can={can} onRefresh={refresh}/>
               :currentDept&&currentFeature?<section className={`business-page-frame business-family-${businessFamily(currentFeature)}`} data-business-family={businessFamily(currentFeature)} aria-label={FEATURE_NAMES[currentFeature]??currentFeature}>
                 <div className="business-page-body">
                 {can(currentDept.id,currentFeature)?
