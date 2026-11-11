@@ -14,7 +14,7 @@ try{
  const errors=[]
  page.on("pageerror",err=>errors.push(err.message))
  await page.goto(base,{waitUntil:"networkidle"})
- await page.locator(".department-tile").first().waitFor()
+ await page.locator(".department-band-button").first().waitFor()
  const testPo="PO-RECEIPT-MODAL"
  async function route(dept,feature){
   await page.evaluate(hash=>{location.hash=hash},`#/departments/${dept}/${feature}`)
