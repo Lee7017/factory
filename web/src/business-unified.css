@@ -2131,33 +2131,47 @@ body::before,body::after{display:none!important}
   margin:9px 0 0;color:#747C75;
   font-size:11px;line-height:1.6;
 }
-.department-overview-strip{
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+.office-panel{
+  margin-top:18px;
+  padding:16px 0 18px;
+  display:grid;
+  grid-template-columns:minmax(170px,230px) minmax(0,1fr);
+  gap:24px;
+  align-items:center;
+  border-top:1px solid var(--factory-line-strong);
   border-bottom:1px solid var(--factory-line-strong);
 }
-.department-overview-strip>div{
-  min-height:68px;
-  display:flex;flex-direction:column;justify-content:center;gap:5px;
-  padding:0 18px 0 0;margin-right:18px;
-  border-right:1px solid var(--factory-line);
+.office-panel-header{min-width:0}
+.office-title{
+  margin:0;
+  color:var(--factory-ink);
+  font-size:13px;
+  line-height:1.35;
+  font-weight:760;
 }
-.department-overview-strip>div:last-child{border-right:0;margin-right:0}
-.department-overview-strip span{font-size:8.7px;color:#929A93}
-.department-overview-strip strong{font-size:17px;color:var(--factory-ink)}
-.department-overview-links{
-  display:flex;flex-wrap:wrap;gap:0 22px;
-  padding-top:12px;
-}
-.department-overview-links button{
-  min-height:34px;
-  display:inline-flex;align-items:center;gap:7px;
-  padding:0;border:0;
-  background:transparent;
-  color:#596159;
+.office-description{
+  margin:5px 0 0;
+  color:#8A928B;
   font-size:9.5px;
+  line-height:1.5;
 }
-.department-overview-links button:hover:not(:disabled){color:var(--factory-ink)}
-.department-overview-links button:disabled{opacity:.35}
+.office-location-row{
+  min-width:0;
+  min-height:50px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:9px 11px;
+  border:1px solid var(--factory-line);
+  border-radius:8px;
+  background:#F0F2EC;
+}
+.office-location-row [data-slot="button"]{
+  min-height:30px;
+  height:30px;
+  padding:0 9px;
+  font-size:11px;
+}
 
 /* Department secondary tabs are quiet; business functions already live in the horizontal band. */
 .factory-shell-v2 .dept-tabs [data-slot="tabs-list"]{
@@ -2353,8 +2367,9 @@ body::before,body::after{display:none!important}
   .factory-shell-v2 .shell-content.is-business{padding:10px 10px 24px!important}
   .factory-shell-v2 .shell-content.is-department:not(.is-business){padding:16px 12px 28px!important}
   .factory-shell-v2 .shell-content.is-overview{padding:18px 12px 30px!important}
-  .department-overview-strip{grid-template-columns:1fr}
-  .department-overview-strip>div{border-right:0;border-bottom:1px solid var(--factory-line);margin-right:0}
+  .office-panel{grid-template-columns:1fr;gap:10px;padding:14px 0 16px}
+  .office-location-row{align-items:flex-start;flex-wrap:wrap}
+  .office-location-row .office-address{flex-basis:100%}
 }
 @media(max-width:520px){
   .business-context-search{width:122px}
@@ -2403,16 +2418,15 @@ body::before,body::after{display:none!important}
 }
 
 
-/* Department overview refinement: members are part of the overview, not a separate tab/card. */
+/* Department overview refinement: department, office location, and roster are separate information sections. */
 .factory-shell-v2 .dept-main{
   display:grid;
   gap:0;
 }
 .factory-shell-v2 .roster-panel{
-  margin-top:22px;
-  padding:18px 0 0;
+  margin-top:20px;
+  padding:0;
   border:0;
-  border-top:1px solid var(--factory-line-strong);
   border-radius:0;
   background:transparent!important;
   box-shadow:none!important;
@@ -2427,12 +2441,6 @@ body::before,body::after{display:none!important}
 .factory-shell-v2 .roster-description{
   font-size:9.5px;
   color:#8A928B;
-}
-.factory-shell-v2 .roster-office{
-  margin-bottom:10px;
-  border-radius:8px;
-  background:#F0F2EC;
-  border-color:var(--factory-line);
 }
 .factory-shell-v2 .person-tile{
   min-height:52px;
