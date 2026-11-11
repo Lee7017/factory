@@ -1,6 +1,7 @@
 import { readWorkspace, type FactoryAccessAPI, type WorkspaceData } from "@/factory-state"
 import schedulingDefinitions from "@/scheduling-definitions.json"
 import orderStages from "@/order-stages.json"
+import orderWorkflow from "@/order-workflow.json"
 
 type LegacyEl=HTMLElement
 type BusinessEngine={
@@ -24,6 +25,7 @@ interface BusinessContext{
 interface RuntimeWindow extends Window{
   FactorySchedulingConfig?:typeof schedulingDefinitions
   FactoryOrderStages?:Record<string,string>
+  FactoryOrderWorkflow?:typeof orderWorkflow
   FactoryOperations?:BusinessEngine
   FactoryModules?:BusinessEngine&{supports:(feature:string)=>boolean}
   FactoryGantt?:{init:(ctx:BusinessContext)=>void}
@@ -50,6 +52,7 @@ async function ready():Promise<void>{
     // One shared source for React overview and imperative PMC/order engines.
     runtimeWindow.FactorySchedulingConfig=schedulingDefinitions
     runtimeWindow.FactoryOrderStages=orderStages as Record<string,string>
+    runtimeWindow.FactoryOrderWorkflow=orderWorkflow
     for(const name of scripts)await loadScript(name)
     if(!runtimeWindow.FactoryOperations?.init||!runtimeWindow.FactoryModules?.init)
       throw new Error("Legacy business engine initialization is missing")
