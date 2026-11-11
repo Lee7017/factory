@@ -1724,3 +1724,641 @@ body:has(.operations-dashboard)::after{display:none!important}
 .factory-shell:has(.operations-dashboard) .sidebar-foot{
   color:rgba(255,255,255,.66)!important;
 }
+
+
+/* ==========================================================================
+   Compact enterprise shell v3 — horizontal departments + contextual features.
+   Approved palette:
+   page #F4F4EF / surface #FBFCF8 / Claude green #788C5D
+   #00973F is reserved for thin active/focus/progress signals only.
+   ========================================================================== */
+
+:root{
+  --factory-page:#F4F4EF;
+  --factory-surface:#FBFCF8;
+  --factory-rail:#788C5D;
+  --factory-soft-1:#829867;
+  --factory-soft-2:#718A59;
+  --factory-soft-3:#7B9164;
+  --factory-soft-4:#869B70;
+  --factory-soft-5:#74895F;
+  --factory-live:#00973F;
+  --factory-ink:#1F241F;
+  --factory-ink-2:#4F574F;
+  --factory-muted:#7B837C;
+  --factory-line:#DEE3DC;
+  --factory-line-strong:#D2D9D1;
+  --factory-danger:#B54A42;
+}
+html,body,#root{background:var(--factory-page)!important}
+body{
+  color:var(--factory-ink)!important;
+  background:var(--factory-page)!important;
+}
+body::before,body::after{display:none!important}
+
+/* The left side is system-level navigation only; departments no longer live here. */
+.factory-shell-v2{
+  min-height:100vh;
+  background:var(--factory-page)!important;
+}
+.factory-shell-v2 .system-rail{
+  position:sticky;
+  top:0;
+  align-self:flex-start;
+  z-index:60;
+  flex:0 0 64px;
+  width:64px;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:12px 0 10px;
+  background:var(--factory-rail);
+  border-right:1px solid rgba(31,36,31,.08);
+  box-shadow:none;
+}
+.system-rail .rail-brand{
+  position:relative;
+  width:36px;height:36px;
+  display:grid;place-items:center;
+  padding:0;border:0;border-radius:10px;
+  background:var(--factory-surface);
+  color:var(--factory-soft-5);
+  box-shadow:none;
+}
+.system-rail .rail-brand::after{
+  content:"";
+  position:absolute;
+  left:9px;right:9px;bottom:5px;
+  height:2px;border-radius:2px;
+  background:var(--factory-live);
+}
+.system-rail .rail-divider{
+  width:28px;height:1px;
+  margin:12px 0;
+  background:rgba(255,255,255,.18);
+}
+.system-rail .rail-actions,
+.system-rail .rail-bottom{
+  display:flex;flex-direction:column;
+  align-items:center;gap:6px;
+}
+.system-rail .rail-bottom{margin-top:auto}
+.system-rail .rail-button{
+  position:relative;
+  width:36px;height:36px;
+  display:grid;place-items:center;
+  padding:0;border:0;border-radius:9px;
+  background:transparent;
+  color:rgba(255,255,255,.74);
+  box-shadow:none;
+}
+.system-rail .rail-button:hover{
+  background:rgba(255,255,255,.10);
+  color:#fff;
+}
+.system-rail .rail-button.active{
+  background:rgba(255,255,255,.15);
+  color:#fff;
+}
+.system-rail .rail-button.active::before{
+  content:"";
+  position:absolute;left:-14px;top:9px;bottom:9px;
+  width:2px;border-radius:0 2px 2px 0;
+  background:var(--factory-live);
+}
+.system-rail .rail-user{
+  width:32px;height:32px;
+  display:grid;place-items:center;
+  padding:0;border:0;border-radius:50%;
+  background:rgba(255,255,255,.16);
+  color:#fff;font-size:10px;font-weight:800;
+}
+.system-rail .rail-user:hover{background:rgba(255,255,255,.23)}
+.system-rail .rail-badge{
+  position:absolute;right:3px;top:2px;
+  min-width:14px;height:14px;padding:0 3px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:7px;
+  background:#FBFCF8;
+  color:#5B6B50;
+  border:1px solid rgba(120,140,93,.25);
+  font:700 7px/1 system-ui;
+  font-style:normal;
+}
+.system-rail .rail-unread-dot{
+  position:absolute;right:5px;top:5px;
+  width:6px;height:6px;border-radius:50%;
+  background:var(--factory-danger);
+  border:2px solid var(--factory-rail);
+}
+.system-rail .rail-ai-dot{
+  position:absolute;right:5px;bottom:5px;
+  width:5px;height:5px;border-radius:50%;
+  background:var(--factory-live);
+  border:2px solid var(--factory-rail);
+}
+
+/* Dialog content used by the rail stays compact and operational. */
+.command-dialog{max-width:520px!important}
+.command-search-wrap{
+  height:38px;
+  display:flex;align-items:center;gap:8px;
+  padding:0 10px;
+  border:1px solid var(--factory-line);
+  border-radius:9px;
+  background:#fff;
+  color:#7A827B;
+}
+.command-search-wrap [data-slot="input"]{
+  height:34px!important;min-height:34px!important;
+  padding:0!important;border:0!important;
+  background:transparent!important;box-shadow:none!important;
+}
+.command-results,.rail-list-dialog{
+  display:grid;gap:4px;
+  max-height:390px;overflow-y:auto;
+}
+.command-result,.rail-list-row{
+  width:100%;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:9px 10px;
+  border:1px solid transparent;border-radius:8px;
+  background:transparent;
+  text-align:left;color:var(--factory-ink-2);
+}
+.command-result:hover,.rail-list-row:hover{
+  background:#F0F2EC;
+  border-color:#E1E5DF;
+}
+.command-result strong,.rail-list-row strong{
+  display:block;color:var(--factory-ink);font-size:11px;font-weight:720;
+}
+.command-result span,.rail-list-row span{min-width:0}
+.command-result span:last-child,
+.rail-list-row small{
+  display:block;margin-top:3px;
+  color:#858D86;font-size:9px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.rail-list-row em{
+  flex:0 0 auto;
+  color:#7D857E;font-size:8.5px;font-style:normal;
+}
+.message-dot{
+  display:inline-block;width:5px;height:5px;border-radius:50%;
+  margin-right:6px;vertical-align:1px;background:var(--factory-danger);
+}
+.agent-mini-list{display:grid}
+.agent-mini-list>div{
+  min-height:50px;
+  display:grid;grid-template-columns:32px minmax(0,1fr);
+  align-items:center;column-gap:9px;
+  border-bottom:1px solid var(--factory-line);
+}
+.agent-mini-list>div:last-child{border-bottom:0}
+.agent-mini-list>div>span{grid-row:1/3;font-size:21px}
+.agent-mini-list strong{font-size:10.5px}
+.agent-mini-list small{font-size:9px;color:#879087}
+
+/* Department navigation is a horizontal content band, not a permanent side list. */
+.factory-shell-v2 .shell-workspace{
+  min-width:0;
+  background:var(--factory-page)!important;
+}
+.department-band-shell{
+  position:sticky;top:0;z-index:45;
+  height:46px;min-height:46px;
+  background:rgba(244,244,239,.97);
+  border-bottom:1px solid var(--factory-line);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+.department-band{
+  height:46px;
+  display:flex;align-items:stretch;
+  gap:1px;
+  padding:0 20px;
+  overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:none;
+  overscroll-behavior-x:contain;
+}
+.department-band::-webkit-scrollbar,
+.feature-band-nav::-webkit-scrollbar{display:none}
+.department-band-button{
+  position:relative;
+  flex:0 0 auto;
+  min-width:max-content;
+  height:46px;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:0 11px;
+  border:0;border-radius:0;
+  background:transparent;
+  color:#6D756E;
+  font-size:10.5px;font-weight:530;
+  line-height:1;
+}
+.department-band-button:hover{color:#303830;background:transparent}
+.department-band-button.active{
+  color:var(--factory-ink);
+  font-weight:760;
+}
+.department-band-button.active::after{
+  content:"";
+  position:absolute;left:10px;right:10px;bottom:0;
+  height:2px;border-radius:2px 2px 0 0;
+  background:var(--factory-live);
+}
+.department-band-dot{
+  width:5px;height:5px;border-radius:50%;
+  flex:0 0 5px;background:var(--factory-soft-1);
+  opacity:.83;
+}
+.department-band-button:nth-child(2n) .department-band-dot{background:var(--factory-soft-2)}
+.department-band-button:nth-child(3n) .department-band-dot{background:var(--factory-soft-3)}
+.department-band-button:nth-child(4n) .department-band-dot{background:var(--factory-soft-4)}
+.department-band-button:nth-child(5n) .department-band-dot{background:var(--factory-soft-5)}
+
+/* Feature band stays exactly one row. Right-side tools never force a second line. */
+.feature-band{
+  position:sticky;top:46px;z-index:44;
+  height:48px;min-height:48px;
+  display:flex;align-items:stretch;
+  gap:14px;
+  padding:0 14px 0 22px;
+  overflow:hidden;
+  background:rgba(244,244,239,.97);
+  border-bottom:1px solid var(--factory-line-strong);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+.feature-band-nav{
+  flex:1 1 auto;
+  min-width:0;
+  height:48px;
+  display:flex;align-items:stretch;
+  gap:18px;
+  overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:none;
+  white-space:nowrap;
+  overscroll-behavior-x:contain;
+}
+.feature-band-button{
+  position:relative;
+  flex:0 0 auto;
+  height:48px;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:0 1px;
+  border:0;border-radius:0;
+  background:transparent;
+  color:#788079;
+  font-size:10.2px;font-weight:530;
+  line-height:1;
+}
+.feature-band-button:hover:not(:disabled){
+  color:#343C34;background:transparent;
+}
+.feature-band-button.active{
+  color:var(--factory-ink);
+  font-weight:760;
+}
+.feature-band-button.active::after{
+  content:"";
+  position:absolute;left:0;right:0;bottom:0;
+  height:2px;border-radius:2px 2px 0 0;
+  background:var(--factory-live);
+}
+.feature-band-button:disabled{
+  opacity:.34;cursor:not-allowed;
+}
+.business-context-tools-host{
+  flex:0 0 auto;
+  min-width:0;height:48px;
+  display:flex;align-items:center;
+}
+.business-context-tools{
+  height:48px;
+  display:flex;align-items:center;justify-content:flex-end;
+  gap:8px;
+  white-space:nowrap;
+}
+.business-context-status{
+  display:flex;align-items:center;
+  max-width:360px;
+  padding:3px;
+  overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:none;
+  border:1px solid var(--factory-line);
+  border-radius:9px;
+  background:#ECEFE9;
+}
+.business-context-status::-webkit-scrollbar{display:none}
+.business-context-status button{
+  flex:0 0 auto;
+  height:27px;
+  padding:0 8px;
+  border:0;border-radius:6px;
+  background:transparent;
+  color:#747C75;
+  font-size:8.5px;
+  line-height:1;
+}
+.business-context-status button.active{
+  background:var(--factory-surface);
+  color:var(--factory-ink);
+  box-shadow:0 1px 3px rgba(40,48,39,.07);
+}
+.business-context-search{
+  width:clamp(150px,16vw,220px);
+  height:32px;
+  display:flex;align-items:center;gap:6px;
+  padding:0 9px;
+  border:1px solid var(--factory-line);
+  border-radius:8px;
+  background:#fff;
+  color:#899189;
+}
+.business-context-search input{
+  min-width:0;width:100%;
+  height:28px;padding:0;border:0;outline:0;
+  background:transparent;
+  color:var(--factory-ink-2);
+  font:inherit;font-size:9px;
+}
+.business-context-search input::placeholder{color:#979E98}
+
+/* Content starts immediately after navigation. No brand/topbar/department intro band. */
+.factory-shell-v2 .shell-content{
+  flex:1;
+  width:100%;
+  max-width:none!important;
+  margin:0;
+  background:var(--factory-page)!important;
+}
+.factory-shell-v2 .shell-content.is-business{
+  padding:12px 22px 28px!important;
+}
+.factory-shell-v2 .shell-content.is-department:not(.is-business){
+  padding:20px 24px 34px!important;
+}
+.factory-shell-v2 .shell-content.is-overview{
+  max-width:1480px!important;
+  margin:0 auto;
+  padding:24px 28px 40px!important;
+}
+.factory-shell-v2 .shell-footer{display:none!important}
+
+/* Department overview is the only place allowed to introduce the department itself. */
+.department-overview-panel{
+  min-width:0;
+  padding:5px 0 0;
+}
+.department-overview-copy{
+  padding:3px 0 20px;
+  border-bottom:1px solid var(--factory-line-strong);
+}
+.department-overview-copy>span{
+  display:block;margin-bottom:7px;
+  color:var(--factory-soft-5);
+  font-size:9px;font-weight:760;letter-spacing:.04em;
+}
+.department-overview-copy h1{
+  margin:0;color:var(--factory-ink);
+  font-size:30px;line-height:1.08;letter-spacing:-.03em;font-weight:790;
+}
+.department-overview-copy p{
+  margin:9px 0 0;color:#747C75;
+  font-size:11px;line-height:1.6;
+}
+.department-overview-strip{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  border-bottom:1px solid var(--factory-line-strong);
+}
+.department-overview-strip>div{
+  min-height:68px;
+  display:flex;flex-direction:column;justify-content:center;gap:5px;
+  padding:0 18px 0 0;margin-right:18px;
+  border-right:1px solid var(--factory-line);
+}
+.department-overview-strip>div:last-child{border-right:0;margin-right:0}
+.department-overview-strip span{font-size:8.7px;color:#929A93}
+.department-overview-strip strong{font-size:17px;color:var(--factory-ink)}
+.department-overview-links{
+  display:flex;flex-wrap:wrap;gap:0 22px;
+  padding-top:12px;
+}
+.department-overview-links button{
+  min-height:34px;
+  display:inline-flex;align-items:center;gap:7px;
+  padding:0;border:0;
+  background:transparent;
+  color:#596159;
+  font-size:9.5px;
+}
+.department-overview-links button:hover:not(:disabled){color:var(--factory-ink)}
+.department-overview-links button:disabled{opacity:.35}
+
+/* Department secondary tabs are quiet; business functions already live in the horizontal band. */
+.factory-shell-v2 .dept-tabs [data-slot="tabs-list"]{
+  height:39px;
+  width:auto;
+  display:inline-flex;
+  grid-template-columns:none;
+  padding:0;gap:18px;
+  border:0;border-bottom:1px solid var(--factory-line-strong);
+  border-radius:0;background:transparent;
+  box-shadow:none;
+}
+.factory-shell-v2 .dept-tabs [data-slot="tabs-trigger"]{
+  height:39px;padding:0 1px;
+  border-radius:0!important;
+  background:transparent!important;
+  color:#7A827B!important;
+  box-shadow:none!important;
+  font-size:9.5px;
+}
+.factory-shell-v2 .dept-tabs [data-slot="tabs-trigger"][data-state="active"]{
+  position:relative;
+  background:transparent!important;
+  color:var(--factory-ink)!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .dept-tabs [data-slot="tabs-trigger"][data-state="active"]::after{
+  content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--factory-live);
+}
+.factory-shell-v2 .dept-tabs [data-slot="tabs-content"]{margin-top:14px}
+
+/* Business workspace: full width, warm flat surfaces, no nested green haze. */
+.factory-shell-v2 .business-page-frame{
+  --biz-surface:var(--factory-surface);
+  --biz-line:var(--factory-line);
+  --biz-muted:var(--factory-muted);
+  --biz-text:var(--factory-ink-2);
+  --biz-primary:#252825;
+  width:100%;min-width:0;
+}
+.factory-shell-v2 .business-page-body{
+  width:100%;min-width:0;
+  padding:0!important;
+}
+.factory-shell-v2 .native-business,
+.factory-shell-v2 .native-business .legacy-root,
+.factory-shell-v2 .native-business .legacy-workbench,
+.factory-shell-v2 .native-business .legacy-root #view{
+  width:100%;min-width:0;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.ops-workbench,.mw-page,.proc-page){
+  gap:10px!important;
+  color:var(--factory-ink-2)!important;
+}
+
+/* Search/status have moved to the right side of the feature band. Existing engine fields
+   remain in the DOM so the business engine is not rewritten, but are not duplicated visually. */
+.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-search,
+.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-status{
+  display:none!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel{
+  min-height:calc(100dvh - 146px)!important;
+  background:transparent!important;
+  border:0!important;border-radius:0!important;box-shadow:none!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-stats{
+  min-height:42px!important;
+  padding:2px 0!important;
+  margin:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-bottom:1px solid var(--factory-line)!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-stat{
+  padding:3px 14px!important;
+  color:#727B73!important;
+  font-size:9px!important;
+  border-right:1px solid var(--factory-line)!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-stat strong{
+  font-size:15px!important;
+  color:#344039!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-toolbar{
+  min-height:36px!important;
+  padding:3px 0!important;
+  gap:6px!important;
+  background:transparent!important;
+  border-bottom:1px solid var(--factory-line)!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-fold{
+  margin-left:auto!important;
+  height:28px!important;min-height:28px!important;
+  padding:0 8px!important;
+  border-color:var(--factory-line)!important;
+  background:#F0F2EC!important;
+  color:#697269!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-table-area{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel .biz-order-footer{
+  min-height:36px!important;
+  padding:7px 10px!important;
+  border-top:1px solid var(--factory-line)!important;
+  background:transparent!important;
+  color:#8A928B!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.op-table-wrap,.mw-table-scroll,.proc-scroll),
+.factory-shell-v2 .business-native-list{
+  overflow:auto;
+  border:1px solid var(--factory-line)!important;
+  border-radius:12px!important;
+  background:var(--factory-surface)!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.op-table,.mw-table,.proc-table) th,
+.factory-shell-v2 .business-page-body :is([data-slot="table-header"],[data-slot="table-head"]){
+  height:38px;
+  padding:0 12px!important;
+  background:#F1F2ED!important;
+  color:#697269!important;
+  border-bottom:1px solid var(--factory-line)!important;
+  font-size:9px!important;font-weight:700!important;
+  white-space:nowrap;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.op-table,.mw-table,.proc-table) td,
+.factory-shell-v2 .business-page-body [data-slot="table-cell"]{
+  min-height:52px;
+  padding:10px 12px!important;
+  background:transparent!important;
+  color:#4A534B!important;
+  border-bottom:1px solid #E8EBE6!important;
+  font-size:10px!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(.op-table,.mw-table,.proc-table) tbody tr:hover td{
+  background:#F7F8F4!important;
+}
+
+/* Large filled actions use charcoal. Bright green stays a line/signal color. */
+.factory-shell-v2 .native-business .legacy-root :is(
+  button.primary,.op-button.primary,.mw-button.primary,.mw-btn.primary,.proc-button.primary,.proc-btn.primary,
+  [data-slot="button"][data-variant="default"]
+),
+.factory-shell-v2 .business-native-page [data-slot="button"][data-variant="default"]{
+  background:#252825!important;
+  border-color:#252825!important;
+  color:#fff!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(
+  button.primary,.op-button.primary,.mw-button.primary,.mw-btn.primary,.proc-button.primary,.proc-btn.primary
+):hover{
+  background:#171917!important;border-color:#171917!important;
+}
+.factory-shell-v2 :focus-visible{
+  outline:2px solid var(--factory-live)!important;
+  outline-offset:2px!important;
+}
+
+/* Dialogs and the existing order journey remain overlays, not part of the workbench width. */
+.factory-shell-v2 .glass-dialog{
+  background:rgba(251,252,248,.98)!important;
+  color:var(--factory-ink)!important;
+  border-color:var(--factory-line)!important;
+}
+.legacy-flow-portal-root .journey-order-panel{
+  background:var(--factory-surface)!important;
+}
+.legacy-flow-portal-root .journey-order-panel-backdrop{
+  background:rgba(23,34,48,.19)!important;
+}
+
+/* Never turn a viewport width change into a taller nav row. */
+@media(max-width:980px){
+  .business-context-status{max-width:250px}
+  .business-context-search{width:clamp(140px,19vw,190px)}
+  .feature-band{gap:9px;padding-right:10px}
+  .feature-band-nav{gap:15px}
+}
+@media(max-width:760px){
+  .factory-shell-v2 .system-rail{flex-basis:54px;width:54px}
+  .system-rail .rail-button{width:34px;height:34px}
+  .system-rail .rail-button.active::before{left:-10px}
+  .department-band{padding:0 8px}
+  .feature-band{padding:0 8px 0 10px}
+  .business-context-status{display:none}
+  .business-context-search{width:150px}
+  .factory-shell-v2 .shell-content.is-business{padding:10px 10px 24px!important}
+  .factory-shell-v2 .shell-content.is-department:not(.is-business){padding:16px 12px 28px!important}
+  .factory-shell-v2 .shell-content.is-overview{padding:18px 12px 30px!important}
+  .department-overview-strip{grid-template-columns:1fr}
+  .department-overview-strip>div{border-right:0;border-bottom:1px solid var(--factory-line);margin-right:0}
+}
+@media(max-width:520px){
+  .business-context-search{width:122px}
+  .business-context-search svg{display:none}
+  .feature-band-nav{gap:13px}
+  .department-band-button{padding:0 9px}
+}
