@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react"
 import { createPortal } from "react-dom"
-import { AlertCircle, LoaderCircle, Plus, RotateCcw, Search } from "lucide-react"
+import { AlertCircle, Check, ListFilter, LoaderCircle, Plus, RotateCcw, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import type { FactoryAccessAPI } from "@/factory-state"
 import { getBusinessRuntime } from "@/business/runtime"
 import { BusinessMarkup } from "@/business/BusinessMarkup"
@@ -65,6 +66,7 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
   const [contextStatuses,setContextStatuses]=useState<string[]>([])
   const [contextStatusCounts,setContextStatusCounts]=useState<Record<string,number>>({})
   const [toolHost,setToolHost]=useState<HTMLElement|null>(null)
+  const [salesStatusHost,setSalesStatusHost]=useState<HTMLElement|null>(null)
   const rootRef=useRef<HTMLDivElement>(null)
   const render=useCallback(async()=>{
     const runtime=await getBusinessRuntime()
@@ -114,7 +116,8 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
         const group=compactBusinessStatus(row.dataset.orderStatus??"")
         if(group)counts.set(group,(counts.get(group)??0)+1)
       }
-      const actual=Array.from(counts.entries()).sort((a,b)=>b[1]-a[1]).map(([name])=>name).slice(0,3)
+      const grouped=Array.from(counts.entries()).sort((a,b)=>b[1]-a[1]).map(([name])=>name)
+      const actual=dept==="sales"&&feature==="orders"?grouped:grouped.slice(0,3)
       const options=actual.length?actual:(fallbackContextStatuses[feature]??[])
       const countRecord=Object.fromEntries(options.map(name=>[name,counts.get(name)??0]))
       setContextStatuses(current=>current.join("\u0000")===options.join("\u0000")?current:options)
@@ -140,6 +143,15 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     const count=panel?.querySelector<HTMLElement>(".biz-order-visible-count")
     if(count)count.textContent=String(visible)
   },[status,markup,contextQuery,contextStatus,contextStatuses.length])
+
+  // The sales filter lives inside the actual status column heading, not the feature band.
+  // The legacy table is replaced when the MES markup refreshes, so re-bind to its new host.
+  useEffect(()=>{
+    const target=dept==="sales"&&feature==="orders"&&status==="ready"
+      ?rootRef.current?.querySelector<HTMLElement>("[data-sales-order-status-filter-host]")??null
+      :null
+    setSalesStatusHost(current=>current===target?current:target)
+  },[dept,feature,status,markup])
 
   // Track the exact document after React has committed the destination route's DOM.
   useEffect(()=>{
@@ -204,7 +216,7 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
           )?.click()}>
           <Plus size={13}/><span className="create-label-full">新建销售订单</span><span className="create-label-short">新建</span>
         </Button>}
-        {contextStatuses.length>0&&<div className="business-context-status" aria-label="当前列表状态">
+        {contextStatuses.length>0&&!(dept==="sales"&&feature==="orders")&&<div className="business-context-status" aria-label="当前列表状态">
           <button type="button" className={!contextStatus?"active":""} onClick={()=>setContextStatus("")}>全部</button>
           {contextStatuses.map(name=><button type="button" key={name} className={contextStatus===name?"active":""}
             onClick={()=>setContextStatus(name)}>{name}<span>{contextStatusCounts[name]??0}</span></button>)}
@@ -215,6 +227,30 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
         </label>
       </div>,
       toolHost
+    )}
+    {salesStatusHost&&dept==="sales"&&feature==="orders"&&createPortal(
+      <Popover>
+        <PopoverTrigger asChild>
+          <button type="button" className={"sales-order-status-trigger"+(contextStatus?" is-filtered":"")}
+            aria-label={"筛选流程状态"+(contextStatus?"，当前："+contextStatus:"")}>
+            <span>流程状态</span><ListFilter size={13} aria-hidden="true"/>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" sideOffset={4} className="sales-order-status-popover">
+          <div className="sales-order-status-choices" role="group" aria-label="按流程状态筛选">
+            <button type="button" aria-pressed={!contextStatus} className={!contextStatus?"selected":""}
+              onClick={()=>setContextStatus("")}>
+              <span>全部状态</span><span>{Object.values(contextStatusCounts).reduce((a,b)=>a+b,0)}</span>
+              {!contextStatus&&<Check size={13} aria-hidden="true"/>}
+            </button>
+            {contextStatuses.map(name=><button type="button" key={name} aria-pressed={contextStatus===name}
+              className={contextStatus===name?"selected":""} onClick={()=>setContextStatus(name)}>
+              <span>{name}</span><span>{contextStatusCounts[name]??0}</span>
+              {contextStatus===name&&<Check size={13} aria-hidden="true"/>}
+            </button>)}
+          </div>
+        </PopoverContent>
+      </Popover>,salesStatusHost
     )}
     {status==="loading"&&<div className="glass-panel flex items-center gap-3 rounded-xl p-5 text-sm text-muted-foreground" role="status">
       <LoaderCircle className="size-4 animate-spin"/>正在加载业务表单和原有权限规则…
