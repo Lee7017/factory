@@ -100,3 +100,30 @@ html{scrollbar-gutter:stable}
  .gantt-row .gantt-lane{padding:10px 8px}
  .gantt-warning{padding:9px 12px}
 }
+
+/* Seven operation colors shared by homepage and PMC Gantt. */
+.gantt-panel{
+ --gantt-clean:#19B7A5;--gantt-blend:#387CF1;--gantt-semi-qc:#F1C644;
+ --gantt-change:#986DF0;--gantt-pack:#F38A48;--gantt-final-qc:#E86AA6;--gantt-qa:#48B978
+}
+.gantt-panel .gantt-bar.category-clean,.gantt-panel .gantt-legend-item i.category-clean{background:var(--gantt-clean);border-color:#168f83;color:#123d39}
+.gantt-panel .gantt-bar.category-blend,.gantt-panel .gantt-legend-item i.category-blend{background:var(--gantt-blend);border-color:#2462d2;color:#fff}
+.gantt-panel .gantt-bar.category-semi-qc,.gantt-panel .gantt-legend-item i.category-semi-qc{background:var(--gantt-semi-qc);border-color:#cba32a;color:#493b0e}
+.gantt-panel .gantt-bar.category-change,.gantt-panel .gantt-legend-item i.category-change{background:var(--gantt-change);border-color:#8158d6;color:#fff}
+.gantt-panel .gantt-bar.category-pack,.gantt-panel .gantt-legend-item i.category-pack{background:var(--gantt-pack);border-color:#d87033;color:#4c250c}
+.gantt-panel .gantt-bar.category-final-qc,.gantt-panel .gantt-legend-item i.category-final-qc{background:var(--gantt-final-qc);border-color:#c9568d;color:#4b1932}
+.gantt-panel .gantt-bar.category-qa,.gantt-panel .gantt-legend-item i.category-qa{background:var(--gantt-qa);border-color:#329a61;color:#173d29}
+.gantt-panel .gantt-legend-item i{width:15px;height:12px;border-radius:3px;flex:0 0 auto}
+.gantt-panel .gantt-legend{gap:10px 18px}
+.gantt-panel .gantt-bar{height:39px;min-width:0;max-width:none;box-sizing:border-box}
+.gantt-panel .gantt-bar.is-narrow small{display:none}
+.gantt-panel .gantt-bar.is-mini{padding:0;gap:0}
+.gantt-panel .gantt-bar.is-mini strong,.gantt-panel .gantt-bar.is-mini small{display:none}
+.gantt-panel .gantt-bar.is-mini:hover,.gantt-panel .gantt-bar.is-mini:focus-visible{filter:brightness(.92)}
+.gantt-panel .gantt-row .gantt-track{isolation:isolate}
+.gantt-panel.gantt-overview{margin:14px 0 18px}
+.gantt-panel.gantt-overview .gantt-panel-head{min-height:70px}
+@media(max-width:760px){
+ .gantt-panel.gantt-overview .gantt-panel-head{padding:12px}
+ .gantt-panel .gantt-legend{gap:8px 12px}
+}
