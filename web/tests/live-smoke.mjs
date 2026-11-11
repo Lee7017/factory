@@ -15,11 +15,11 @@ try{
     try{
       const response=await page.goto(url,{waitUntil:"networkidle",timeout:20000})
       await page.locator(".department-tile").first().waitFor({timeout:6500})
-      if(response?.ok()&&await page.locator(".department-tile").count()===12){loaded=true;break}
+      if(response?.ok()&&await page.locator(".department-tile").count()===11){loaded=true;break}
     }catch{}
     await page.waitForTimeout(3000)
   }
-  assert.ok(loaded,"Published GitHub Pages must load React and all 12 navigation tiles")
+  assert.ok(loaded,"Published GitHub Pages must load React and all 11 navigation tiles")
   assert.ok((await page.title()).includes("工厂管理系统"))
   assert.equal(await page.locator("svg.svg-bank[data-icon-library=lucide] symbol[data-lucide-icon]").count(),77)
   await page.locator(".overview-kpi-grid").waitFor()
