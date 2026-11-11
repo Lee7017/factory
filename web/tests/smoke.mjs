@@ -28,7 +28,7 @@ try{
   assert.equal(await page.locator("svg.svg-bank[data-icon-library=lucide] symbol[data-lucide-icon]").count(),77,
     "All 77 legacy business icons remain available without iframe")
   assert.equal(await page.locator(".system-rail").count(),1,"One compact system rail")
-  assert.equal(await page.locator(".department-band-button").count(),10,"Ten real departments live in the horizontal department band")
+  assert.equal(await page.locator(".department-band-button").count(),9,"Nine operating departments live in the horizontal department band; system settings is separate")
   assert.equal(await page.locator(".shell-topbar,.shell-sidebar,.department-tile").count(),0,
     "Old topbar and department tile sidebar are removed")
   assert.equal(await page.locator(".dashboard-kpis .kpi-card").count(),4,"Overview keeps four operational KPIs")
@@ -73,7 +73,6 @@ try{
   assert.equal(featureBand.underline,"rgb(0, 151, 63)","Active function keeps the thin #00973F underline")
   assert.equal(featureBand.overflow,false)
 
-  await page.getByRole("tab",{name:/部门花名簿/}).click()
   await page.getByText("办公位置",{exact:true}).waitFor()
   const rosterLayout=await page.locator(".roster-grid").evaluate(grid=>{
     const cards=[...grid.querySelectorAll(".person-tile")]
