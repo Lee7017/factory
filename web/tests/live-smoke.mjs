@@ -138,26 +138,63 @@ try{
   await page.screenshot({path:"test-results/live-pmc-purchase-demand.png"})
   await page.evaluate(()=>{window.location.hash="#/departments/purchase/purchase"})
   await page.locator('.native-business .proc-purchase-board').waitFor({state:"visible",timeout:18000})
-  const purchasePalette=await page.evaluate(()=>{
-    const color=selector=>{
-      const element=document.querySelector(selector)
-      return element?getComputedStyle(element).backgroundColor:null
-    }
+  const publishedPurchase=await page.evaluate(()=>{
+    const board=document.querySelector(".proc-purchase-board")
+    const table=board?.querySelector(".proc-order-table")
+    const headers=[...(table?.querySelectorAll("thead th")??[])]
+    const select=board?.querySelector("[data-purchase-status-filter]")
+    const statusHeader=select?.closest("th")
+    const control=select?.closest(".sales-order-status-control")
+    const icon=control?.querySelector(".sales-order-status-caret")
+    const body=document.querySelector(".business-page-body")
+    const content=board?.querySelector(".proc-board-content")
+    const footer=board?.querySelector(".proc-board-footer")
+    const actions=board?.querySelector(".proc-order-row .proc-actions")
+    const status=board?.querySelector(".proc-order-row .proc-status")
+    if(!board||!table||!select||!statusHeader||!control||!icon||!body||!content||!footer)return null
+    const th=statusHeader.getBoundingClientRect(),ct=control.getBoundingClientRect()
+    const lastHeader=headers.at(-1)?.getBoundingClientRect()
     return {
-      page:color(".shell-content.is-business"),
-      panel:color(".business-page-body"),
-      heading:color(".proc-board-heading"),
-      board:color(".proc-board-content"),
-      metric:color(".proc-board-metric"),
-      tableHead:color(".proc-order-table th")
+      page:getComputedStyle(document.querySelector(".shell-content.is-business")).backgroundColor,
+      body:getComputedStyle(body).backgroundColor,
+      content:getComputedStyle(content).backgroundColor,
+      table:getComputedStyle(table).backgroundColor,
+      cols:headers.length,
+      statusIndex:headers.indexOf(statusHeader),
+      statusAligned:Math.abs((th.top+th.bottom-ct.top-ct.bottom)/2)<5,
+      filterIcon:icon.getBoundingClientRect().width>=13,
+      actionsAligned:!actions||!lastHeader||Math.abs(actions.getBoundingClientRect().left-lastHeader.left-12)<5,
+      statusNeutral:!status||getComputedStyle(status).backgroundColor==="rgb(251, 252, 248)",
+      headingsNeutral:headers.every(x=>getComputedStyle(x).backgroundColor==="rgb(244, 244, 239)"),
+      extraHeaderHidden:getComputedStyle(board.querySelector(".proc-board-heading")).display==="none",
+      metricsHidden:getComputedStyle(board.querySelector(".proc-board-metrics")).display==="none",
+      duplicatedFiltersHidden:getComputedStyle(board.querySelector(".proc-board-filters")).display==="none",
+      footerAttached:Math.abs(footer.getBoundingClientRect().top-table.getBoundingClientRect().bottom)<3,
+      contentFollowsRows:board.getBoundingClientRect().height<table.getBoundingClientRect().height+100,
+      pageOverflow:document.documentElement.scrollWidth>innerWidth+4
     }
   })
-  assert.equal(purchasePalette.page,"rgb(244, 244, 239)")
-  assert.equal(purchasePalette.panel,"rgb(251, 252, 248)")
-  assert.equal(purchasePalette.heading,"rgb(251, 252, 248)")
-  assert.equal(purchasePalette.board,"rgb(251, 252, 248)")
-  assert.equal(purchasePalette.metric,"rgb(255, 255, 255)")
-  assert.equal(purchasePalette.tableHead,"rgb(244, 244, 239)")
+  assert.ok(publishedPurchase,"Published procurement must render its independent table")
+  assert.equal(publishedPurchase.page,"rgb(244, 244, 239)")
+  assert.equal(publishedPurchase.body,"rgba(0, 0, 0, 0)")
+  assert.equal(publishedPurchase.content,"rgba(0, 0, 0, 0)")
+  assert.equal(publishedPurchase.table,"rgb(255, 255, 255)")
+  assert.equal(publishedPurchase.cols,8)
+  assert.equal(publishedPurchase.statusIndex,5)
+  for(const [key,value] of Object.entries(publishedPurchase)){
+    if(typeof value==="boolean"&&key!=="pageOverflow")
+      assert.equal(value,true,"Published procurement "+key+": "+JSON.stringify(publishedPurchase))
+  }
+  assert.equal(publishedPurchase.pageOverflow,false)
+  const publishedStatus=page.locator('.proc-purchase-board [data-purchase-status-filter]')
+  await publishedStatus.selectOption({index:1})
+  await page.waitForTimeout(80)
+  assert.equal(await page.locator('.proc-purchase-board .sales-order-status-control').evaluate(el=>getComputedStyle(el).backgroundColor),
+    "rgb(251, 252, 248)","Published procurement selection must use #FBFCF8")
+  await publishedStatus.selectOption("")
+  assert.equal(await page.locator(".business-context-status").count(),0,
+    "Published purchasing filters stay in their table header")
+  console.log("LIVE PROCUREMENT FLAT TABLE",JSON.stringify(publishedPurchase))
 
   assert.equal(await page.locator('.native-business [data-proc-action="newPurchase"]').count(),0,"No duplicate PO creation in purchasing")
   await page.screenshot({path:"test-results/live-purchase-approval-list.png"})
