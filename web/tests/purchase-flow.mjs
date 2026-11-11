@@ -234,7 +234,7 @@ try {
   await form.locator('button[type="submit"]').click()
   await asEmployee("E007")
   await navigate("pmc","kitting")
-  await page.locator('[data-proc-action="newDirectPurchase"]').click()
+  await page.getByRole("button",{name:"手动补货采购"}).click()
   form=page.locator("#proc-form")
   await form.locator('[name="material"]').selectOption("RM-001")
   await form.locator('[name="qty"]').fill("20")
@@ -292,7 +292,7 @@ try {
   await page.screenshot({path:"test-results/purchase-07-developer-full-rights.png"})
 
   await navigate("pmc","kitting")
-  await page.locator('[data-proc-action="newDirectPurchase"]').click()
+  await page.getByRole("button",{name:"手动补货采购"}).click()
   form=page.locator("#proc-form")
   await form.locator('[name="material"]').selectOption("RM-002")
   await form.locator('[name="qty"]').fill("7")
