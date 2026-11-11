@@ -39,7 +39,7 @@ function loadScript(name:string):Promise<void>{
   return new Promise((resolve,reject)=>{
     const script=document.createElement("script")
     // Avoid stale browsers showing the previous flow button after a Pages deployment.
-    script.src=`${import.meta.env.BASE_URL}legacy/${name}?v=20261111-workshop-split-v1`
+    script.src=`${import.meta.env.BASE_URL}legacy/${name}?v=20261111-shared-workflow-v1`
     script.async=false
     script.onload=()=>resolve()
     script.onerror=()=>reject(new Error(`无法加载业务模块 ${name}`))
