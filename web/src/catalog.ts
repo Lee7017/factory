@@ -92,26 +92,18 @@ export const DEPARTMENTS: Department[] = [
     "id": "production",
     "name": "生产车间",
     "icon": "production",
-    "description": "领退料、到料接收、返洗返工、生产任务与班组管理",
+    "description": "领退料、到料接收、生产任务、清洗调机与班组管理",
     "features": [
       "workshop",
       "workshopReceive",
       "workshopDispute",
       "workshopRework",
       "tasks",
+      "nonProductionTasks",
       "batch",
       "shift",
       "skills",
       "incentive"
-    ]
-  },
-  {
-    "id": "engineering",
-    "name": "设备工程部",
-    "icon": "engineering",
-    "description": "设备维护、调机调线和非生产工单",
-    "features": [
-      "engineering"
     ]
   },
   {
@@ -196,13 +188,13 @@ export const FEATURE_NAMES: Record<string,string> = {
   "issue": "领料与发料",
   "inspection": "检验任务",
   "release": "QA 放行",
-  "tasks": "生产 / 非生产任务",
+  "tasks": "生产任务",
+  "nonProductionTasks": "非生产任务",
   "batch": "生产批次卡",
   "incentive": "生产激励提报",
   "templates": "工艺模板",
   "bom": "BOM 关系",
   "catalog": "产品与产线",
-  "engineering": "设备与调机调线",
   "finance": "财务审核",
   "permissions": "员工权限矩阵",
   "approvals": "总经办审批"
@@ -251,13 +243,13 @@ export const FEATURE_HINTS: Record<string,string> = {
   "issue": "按正式任务领料、发料、签收",
   "inspection": "来料、半成品、成品检验",
   "release": "成品 QC 合格后的 QA 最终放行",
-  "tasks": "配制、包装、清洗、调机调线",
+  "tasks": "按销售订单执行配制、包装开工和完工，关联批次与质量报检",
+  "nonProductionTasks": "独立办理清洗、调机调线、设备点检工单及复核；清洗报检仍由质量部判定",
   "batch": "生产实绩与批次过程记录",
   "incentive": "按合格计量提报激励",
   "templates": "受控模板、版本、一键填充",
   "bom": "成品与半成品及原辅料关系",
   "catalog": "产品、规格、产线、品类关系",
-  "engineering": "非生产任务、设备维护",
   "finance": "财务审核记录和汇总",
   "permissions": "岗位权限与个人追加权限取并集；个人授权用于补充特定操作权限",
   "approvals": "高风险权限与经营决策"
