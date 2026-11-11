@@ -1,31 +1,13 @@
 /* 工厂业务工作台：前端可操作的单据状态、关联流程和操作记录。 */
 (()=>{'use strict';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const stages={draft:'草稿',review:'待评审',approved:'已评审',trial:'试算完成',formal:'正式排程',reserved:'物料已锁定',issued:'物料已发放',blending:'配制进行中',blend_clean:'配制完成·待清洗',semi_qc:'半成品待检',semi_ok:'半成品合格',packaging:'包装进行中',pack_clean:'包装完成·待清洗',final_qc:'成品待检',inspected:'成品检验合格',released:'质量已放行',stored:'成品已入库',dispatch:'待成品出库',shipping:'部分发货',shipped:'已发货',delivered:'客户已确认收货'};
+// Shared order state dictionary is also consumed by React's dashboard.
+const stages=window.FactoryOrderStages;
+if(!stages||!stages.draft||!stages.blend_clean)throw Error('缺少订单状态公共配置，请刷新页面');
 const orderActions={submit:['提交评审','sales','orders','edit','draft','review'],review:['评审通过','sales','orderReview','approve','review','approved'],reject:['退回修改','sales','orderReview','approve','review','draft'],trial:['排程试算','pmc','schedule','edit','approved','trial'],formal:['发布正式排程','pmc','schedule','approve','trial','formal'],reserve:['确认齐套并锁库','pmc','kitting','execute','formal','reserved'],issue:['确认领料发料','warehouse','issue','execute','reserved','issued'],blendStart:['配制开工','production','tasks','execute','issued','blending'],blendFinish:['配制任务完成','production','tasks','execute','blending','blend_clean'],semiPass:['半成品检验合格','quality','qaQc','approve','semi_qc','semi_ok'],semiFail:['半成品不合格 / 返回配制','quality','qaQc','approve','semi_qc','blending'],packStart:['包装开工','production','tasks','execute','semi_ok','packaging'],packFinish:['包装任务完成','production','tasks','execute','packaging','pack_clean'],finalPass:['成品检验合格并放行','quality','qaQc','approve','final_qc','released'],finalFail:['成品不合格 / 返回包装','quality','qaQc','approve','final_qc','packaging'],receipt:['成品入库','warehouse','inventory','edit','released','stored'],notifyDelivery:['发起发货通知','sales','orders','edit','stored','dispatch'],confirmDelivery:['确认客户收货','sales','orders','edit','shipped','delivered']};
 const featureActions={orders:['submit','notifyDelivery','confirmDelivery'],orderReview:['review','reject'],schedule:['trial','formal'],kitting:['reserve'],issue:['issue'],tasks:['blendStart','blendFinish','packStart','packFinish'],batch:['blendStart','blendFinish','packStart','packFinish'],inspection:['semiPass','semiFail','finalPass','finalFail'],release:[],inventory:['receipt']};
-const nextWorkForStage={
- draft:{dept:'sales',feature:'orders'},
- review:{dept:'sales',feature:'orderReview'},
- approved:{dept:'pmc',feature:'schedule'},
- trial:{dept:'pmc',feature:'schedule'},
- formal:{dept:'pmc',feature:'kitting'},
- reserved:{dept:'warehouse',feature:'issue'},
- issued:{dept:'production',feature:'tasks'},
- blending:{dept:'production',feature:'tasks'},
- blend_clean:{dept:'production',feature:'nonProductionTasks'},
- semi_qc:{dept:'quality',feature:'qaQc'},
- semi_ok:{dept:'production',feature:'tasks'},
- packaging:{dept:'production',feature:'tasks'},
- pack_clean:{dept:'production',feature:'nonProductionTasks'},
- final_qc:{dept:'quality',feature:'qaQc'},
- released:{dept:'warehouse',feature:'inventory'},
- stored:{dept:'sales',feature:'orders'},
- dispatch:{dept:'warehouse',feature:'warehouseOutbound'},
- shipping:{dept:'warehouse',feature:'warehouseOutbound'},
- shipped:{dept:'sales',feature:'orders'},
- delivered:{dept:'sales',feature:'orderHistory'}
-};
+const nextWorkForStage=window.FactoryOrderWorkflow?.nextWorkForStage;
+if(!nextWorkForStage?.review)throw Error('缺少订单流转公共配置，请刷新页面');
 const catalogs={
  purchase:{title:'采购单',prefix:'PO',dept:'purchase',feature:'purchase',perm:'create',fields:[['material','采购物料','select',['RM-001','PK-001','AD-001','RM-002','PK-002']],['qty','采购数量','number'],['supplier','供应商','text']],columns:['物料编码','采购数量','供应商'],stages:['草稿','待审批','待到货','已入库'],actions:[['提交采购','草稿','待审批','create'],['审批通过','待审批','待到货','approve'],['审批驳回','待审批','草稿','approve']]},
  approvals:{title:'重大事项审批',prefix:'APR',dept:'leadership',feature:'approvals',perm:'approve',fields:[['subject','事项名称','text'],['owner','申请部门','text'],['reason','申请说明','text']],columns:['事项名称','申请部门','申请说明'],stages:['待复核','已通过','已驳回'],actions:[['审批通过','待复核','已通过','approve'],['驳回','待复核','已驳回','approve']]},
@@ -293,8 +275,7 @@ function skillPage(){const persons=ctx.access.staff.filter(p=>p.dept==='生产�
 function employeePage(){return shell('员工基础档案','',recordTable(['工号','姓名','所属部门','岗位','联系电话','操作'],ctx.access.staff.map(p=>`<tr>${td(esc(p.id))}${td(`<strong>${esc(p.name)}</strong>`)}${td(esc(p.dept))}${td(esc(p.title))}${td(esc(S.staffEdits[p.id]?.phone||'—'))}${td(cmd('编辑档案','edit:staff',p.id))}</tr>`)),'员工与岗位权限分开：这里维护基础资料，权限由信息化部门的权限矩阵管理。')}
 function rosterPage(){return shell('生产线排班','',recordTable(['班次号','工作岗位','员工','技能等级','状态','操作'],S.roster.map(s=>`<tr>${td(esc(s.id))}${td(esc(s.slot))}${td(esc(ctx.access.staff.find(x=>x.id===s.person)?.name||'未分配'))}${td(badge(s.level))}${td(badge(s.status))}${td(cmd('调整人员','edit:shift',s.id))}</tr>`),cmd('新增排班','new:shift','','primary')),'每个员工同一班次只允许一个工位，技能等级不足 L2 时不允许排班.')}
 function payrollPage(feature){let rows=ctx.data.payroll;if(feature==='incentive')rows=rows.filter(r=>r.type==='生产激励');const toolbar=feature==='incentive'?cmd('提报生产激励','new:pay:生产激励','','primary'):ctx.data.dept==='finance'?'':cmd('申请加班','new:pay:加班','','primary')+cmd('提报生产激励','new:pay:生产激励');const action=p=>ctx.data.dept==='hr'&&p.status==='待人事复核'?cmd('人事审核','pay:hr',p.id):ctx.data.dept==='finance'&&p.status==='待财务核准'?cmd('财务核准','pay:finance',p.id):'<span class="op-muted">—</span>';return shell(feature==='incentive'?'生产激励提报':'加班费与激励工资','',recordTable(['单据编号','员工','类型','核算依据','状态','操作'],rows.map(p=>`<tr>${td(`<strong>${esc(p.id)}</strong>`)}${td(esc(p.name))}${td(esc(p.type))}${td(esc(p.basis))}${td(badge(p.status))}${td(`<div class="op-row-actions">${action(p)}</div>`)}</tr>`),toolbar),'加班与生产激励分开记录：员工提报 → 人事复核 → 财务核准；不同操作受岗位或个人权限控制.')}
-function opsOverview(){const rows=ctx.data.orders.filter(o=>stageOf(o)!=='delivered').map(o=>`<tr>${td(`<strong>${esc(o.id)}</strong>`)}${td(esc(o.product))}${td(badge(stageForOrder(o)))}${td(cmd('查看订单','detailFlow',o.id))}</tr>`);return shell('订单到交付流程','',recordTable(['订单号','产品','进度','操作'],rows,cmd('前往销售订单','go:sales:orders')), '订单从评审到排产、生产、质检、入库，再到销售通知发货、仓库出库与客户确认收货；只有交付确认后才归档.')}
-function render(feature){activeFeature=feature;switch(feature){case 'orders':case 'orderReview':case 'schedule':case 'kitting':case 'issue':case 'tasks':case 'batch':case 'inspection':case 'release':case 'inventory':return flowActionsFor(feature);case 'nonProductionTasks':return nonProductionTasksPage();case 'orderHistory':return historyOrderPage();case 'purchase':return purchasePage();case 'catalog':return catalogPage();case 'bom':return bomPage();case 'templates':return templatePage();case 'skills':return skillPage();case 'employees':return employeePage();case 'shift':return rosterPage();case 'finance':case 'approvals':return genericPage(feature,S[feature]);case 'payroll':case 'incentive':return payrollPage(feature);case 'overview':return opsOverview();default:return shell(feature,'','<div class="op-empty">尚未配置业务表单</div>')}}
+function render(feature){activeFeature=feature;switch(feature){case 'orders':case 'orderReview':case 'schedule':case 'kitting':case 'issue':case 'tasks':case 'batch':case 'inspection':case 'release':case 'inventory':return flowActionsFor(feature);case 'nonProductionTasks':return nonProductionTasksPage();case 'orderHistory':return historyOrderPage();case 'purchase':return purchasePage();case 'catalog':return catalogPage();case 'bom':return bomPage();case 'templates':return templatePage();case 'skills':return skillPage();case 'employees':return employeePage();case 'shift':return rosterPage();case 'finance':case 'approvals':return genericPage(feature,S[feature]);case 'payroll':case 'incentive':return payrollPage(feature);default:return shell(feature,'','<div class="op-empty">尚未配置业务表单</div>')}}
 function modal(title,fields,submit,confirmLabel='保存'){const host=document.querySelector('#ops-modal-host');host.innerHTML=`<div class="op-modal-shade" data-op-action="close"></div><div class="op-modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="op-modal-head"><h2>${esc(title)}</h2>${cmd('关闭','close')}</div><form id="ops-form"><div class="op-form-grid">${fields}</div><div class="op-modal-actions">${cmd('取消','close')}<button type="submit" class="op-button primary">${esc(confirmLabel)}</button></div></form></div>`;openForm=submit;}
 function field(name,label,type='text',value='',choices=[]){const id='of-'+name;const content=type==='select'?`<select name="${esc(name)}" id="${id}" required>${choices.map(v=>`<option value="${esc(v)}" ${String(v)===String(value)?'selected':''}>${esc(v)}</option>`).join('')}</select>`:`<input name="${esc(name)}" id="${id}" type="${esc(type)}" value="${esc(value)}" ${type==='number'?(name==='delta'?'step="any"':'min="0.000001" step="any"'):''} ${name==='phone'?'':'required'}>`;return `<label class="op-field"><span>${esc(label)}</span>${content}</label>`}
 function close(){const host=document.querySelector('#ops-modal-host');host.innerHTML='';openForm=null;currentRecord=''}

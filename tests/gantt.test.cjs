@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const scheduling = require('../web/src/scheduling-definitions.json');
 const vm = require('node:vm');
 
 const original = fs.readFileSync(path.join(__dirname, '..', 'gantt.js'), 'utf8');
@@ -16,6 +17,7 @@ function boot(orders, existing = [], flows = {}) {
  const listeners = {};
  const win = {
   FactoryOperations: {state, render: () => '<div class="ops-workbench"></div>'},
+  FactorySchedulingConfig:scheduling,
   confirm: () => true, alert: () => {}
  };
  const doc = {
@@ -88,30 +90,29 @@ test('optimizing unpublished tasks resolves conflicts without moving formal sche
  assert.equal(app.api.debug.hasConflict(plan.entries[0],plan.entries[1]),false);
 });
 
-test('homepage and PMC use identical stacked tasks and a six-color legend', () => {
+test('PMC compact and full views share a six-color task renderer', () => {
  const jobs=[
   entry('X','X','配制','L01 配制一线','2026-11-11T08:00',120),
   entry('Y','Y','清洗','L01 配制一线','2026-11-11T08:15',60),
   entry('Z','Z','半成品 QC','QC 检验位','2026-11-11T11:00',15)
  ];
  const app=boot([order('X'),order('Y'),order('Z')],jobs);
- const home=app.api.renderOverview(),pmc=app.api.render();
- assert.match(home,/class="gantt-panel gantt-overview"/);
- assert.match(home,/--gantt-row-height:112px/);
- assert.match(home,/is-mini/);
- const positions=html=>Array.from(html.matchAll(/class="gantt-bar [^"]+" style="([^"]+)"/g),m=>m[1]);
- assert.deepEqual(positions(home),positions(pmc));
+ const html=app.api.render();
+ assert.match(html,/class="gantt-panel"/);
+ assert.match(html,/--gantt-row-height:112px/);
+ assert.match(html,/is-mini/);
  const classes=['clean','blend','semi-qc','change','pack','final-qc'];
- assert.ok(classes.every(x=>home.includes('category-'+x)),'six legend categories required');
- const css=fs.readFileSync(path.join(__dirname,'..','gantt.css'),'utf8');
+ assert.ok(classes.every(x=>html.includes('category-'+x)),'six legend categories required');
+ const css=fs.readFileSync(path.join(__dirname,'..','web/src/gantt-palette.css'),'utf8');
  const palette=classes.map(x=>{
-  const result=css.match(new RegExp('--gantt-'+x+':(#[0-9a-fA-F]{6})'));
+  const result=css.match(new RegExp('--gantt-'+x+':\\s*(#[0-9a-fA-F]{6})'));
   assert.ok(result,x+' color token missing');
   return result[1].toLowerCase();
  });
  assert.equal(new Set(palette).size,6,'operation colors must be distinct');
  const modules=fs.readFileSync(path.join(__dirname,'..','modules.js'),'utf8');
- assert.match(modules,/FactoryGantt\?\.renderOverview\?\.\(\)/);
+ assert.doesNotMatch(modules,/overview:overviewPage/);
+ assert.doesNotMatch(modules,/renderOverview/);
 });
 
 test('only two QAQC tasks remain; old QC names migrate and old QA release schedule is preserved in archive', () => {

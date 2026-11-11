@@ -1,0 +1,9 @@
+/* Single palette for the React overview and the scoped PMC business Gantt. */
+:root {
+  --gantt-clean: #19B7A5;
+  --gantt-blend: #387CF1;
+  --gantt-semi-qc: #F1C644;
+  --gantt-change: #986DF0;
+  --gantt-pack: #F38A48;
+  --gantt-final-qc: #E86AA6;
+}

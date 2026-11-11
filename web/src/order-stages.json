@@ -1,0 +1,23 @@
+{
+  "draft": "草稿",
+  "review": "待评审",
+  "approved": "已评审",
+  "trial": "试算完成",
+  "formal": "正式排程",
+  "reserved": "物料已锁定",
+  "issued": "物料已发放",
+  "blending": "配制进行中",
+  "blend_clean": "配制完成·待清洗",
+  "semi_qc": "半成品待检",
+  "semi_ok": "半成品合格",
+  "packaging": "包装进行中",
+  "pack_clean": "包装完成·待清洗",
+  "final_qc": "成品待检",
+  "inspected": "成品检验合格",
+  "released": "质量已放行",
+  "stored": "成品已入库",
+  "dispatch": "待成品出库",
+  "shipping": "部分发货",
+  "shipped": "已发货",
+  "delivered": "客户已确认收货"
+}

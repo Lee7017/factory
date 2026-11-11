@@ -1,4 +1,7 @@
 import { readWorkspace, type FactoryAccessAPI, type WorkspaceData } from "@/factory-state"
+import schedulingDefinitions from "@/scheduling-definitions.json"
+import orderStages from "@/order-stages.json"
+import orderWorkflow from "@/order-workflow.json"
 
 type LegacyEl=HTMLElement
 type BusinessEngine={
@@ -20,6 +23,9 @@ interface BusinessContext{
   ops:BusinessEngine
 }
 interface RuntimeWindow extends Window{
+  FactorySchedulingConfig?:typeof schedulingDefinitions
+  FactoryOrderStages?:Record<string,string>
+  FactoryOrderWorkflow?:typeof orderWorkflow
   FactoryOperations?:BusinessEngine
   FactoryModules?:BusinessEngine&{supports:(feature:string)=>boolean}
   FactoryGantt?:{init:(ctx:BusinessContext)=>void}
@@ -33,7 +39,7 @@ function loadScript(name:string):Promise<void>{
   return new Promise((resolve,reject)=>{
     const script=document.createElement("script")
     // Avoid stale browsers showing the previous flow button after a Pages deployment.
-    script.src=`${import.meta.env.BASE_URL}legacy/${name}?v=20261111-workshop-split-v1`
+    script.src=`${import.meta.env.BASE_URL}legacy/${name}?v=20261111-shared-workflow-v1`
     script.async=false
     script.onload=()=>resolve()
     script.onerror=()=>reject(new Error(`无法加载业务模块 ${name}`))
@@ -43,6 +49,10 @@ function loadScript(name:string):Promise<void>{
 let loader:Promise<void>|undefined
 async function ready():Promise<void>{
   if(!loader)loader=(async()=>{
+    // One shared source for React overview and imperative PMC/order engines.
+    runtimeWindow.FactorySchedulingConfig=schedulingDefinitions
+    runtimeWindow.FactoryOrderStages=orderStages as Record<string,string>
+    runtimeWindow.FactoryOrderWorkflow=orderWorkflow
     for(const name of scripts)await loadScript(name)
     if(!runtimeWindow.FactoryOperations?.init||!runtimeWindow.FactoryModules?.init)
       throw new Error("Legacy business engine initialization is missing")

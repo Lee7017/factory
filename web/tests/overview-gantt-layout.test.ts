@@ -2,6 +2,7 @@ import test from "node:test"
 import assert from "node:assert/strict"
 import { layoutOverviewBars,overviewRowHeight,PMC_LANES,resourceConflicts } from "../src/overview-gantt-layout"
 import { readFileSync } from "node:fs"
+import schedulingDefinitions from "../src/scheduling-definitions.json"
 import type { GanttEntry } from "../src/overview-data"
 
 const start=new Date("2026-11-09T00:00:00").getTime()
@@ -42,13 +43,15 @@ test("very short tasks are marked as compact colored bars without forcing labels
  assert.ok(bars.every(b=>b.width>0))
 })
 
-test("homepage workcenters match the exact PMC gantt.js lane definitions",()=>{
+test("homepage workcenters, default route options and PMC use the same versioned configuration",()=>{
  const js=readFileSync(new URL("../../gantt.js",import.meta.url),"utf8")
- const laneBlock=js.match(/const lanes=\[([\s\S]*?)\];/)
- assert.ok(laneBlock,"PMC must expose its lane definitions")
- const pmc=[...laneBlock[1].matchAll(/\{id:\x27([^\x27]+)\x27,desc:\x27([^\x27]+)\x27\}/g)]
-   .map(match=>({id:match[1],desc:match[2]}))
- assert.deepEqual(PMC_LANES.map(lane=>({...lane})),pmc)
+ assert.match(js,/const lanes=schedule\.lanes/)
+ assert.match(js,/const categories=schedule\.categories/)
+ assert.match(js,/const laneOptions=schedule\.laneOptions/)
+ assert.deepEqual(PMC_LANES,schedulingDefinitions.lanes)
+ assert.deepEqual(new Set(schedulingDefinitions.stages),new Set(Object.keys(schedulingDefinitions.categories)))
+ for(const [type,lanes] of Object.entries(schedulingDefinitions.laneOptions))
+   for(const lane of lanes)assert.ok(PMC_LANES.some(x=>x.id===lane),type+" references nonexisting lane")
 })
 test("simultaneous tasks conflict only if they share an actual workcenter",()=>{
  const task=(id:string,lane:string,start:string,duration:number):GanttEntry=>({

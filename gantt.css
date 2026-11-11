@@ -102,10 +102,6 @@ html{scrollbar-gutter:stable}
 }
 
 /* Six operation colors, including only semi-finished and finished QAQC, shared by homepage and PMC. */
-.gantt-panel{
- --gantt-clean:#19B7A5;--gantt-blend:#387CF1;--gantt-semi-qc:#F1C644;
- --gantt-change:#986DF0;--gantt-pack:#F38A48;--gantt-final-qc:#E86AA6
-}
 .gantt-panel .gantt-bar.category-clean,.gantt-panel .gantt-legend-item i.category-clean{background:var(--gantt-clean);border-color:#168f83;color:#123d39}
 .gantt-panel .gantt-bar.category-blend,.gantt-panel .gantt-legend-item i.category-blend{background:var(--gantt-blend);border-color:#2462d2;color:#fff}
 .gantt-panel .gantt-bar.category-semi-qc,.gantt-panel .gantt-legend-item i.category-semi-qc{background:var(--gantt-semi-qc);border-color:#cba32a;color:#493b0e}

@@ -3,28 +3,15 @@
 const $=s=>document.querySelector(s);
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ops=window.FactoryOperations;
-const lanes=[
- {id:'L01 配制一线',desc:'配制'},
- {id:'L02 配制二线',desc:'配制'},
- {id:'S03-4# 瓶装线',desc:'包装'},
- {id:'S04 包装二线',desc:'包装'},
- {id:'QC 检验位',desc:'半成品 / 成品 QAQC'}
-];
-const categories={
- '清洗':'clean','配制':'blend','半成品 QAQC':'semi-qc','调机调线':'change',
- '包装':'pack','成品 QAQC':'final-qc'
-};
-const stages=['清洗','配制','半成品 QAQC','调机调线','包装','成品 QAQC'];
-const nonProductionTypes=new Set(['清洗','调机调线']);
+// Scheduling rules are injected from the same JSON React overview imports.
+const schedule=window.FactorySchedulingConfig;
+if(!schedule?.lanes?.length||!schedule?.stages?.length)throw Error('缺少排程公共配置，请刷新页面');
+const lanes=schedule.lanes;
+const categories=schedule.categories;
+const stages=schedule.stages;
+const nonProductionTypes=new Set(schedule.nonProductionTypes);
 const taskLabel=type=>nonProductionTypes.has(type)?`非生产 · ${type}`:type;
-const defaults=[
- ['清洗','L01 配制一线',420,60],
- ['配制','L01 配制一线',480,210],
- ['半成品 QAQC','QC 检验位',690,60],
- ['调机调线','S03-4# 瓶装线',750,60],
- ['包装','S03-4# 瓶装线',810,180],
- ['成品 QAQC','QC 检验位',990,60]
-];
+const defaults=schedule.defaults;
 const pad=n=>String(n).padStart(2,'0');
 const dayString=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const parseLocal=s=>new Date(`${String(s).replace(' ','T')}:00`.replace(/:00:00$/,':00'));
@@ -35,30 +22,7 @@ let ctx=null;
 let editId=null;
 let restoreLeft=360;
 const state=()=>ops.state;
-const laneOptions={
- "清洗": [
-  "L01 配制一线",
-  "L02 配制二线"
- ],
- "配制": [
-  "L01 配制一线",
-  "L02 配制二线"
- ],
- "半成品 QAQC": [
-  "QC 检验位"
- ],
- "调机调线": [
-  "S03-4# 瓶装线",
-  "S04 包装二线"
- ],
- "包装": [
-  "S03-4# 瓶装线",
-  "S04 包装二线"
- ],
- "成品 QAQC": [
-  "QC 检验位"
- ]
-};
+const laneOptions=schedule.laneOptions;
 function taskSpan(item){
  const start=ms(item.start),duration=Number(item.duration);
  return Number.isFinite(start)&&Number.isFinite(duration)&&duration>0?{start,end:start+duration*60000}:null;
@@ -160,7 +124,7 @@ function ensure(){
  s.gantt??=[];s.ganttDay??=dayString(new Date());
  let changed=false;
  // 兼容旧排程：检验名称统一成 QAQC；“QA 放行”属于质量审批，不再生成第三项甘特任务。
- const legacyNames={'半成品 QC':'半成品 QAQC','成品 QC':'成品 QAQC'};
+ const legacyNames=schedule.legacyTypeNames;
  const oldRelease=s.gantt.filter(x=>x.type==='QA 放行');
  if(oldRelease.length){
   s.ganttArchived??=[];
@@ -189,7 +153,7 @@ function status(entry){
  const flow=state().flows[entry.orderId]?.stage||'draft';
  const order=['draft','review','approved','trial','formal','reserved','issued','blending','semi_qc','semi_ok','packaging','final_qc','inspected','released','stored'];
  const rank=order.indexOf(flow);
- const expected={'清洗':7,'配制':8,'半成品 QAQC':9,'调机调线':10,'包装':11,'成品 QAQC':12};
+ const expected=schedule.flowProgress;
  const taskType=entry.type==='清洗'||entry.type==='调机调线'?entry.type:null;
  const task=taskType&&ctx.data.tasks?.find(t=>t.type===taskType);
  if(task&&task.status!=='待开始')return task.status;
@@ -200,9 +164,8 @@ function status(entry){
 function readDay(){return state().ganttDay}
 function fmtMin(m){return `${pad(Math.floor(m/60))}:${pad(m%60)}`}
 function startMinute(x){const d=new Date(x.start);return d.getHours()*60+d.getMinutes()}
-function render(options={}){
+function render(){
  ensure();
- const overview=options.overview===true;
  const day=readDay(),view=dayLayout(state().gantt,day),canEdit=ctx.access.has('pmc','schedule','edit');
  const types=stages.map(type=>[type,categories[type]]);
  const times=Array.from({length:25},(_,i)=>`<span class="gantt-tick" style="left:${i/24*100}%">${pad(i)}:00</span>`).join('');
@@ -228,9 +191,9 @@ function render(options={}){
   replans.map(o=>'<p>'+safe(o.id)+'：'+safe((state().flows[o.id].audit||[]).filter(a=>a.action==='开工前一天物料不齐套，退回排程').slice(-1)[0]?.state||'请复查物料')+'</p>').join('')+'</div>':'';
  const warning=conflictCount?`<div class="gantt-warning" role="status"><strong>发现 ${conflictCount} 对同工位时间冲突</strong><span>冲突任务已分层显示，不代表工位能同时生产；可编辑任务或整理尚未发布的排程。</span></div>`:'';
  requestAnimationFrame(()=>{const sc=$('.gantt-scroll');if(sc)sc.scrollLeft=restoreLeft});
- return replanNote+`<section class="gantt-panel${overview?' gantt-overview':''}" aria-label="排产甘特图">
-   <header class="gantt-panel-head"><div><h2>${overview?'今日生产排程':'排产甘特图'}</h2><p>横轴：24 小时 · 纵轴：产线 / 检验工位 · 短任务用工序颜色识别，悬停查看详情</p></div>
-   <div class="gantt-controls"><button type="button" data-gantt="prev" aria-label="前一天">‹</button><input type="date" id="gantt-date" aria-label="选择排产日期" value="${day}"><button type="button" data-gantt="next" aria-label="后一天">›</button><button type="button" data-gantt="today">今天</button>${overview?'':(canEdit?'<button type="button" data-gantt="optimize" class="gantt-optimize">整理未发布排程</button>':'')+'<button type="button" data-gantt="add" class="gantt-add" '+(canEdit?'':'disabled title="无权修改排程"')+'>+ 新建任务</button>'}</div></header>
+ return replanNote+`<section class="gantt-panel" aria-label="排产甘特图">
+   <header class="gantt-panel-head"><div><h2>排产甘特图</h2><p>横轴：24 小时 · 纵轴：产线 / 检验工位 · 短任务用工序颜色识别，悬停查看详情</p></div>
+   <div class="gantt-controls"><button type="button" data-gantt="prev" aria-label="前一天">‹</button><input type="date" id="gantt-date" aria-label="选择排产日期" value="${day}"><button type="button" data-gantt="next" aria-label="后一天">›</button><button type="button" data-gantt="today">今天</button>${canEdit?'<button type="button" data-gantt="optimize" class="gantt-optimize">整理未发布排程</button>':''}<button type="button" data-gantt="add" class="gantt-add" ${canEdit?'':'disabled title="无权修改排程"'}>+ 新建任务</button></div></header>
    <div class="gantt-legend">${legend}<span class="gantt-count">当天 ${n} 项任务${conflictCount?' · '+conflictCount+' 对冲突':''}</span></div>
    ${warning}
    <div class="gantt-scroll" tabindex="0" aria-label="可左右滚动的排产甘特图"><div class="gantt-canvas"><div class="gantt-head"><div class="gantt-lane gantt-lane-title">产线 / 工位</div><div class="gantt-hours">${times}</div></div>${rows}</div></div>
@@ -333,5 +296,4 @@ document.addEventListener('scroll',ev=>{if(ev.target.matches?.('.gantt-scroll'))
 document.addEventListener('change',ev=>{if(ev.target.id==='gantt-date'){state().ganttDay=ev.target.value;ctx.save();rerender()}},true);
 document.addEventListener('submit',ev=>{if(ev.target.id==='gantt-form'){ev.stopPropagation();save(ev)}},true);
 window.FactoryGantt={init,render,validate,get entries(){return state()?.gantt||[]}};
-window.FactoryGantt.renderOverview=()=>render({overview:true});
 })();

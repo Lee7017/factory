@@ -25,6 +25,8 @@ jobs:
       - name: Install dependencies
         working-directory: web
         run: npm ci --no-audit --no-fund
+      - name: React and MES architecture checks
+        run: python3 -m unittest discover -s tests -p test_department_ui.py
       - name: Business data regression tests
         working-directory: web
         run: npm run test:unit
