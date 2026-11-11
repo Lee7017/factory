@@ -1,6 +1,6 @@
 /* 统一流转反馈：跨部门动作与本单历史，页面中央出现后自动淡出，不阻止下一个操作。 */
 (()=>{'use strict';
-const deptNames={sales:'销售部',pmc:'生产计划与物料控制部（PMC）',purchase:'采购 / 供应链部',warehouse:'仓库 / 物流部',quality:'质量部 QA / QC',production:'生产车间',engineering:'设备工程部',hr:'人事行政办公室',finance:'财务部',it:'信息化 / 主数据管理',tech:'工艺技术部',ehs:'EHS 安全环保部',leadership:'总经办'};
+const deptNames={sales:'销售部',pmc:'生产计划与物料控制部（PMC）',purchase:'采购 / 供应链部',warehouse:'仓库 / 物流部',quality:'质量部 QA / QC',production:'生产车间',engineering:'生产车间',hr:'人事行政办公室',finance:'财务部',it:'信息化 / 主数据管理',tech:'工艺技术部',ehs:'EHS 安全环保部',leadership:'总经办'};
 const clean=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&quot;'}[c]));
 const label=x=>deptNames[x]||x||'当前部门';
 const routes={
@@ -41,7 +41,7 @@ const nextTargets={
  '仓库退库接收':{dept:'warehouse',feature:'warehouseOps'},
  '创建报检单':{dept:'quality',feature:'qaQc'},
  '清洗报检提交':{dept:'quality',feature:'qaCleanInspection'},
- '清洗报检合格':{dept:'production',feature:'tasks'},
+ '清洗报检合格':{dept:'production',feature:'nonProductionTasks'},
  '清洗报检不合格':{dept:'production',feature:'workshopRework'},
  '报检合格':{dept:'production',feature:'tasks'},
  '报检不合格':{dept:'quality',feature:'qaNcr'},
@@ -111,7 +111,7 @@ const flowConfig={
   ['production','配制任务完成',/配制任务完成|配制报检/],
   ['production','配制线清洗执行与复核',/配制线清洗执行与复核/],
   ['quality','半成品检验判定',/半成品检验合格|半成品不合格/],
-  ['engineering','调机调线执行与复核',/调机调线任务复核完成/],
+  ['production','调机调线执行与复核',/调机调线任务复核完成/],
   ['production','包装开工',/包装开工/],
   ['production','包装任务完成',/包装任务完成|包装报检/],
   ['production','包装线清洗执行与复核',/包装线清洗执行与复核/],
