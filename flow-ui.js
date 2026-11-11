@@ -96,7 +96,7 @@ function docMeta(entry){
  };
 }
 function currentTime(){return new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
-let dismissTimer=null,activeContinue=null,activeTrackRef='',activeFlowDocuments=[];
+let dismissTimer=null,activeContinue=null,activeTrackRef='',activeFlowDocuments=[],activeFlowEntry=null;
 const arrowRight='<svg class="journey-arrow" viewBox="0 0 48 26" aria-hidden="true"><path d="M2 13 H42 M33 4 L42 13 L33 22"/></svg>';
 const arrowReturn='<svg class="journey-return-arrow" viewBox="0 0 80 39" aria-hidden="true"><path d="M73 5 H27 Q9 5 9 20 V32 M2 24 L9 32 L16 24"/></svg>';
 const flowConfig={
@@ -234,7 +234,7 @@ function linkedDocuments(entry,kind,step){
  }
  return documents.filter((d,i)=>documents.findIndex(x=>x.type===d.type&&x.ref===d.ref)===i);
 }
-function makeCard(step,i,state,history,documents=[]){
+function makeCard(step,i,state,history,documents=[],kind='handoff'){
  const [dept,act]=step,record=lastStepRecord(step,history),done=['done','complete'].includes(state);
  const operator=record?.person||record?.by||(done?'历史记录未注明':'待分配'),time=record?.at||record?.time||'—';
  const canTrack=Boolean(activeContinue)&&['current','complete'].includes(state);
@@ -243,9 +243,12 @@ function makeCard(step,i,state,history,documents=[]){
  const docButton=done&&documents.length?
   `<button type="button" class="journey-card-document" data-flow-document-step="${i}" title="${clean('查看'+title)}">查看${clean(title)}</button>`:'';
  const status=state==='done'?'已办理':state==='current'?'当前环节':state==='complete'?'已办结':'待办理';
- const head=docButton||(canTrack?
-  `<button type="button" class="journey-card-track" data-flow-track>${state==='complete'?'查看已办结环节':'跟踪当前环节'} →</button>`:
-  `<span class="journey-state">${status}</span>`);
+ // 订单最初两张业务卡右上角直接查看订单正文，不再使用独立 Tab。
+ const head=kind==='order'&&i<2?
+  '<button type="button" class="journey-card-document journey-order-content" data-flow-order-content>订单内容</button>':
+  (docButton||(canTrack?
+   `<button type="button" class="journey-card-track" data-flow-track>${state==='complete'?'查看已办结环节':'跟踪当前环节'} →</button>`:
+   `<span class="journey-state">${status}</span>`));
  return `<div class="journey-card is-${state}" data-journey-step="${i}">
   <div class="journey-card-head"><span class="journey-seq">${String(i+1).padStart(2,'0')}</span>
    <div class="journey-card-head-actions">${head}</div></div>
@@ -274,7 +277,7 @@ function snakeOfCards(steps,kind,stage,history,ref,documentsByStep){
   const x1=a.x+cardW/2,y1=a.y+cardH/2,x2=b.x+cardW/2,y2=b.y+cardH/2,lift=42+i*18,cy=Math.min(y1,y2)-lift;
   return `<path class="journey-snake-return" d="M${x1} ${y1} C${x1} ${cy} ${x2} ${cy} ${x2} ${y2}" marker-end="url(#journey-return-tip)"/>`;
  }).join('');
- const cards=steps.map((step,i)=>`<div class="journey-snake-position" style="left:${pos[i].x}px;top:${pos[i].y}px;width:${cardW}px;height:${cardH}px">${makeCard(step,i,states[i],history,documentsByStep?.[i]||[])}</div>`).join('');
+ const cards=steps.map((step,i)=>`<div class="journey-snake-position" style="left:${pos[i].x}px;top:${pos[i].y}px;width:${cardW}px;height:${cardH}px">${makeCard(step,i,states[i],history,documentsByStep?.[i]||[],kind)}</div>`).join('');
  return `<div class="journey-snake-scroll" role="region" aria-label="连续折返流程图" tabindex="0" data-arrival-index="${currentIndex}"><div class="journey-snake" style="width:${width}px;height:${height}px"><svg viewBox="0 0 ${width} ${height}" class="journey-snake-paths" aria-hidden="true"><defs><marker id="journey-arrow-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#62758a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="journey-return-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L8 5 L1 9" fill="none" stroke="#b76b44" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>${arrows}${returnLines}</svg>${cards}</div></div>`;
 }
 
@@ -305,18 +308,31 @@ function extras(entry,kind){if(entry.detailHtml)return `<div class="journey-extr
  const outbound=m?.outbound?.filter(x=>x.order===ref)||[];
  if(outbound.length)return `<div class="journey-extra"><div class="journey-section-head"><strong>成品出库与客户交付</strong><small>${outbound.length} 次出库记录</small></div>${outbound.map(r=>`<div class="journey-extra-line"><b>${clean(r.id)}</b><span>${clean(r.qty)} 箱 · ${clean(r.destination)} · ${clean(r.status)}</span></div>`).join('')}</div>`;
  }return ''}
-function renderGraph(entry){const kind=inferKind(entry),history=getHistory(entry,kind),cfg=flowConfig[kind],stage=getStage(entry,kind),type=entry.docType||cfg?.title||docMeta(entry).type;
- const steps=buildSteps(entry,kind);const summary=entry.summary||'';
+function renderGraph(entry){
+ const kind=inferKind(entry),history=getHistory(entry,kind),cfg=flowConfig[kind],stage=getStage(entry,kind),type=entry.docType||cfg?.title||docMeta(entry).type;
+ const steps=buildSteps(entry,kind),summary=entry.summary||'';
  const documentsByStep=steps.map(step=>linkedDocuments(entry,kind,step));
  const blocker=entry.blockedTask;
- const blockedInfo=blocker?`<div class="journey-blocker" role="status"><strong>当前卡点：${clean(blocker.type)}工单 ${clean(blocker.id)} · ${clean(blocker.status)}</strong><span>${clean(blocker.line)} · ${clean(blocker.note)}</span><small>点击流程图当前环节的“跟踪当前环节”，直接前往实际待办。</small></div>`:'';
+ const blockedInfo=blocker?`<div class="journey-blocker" role="status"><strong>当前卡点：${clean(blocker.type)}工单 ${clean(blocker.id)} · ${clean(blocker.status)}</strong><span>${clean(blocker.line)} · ${clean(blocker.note)}</span><small>点击当前环节的“跟踪当前环节”前往待办。</small></div>`:'';
  return `<div class="flow-veil" data-flow-close aria-hidden="true"></div><section class="flow-window journey-dialog" role="dialog" aria-modal="true" aria-labelledby="journey-title">
  <header class="journey-top"><div><span class="journey-eyebrow">跨部门单据流转</span><h2 id="journey-title">${clean(type)} <span>${clean(entry.ref||'业务记录')}</span></h2><p>${clean(summary)}</p></div></header>
- ${kind==='order'?"<div class=\"journey-tabs\" role=\"tablist\" aria-label=\"订单弹窗\">\n  <button type=\"button\" class=\"journey-tab is-active\" role=\"tab\" id=\"journey-tab-flow\" aria-controls=\"journey-panel-flow\" aria-selected=\"true\" tabindex=\"0\" data-journey-tab=\"flow\">流转图</button>\n  <button type=\"button\" class=\"journey-tab\" role=\"tab\" id=\"journey-tab-order\" aria-controls=\"journey-panel-order\" aria-selected=\"false\" tabindex=\"-1\" data-journey-tab=\"order\">订单内容</button>\n </div>\n <section class=\"journey-tab-panel is-active\" id=\"journey-panel-flow\" role=\"tabpanel\" aria-labelledby=\"journey-tab-flow\" data-journey-panel=\"flow\">":orderDetails(entry,kind)}
  ${blockedInfo}
  <div class="journey-steps">${snakeOfCards(steps,kind,stage,history,entry.ref,documentsByStep)}</div>
- ${kind==='order'?"</section><section class=\"journey-tab-panel\" id=\"journey-panel-order\" role=\"tabpanel\" aria-labelledby=\"journey-tab-order\" data-journey-panel=\"order\" hidden>"+orderDetails(entry,kind)+extras(entry,kind)+'</section>':extras(entry,kind)}
- </section>`}
+ ${extras(entry,kind)}
+ </section>`;
+}
+function openOrderContent(){
+ if(!activeFlowEntry||inferKind(activeFlowEntry)!=='order')return;
+ const host=document.querySelector('#flow-transition-host');
+ if(!host)return;
+ host.querySelector('[data-flow-order-panel]')?.remove();
+ host.insertAdjacentHTML('beforeend',`<div class="journey-order-panel-backdrop" data-flow-order-panel>
+  <section class="journey-order-panel" role="dialog" aria-modal="true" aria-label="订单内容">
+   <header><strong>订单内容</strong><button type="button" data-flow-order-dismiss aria-label="关闭订单内容">×</button></header>
+   <div class="journey-order-panel-body">${orderDetails(activeFlowEntry,'order')}${extras(activeFlowEntry,'order')}</div>
+  </section></div>`);
+ host.querySelector('[data-flow-order-dismiss]')?.focus();
+}
 function openDialog(entry){const host=document.querySelector('#flow-transition-host');if(!host||!entry)return;
  clearTimeout(dismissTimer);
  const liveStage=(entry.kind==='order'||/^SO-/.test(String(entry.ref||'')))?window.FactoryOperations?.state?.flows?.[entry.ref]?.stage:null;
@@ -324,7 +340,7 @@ function openDialog(entry){const host=document.querySelector('#flow-transition-h
   liveStage==='shipped'?{dept:'sales',feature:'orders',record:entry.ref}:
   ['dispatch','shipping'].includes(liveStage)?{dept:'warehouse',feature:'warehouseOutbound',record:entry.ref}:null;
  activeContinue=orderTarget||entry.nextOpen||nextTargets[entry.action]||null;activeTrackRef=entry.nextOpen?.record||entry.ref||'';
- activeFlowDocuments=buildSteps(entry,inferKind(entry)).map(step=>linkedDocuments(entry,inferKind(entry),step));
+ activeFlowDocuments=buildSteps(entry,inferKind(entry)).map(step=>linkedDocuments(entry,inferKind(entry),step));activeFlowEntry=entry;
  host.innerHTML=renderGraph(entry);host.classList.remove('flow-dismiss');host.classList.add('flow-visible');
  const dialog=host.querySelector('.journey-dialog'),snakeScroll=dialog?.querySelector('.journey-snake-scroll'),arrival=Number(snakeScroll?.dataset.arrivalIndex??-1);
  if(dialog&&snakeScroll&&arrival>=0){
@@ -346,7 +362,7 @@ function openDialog(entry){const host=document.querySelector('#flow-transition-h
 }
 function show(entry){openDialog(entry)}
 function openDocument(entry){openDialog(entry)}
-function dismiss(){const host=document.querySelector('#flow-transition-host');if(!host)return;host.classList.remove('flow-visible');host.classList.add('flow-dismiss');host.innerHTML='';activeContinue=null;activeTrackRef='';activeFlowDocuments=[];activeDocumentChoices=[]}
+function dismiss(){const host=document.querySelector('#flow-transition-host');if(!host)return;host.classList.remove('flow-visible');host.classList.add('flow-dismiss');host.innerHTML='';activeContinue=null;activeTrackRef='';activeFlowDocuments=[];activeFlowEntry=null;activeDocumentChoices=[]}
 function openLinkedDocument(doc){
  if(!doc)return;
  if(!window.FactoryModules?.openRecordDocument){window.alert('单据查看功能尚不可用');return}
@@ -400,8 +416,10 @@ let activeDocumentChoices=[];
 function fromAudit(row,history,defaultDept){const rule=routes[row.type]||Object.entries(routes).find(([k])=>String(row.type).includes(k))?.[1],from=rule?.[0]||defaultDept||'当前部门',to=rule?.[1]||from;
  show({ref:row.ref,action:row.type,from,to,status:row.detail||'已记录',summary:row.detail||'',operator:row.by||'当前用户',at:row.time||'',history,next:rule?.[2]||'查看单据状态',nextOpen:nextTargets[row.type]||Object.entries(nextTargets).find(([k])=>String(row.type).includes(k))?.[1]});}
 document.addEventListener('click',event=>{
- const tab=event.target.closest('[data-journey-tab]');
- if(tab){const dialog=tab.closest('.journey-dialog'),name=tab.dataset.journeyTab;if(dialog){dialog.querySelectorAll('[data-journey-tab]').forEach(btn=>{const on=btn===tab;btn.classList.toggle('is-active',on);btn.setAttribute('aria-selected',on?'true':'false');btn.setAttribute('tabindex',on?'0':'-1')});dialog.querySelectorAll('[data-journey-panel]').forEach(panel=>{const on=panel.dataset.journeyPanel===name;panel.hidden=!on;panel.classList.toggle('is-active',on)});dialog.scrollTop=0}return;}
+ if(event.target.closest('[data-flow-order-content]')){openOrderContent();return;}
+ if(event.target.closest('[data-flow-order-dismiss]')||(event.target.matches?.('[data-flow-order-panel]'))){
+  document.querySelector('[data-flow-order-panel]')?.remove();return;
+ }
  const choice=event.target.closest('[data-flow-document-choice]');
  if(choice){const item=activeDocumentChoices[Number(choice.dataset.flowDocumentChoice)];return openLinkedDocument(item)}
  if(event.target.closest('[data-flow-document-dismiss]')||event.target.matches?.('[data-flow-document-picker]')){
@@ -414,13 +432,7 @@ document.addEventListener('click',event=>{
  if(event.target.closest('[data-flow-track]')){const target=activeContinue?{...activeContinue}:null,ref=activeTrackRef;dismiss();if(target)window.FactoryNavigation?.trackBottleneck?.(target,ref);return;}
  if(event.target.closest('[data-flow-close]')||(event.target.closest('#flow-transition-host')&&!event.target.closest('.journey-dialog')))dismiss();});
 document.addEventListener('keydown',event=>{
- const activeTab=event.target.closest?.('[data-journey-tab]');
- if(activeTab&&['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){
-  const tabs=[...activeTab.closest('[role="tablist"]').querySelectorAll('[data-journey-tab]')],i=tabs.indexOf(activeTab);
-  const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(i+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
-  event.preventDefault();tabs[next].click();tabs[next].focus();return;
- }
- if(event.key==='Escape')dismiss();
+ if(event.key==='Escape'){const panel=document.querySelector('[data-flow-order-panel]');if(panel){panel.remove();return}dismiss();}
 });
 window.FactoryFlowUI={show,openDocument,dismiss,fromAudit,names:deptNames,flowConfig};
 })();
