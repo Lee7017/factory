@@ -165,6 +165,30 @@ try{
   assert.equal(await page.locator('.native-business .biz-order-panel[data-order-panel="purchase"]').count(),0)
   await page.evaluate(()=>{window.location.hash="#/departments/sales/orders"})
   await page.locator('.native-business .biz-order-panel[data-order-panel="orders"]').waitFor({state:"visible",timeout:15000})
+  await page.getByRole("button",{name:"新建销售订单"}).waitFor({state:"visible"})
+  const publishedSalesLayout=await page.evaluate(()=>{
+    const button=document.querySelector(".business-context-create")
+    const band=document.querySelector(".feature-band")
+    const panel=document.querySelector('.biz-order-panel[data-order-panel="orders"]')
+    const table=panel?.querySelector(".op-table")
+    const footer=panel?.querySelector(".biz-order-footer")
+    const body=document.querySelector(".business-page-body")
+    if(!button||!band||!panel||!table||!footer||!body)return null
+    const b=button.getBoundingClientRect(),f=band.getBoundingClientRect()
+    const t=table.getBoundingClientRect(),p=panel.getBoundingClientRect(),ft=footer.getBoundingClientRect()
+    return {
+      createInTopRight:b.top>=f.top&&b.bottom<=f.bottom,
+      legacyButtonHidden:getComputedStyle(panel.querySelector('[data-op-action="newOrder"]')).display==="none"||
+        getComputedStyle(panel.querySelector(".biz-order-toolbar")).display==="none",
+      flatSurface:getComputedStyle(body).borderTopWidth==="0px"&&getComputedStyle(body).backgroundColor==="rgba(0, 0, 0, 0)",
+      contentHeight:p.height<t.height+100,
+      footerFollowsRows:Math.abs(ft.top-t.bottom)<3,
+      overflow:document.documentElement.scrollWidth>innerWidth+4
+    }
+  })
+  assert.ok(publishedSalesLayout&&publishedSalesLayout.createInTopRight&&publishedSalesLayout.legacyButtonHidden&&
+    publishedSalesLayout.flatSurface&&publishedSalesLayout.contentHeight&&publishedSalesLayout.footerFollowsRows&&
+    !publishedSalesLayout.overflow,"Published sales order table must be flat with a top-right create action")
   assert.equal(await page.locator('.native-business .proc-purchase-board').count(),0,"Sales cannot contain procurement workbench")
   await page.screenshot({path:"test-results/live-sales-separated-from-purchasing.png"})
 
