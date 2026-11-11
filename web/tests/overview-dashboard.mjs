@@ -20,6 +20,11 @@ const workspace={...seed,
   ops:{...ops,flows:{[first]:{stage:"blending"},[second]:{stage:"approved"}},
     gantt:[
       {id:"G-TEST-1",orderId:first,type:"配制",lane:"L01 配制一线",start:`${today}T08:00`,duration:180,source:"手工排程"},
+      {id:"G-TEST-4",orderId:first,type:"清洗",lane:"L01 配制一线",start:`${today}T08:20`,duration:45,source:"手工排程"},
+      {id:"G-TEST-5",orderId:first,type:"半成品 QAQC",lane:"QC 检验位",start:`${today}T08:40`,duration:35,source:"手工排程"},
+      {id:"G-TEST-6",orderId:first,type:"调机调线",lane:"S03-4# 瓶装线",start:`${today}T09:00`,duration:30,source:"手工排程"},
+      {id:"G-TEST-7",orderId:first,type:"成品 QAQC",lane:"QC 检验位",start:`${today}T09:20`,duration:25,source:"手工排程"},
+      {id:"G-TEST-8",orderId:first,type:"清洗",lane:"S03-4# 瓶装线",start:`${today}T09:40`,duration:30,source:"手工排程"},
       {id:"G-TEST-2",orderId:first,type:"包装",lane:"S03-4# 瓶装线",start:`${today}T14:00`,duration:120,source:"手工排程"},
       {id:"G-TEST-3",orderId:second,type:"配制",lane:"L02 配制二线",start:`${tomorrow}T09:00`,duration:210,source:"手工排程"}
     ]
@@ -43,7 +48,29 @@ try{
   await page.addInitScript(value=>localStorage.setItem("factory-workspace-v4",JSON.stringify(value)),workspace)
   await page.goto(base,{waitUntil:"networkidle"})
   await page.locator(".overview-kpi-grid").waitFor()
-  assert.equal(await page.locator(".overview-gantt-bar").count(),3,"Weekly view draws real saved entries")
+  assert.equal(await page.locator(".overview-gantt-bar").count(),8,"Weekly view draws all saved entries including crowded days")
+  async function assertNoPaintedOverlap(label){
+    const result=await page.locator(".overview-gantt-data").first().evaluate(row=>{
+      const elements=Array.from(row.querySelectorAll(".overview-gantt-bar"))
+      const boxes=elements.map(el=>({id:el.getAttribute("aria-label"),r:el.getBoundingClientRect()}))
+      const collisions=[]
+      for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++){
+        const a=boxes[i].r,b=boxes[j].r
+        if(Math.min(a.right,b.right)-Math.max(a.left,b.left)>0.5&&
+          Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>0.5)collisions.push([boxes[i].id,boxes[j].id])
+      }
+      return {count:boxes.length,collisions,height:row.getBoundingClientRect().height}
+    })
+    assert.equal(result.collisions.length,0,label+" tasks physically overlap: "+JSON.stringify(result))
+    assert.ok(result.height>=57,label+" order height must fit all stacked tasks")
+  }
+  await assertNoPaintedOverlap("week")
+  const colors=await page.locator(".overview-gantt-data").first().locator(".overview-gantt-bar")
+    .evaluateAll(nodes=>[...new Set(nodes.map(n=>getComputedStyle(n).backgroundColor))])
+  assert.equal(colors.length,6,"Homepage must use six distinct PMC operation colors")
+  assert.equal(await page.locator(".overview-gantt-legend span").count(),6,"Six-stage legend must match PMC")
+  assert.equal(await page.locator(".overview-gantt-bar.is-mini").count()>0,true,
+    "Short tasks display colored mini-bars instead of illegible text")
   assert.equal(await page.locator(".overview-donut-legend button").count(),4)
   const donutLabel=await page.locator(".overview-donut-chart svg").getAttribute("aria-label")
   assert.ok(donutLabel?.includes("生产中 / 待检1单"))
@@ -52,9 +79,11 @@ try{
   assert.ok((await page.locator(".overview-alert-row").count())>0)
   await page.screenshot({path:"test-results/overview-with-real-schedule-fixture.png",fullPage:true})
   await page.getByRole("button",{name:"日视图"}).click()
-  assert.equal(await page.locator(".overview-gantt-bar").count(),2,"Day view filters to selected date")
+  assert.equal(await page.locator(".overview-gantt-bar").count(),7,"Day view filters to selected date")
+  await assertNoPaintedOverlap("day")
   await page.getByRole("button",{name:"月视图"}).click()
-  assert.equal(await page.locator(".overview-gantt-bar").count(),3,"Month view shows all saved entries")
+  assert.equal(await page.locator(".overview-gantt-bar").count(),8,"Month view shows all saved entries")
+  await assertNoPaintedOverlap("month")
   await page.getByRole("button",{name:"周视图"}).click()
   await page.getByRole("button",{name:"查看蜂群计划员详情"}).click()
   await page.getByRole("dialog").getByText("当前未连接运行服务",{exact:false}).waitFor()
@@ -75,7 +104,7 @@ try{
   assert.ok(overflow.scroll<=overflow.viewport+4,`Mobile dashboard overflow: ${JSON.stringify(overflow)}`)
   await page.screenshot({path:"test-results/overview-cockpit-mobile.png",fullPage:true})
   assert.deepEqual(errors,[],"Cockpit must not produce uncaught errors")
-  console.log("PASS: saved Gantt renders 3 tasks, day/week/month filtering, donut segmentation, Agent dialog and mobile layout.")
+  console.log("PASS: packed homepage Gantt renders 8 tasks without overlaps, six PMC colors, day/week/month, mobile layout.")
 }catch(error){failed=true;console.error(error)}
 finally{await browser?.close();server.kill("SIGTERM")}
 if(failed)process.exit(1)
