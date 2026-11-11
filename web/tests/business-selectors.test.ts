@@ -23,6 +23,7 @@ test("order handoff stage routes match FactoryOperations.pendingForDept",()=>{
     ["formal","pmc","kitting"],["reserved","warehouse","issue"],
     ["issued","production","tasks"],["blending","production","tasks"],
     ["semi_ok","production","tasks"],["packaging","production","tasks"],
+    ["blend_clean","production","nonProductionTasks"],["pack_clean","production","nonProductionTasks"],
     ["semi_qc","quality","qaQc"],["final_qc","quality","qaQc"],
     ["inspected","quality","release"],["released","warehouse","inventory"],
     ["stored","sales","orders"],["dispatch","warehouse","warehouseOutbound"],
@@ -64,14 +65,23 @@ test("warehouse and production module tasks cover status gates",()=>{
   assert.deepEqual(getTodos("production",ws).map(r=>r.id),["MR-04","DSP-01"])
   assert.deepEqual(getTodos("pmc",ws).map(r=>r.id),["SHIFT-01"])
 })
-test("HR finance and engineering preserve app.js pending rules",()=>{
+test("equipment work moves into production nonproduction without deleting existing tasks",()=>{
   const ws=empty()
   ws.leaves=[rec("LV-01","待人事审批",{person:"员工甲",range:"明天"})]
   ws.payroll=[rec("OT-01","待人事复核",{name:"员工乙"}),rec("IN-01","待财务核准",{name:"员工丙"})]
-  ws.tasks=[rec("TK-01","待开始",{type:"调机调线",line:"L01"}),rec("TK-02","已完成",{type:"调机调线"})]
+  ws.tasks=[
+    rec("TK-01","待开始",{type:"调机调线",line:"L01"}),
+    rec("TK-02","已完成",{type:"调机调线"}),
+    rec("TK-03","待复核",{type:"清洗",line:"L02"}),
+    rec("TK-04","执行中",{type:"设备点检"}),
+    rec("TK-05","待开始",{type:"配制",category:"生产任务"})
+  ]
   assert.deepEqual(getTodos("hr",ws).map(r=>r.feature),["leaveApproval","payroll"])
   assert.deepEqual(getTodos("finance",ws).map(r=>r.id),["IN-01"])
-  assert.deepEqual(getTodos("engineering",ws).map(r=>r.id),["TK-01"])
+  const todos=getTodos("production",ws)
+  assert.deepEqual(todos.map(x=>x.id),["TK-01","TK-03","TK-04"])
+  assert.ok(todos.every(x=>x.feature==="nonProductionTasks"))
+  assert.equal(getTodos("engineering",ws).length,0)
   assert.equal(getTodos("it",ws).length,0)
 })
 test("real factory status labels map to the three todo columns",()=>{
