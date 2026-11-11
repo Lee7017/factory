@@ -188,12 +188,18 @@ function linkedDocuments(entry,kind,step){
   if(name==='确认领料发料')add((modules.materialRequests||[]).filter(r=>r.order===ref&&r.type==='领料'),'material','领料单');
   if(name==='配制线清洗执行与复核'||name==='包装线清洗执行与复核'){
    const phase=name.startsWith('配制')?'配制':'包装';
-   // 一张流程卡对应当前这次清洗；同一工单因不合格重洗产生的历史报检仍在质量部留档。
-   const latestTask=window.FactoryOperations?.tasksForOrder?.(ref,'清洗',phase)?.[0];
    const reports=cleanFor(phase);
-   const latestReport=latestTask?reports.find(r=>r.task===latestTask.id):reports[0];
-   if(latestReport)add([latestReport],'clean','清洗报检单');
-   else if(latestTask)add([latestTask],'task','清洗工单');
+   // 展示所有真实报检记录，包含不合格后重新报检的历史；不擅自隐藏或合并单据。
+   for(const r of reports)if(r.id)documents.push({
+    type:'clean',title:'清洗报检单',ref:String(r.id),
+    taskId:String(r.task||''),line:String(r.line||''),phase,
+    status:String(r.status||'未记录'),at:String(r.checkedAt||r.submittedAt||''),
+    remark:String(r.remark||r.failureReason||'')
+   });
+   if(!reports.length){
+    const tasks=window.FactoryOperations?.tasksForOrder?.(ref,'清洗',phase)||[];
+    add(tasks,'task','清洗工单');
+   }
   }
   if(name==='半成品检验判定'||name==='成品检验判定并放行'){
    const phase=name.startsWith('半成品')?'半成品':'成品';
@@ -347,16 +353,43 @@ function openLinkedDocument(doc){
  dismiss();
  window.FactoryModules.openRecordDocument(doc.type,doc.ref);
 }
+
+// 解释同一环节为何出现多张清洗报检单，只根据工单号、产线和实际检验结论下结论。
+function cleaningDocumentsExplanation(docs){
+ const items=docs.filter(d=>d.type==='clean');
+ if(items.length<2)return '';
+ const tasks=[...new Set(items.map(d=>d.taskId).filter(Boolean))],
+  lines=[...new Set(items.map(d=>d.line).filter(Boolean))];
+ if(items.some(d=>!d.taskId||!d.line))
+  return '有历史报检单缺少关联清洗工单或产线信息，无法确认多张单的具体原因，请核对下方工单号与检验结论。';
+ if(tasks.length===1){
+  const failed=items.filter(d=>d.status==='不合格');
+  if(failed.length)
+   return `同一条产线（${lines.join('、')}）、同一清洗工单（${tasks[0]}），共有 ${items.length} 次报检；其中 ${failed.length} 次检验不合格，系统按规则退回重新清洗，因此产生再次报检记录。不是两条产线同时清洗。`;
+  return `同一清洗工单（${tasks[0]}）关联 ${items.length} 张报检单，但未发现“不合格”结论。当前记录不能证明有重新清洗，需核实是否为历史重复报检。`;
+ }
+ if(lines.length>1)
+  return `这 ${items.length} 张报检单属于 ${tasks.length} 张不同清洗工单，涉及 ${lines.length} 条产线：${lines.join('、')}。这是不同产线的记录，并非一条产线重复报检。`;
+ if(lines.length===1)
+  return `同一条产线（${lines[0]}）关联了 ${tasks.length} 张清洗工单。它们不是同一清洗工单的复检；可能是不同生产任务或返工后分别清洗。现有记录没有注明重复开工原因，不能认定是重复清洗。`;
+ return '多张报检单关联不同清洗工单，但产线信息不完整，暂时无法判定原因。';
+}
 function chooseLinkedDocuments(docs){
  const host=document.querySelector('#flow-transition-host');
  if(!host||!docs.length)return;
  if(docs.length===1)return openLinkedDocument(docs[0]);
  host.querySelector('[data-flow-document-picker]')?.remove();
- const body=docs.map((doc,i)=>`<button type="button" class="journey-doc-choice" data-flow-document-choice="${i}">
-  <strong>${clean(doc.title)}</strong><span>${clean(doc.ref)}</span></button>`).join('');
+ const reason=cleaningDocumentsExplanation(docs);
+ const body=docs.map((doc,i)=>{
+  const details=doc.type==='clean'?
+   `<small>${clean(doc.phase||'清洗')}线 · ${clean(doc.line||'产线未登记')} · 工单 ${clean(doc.taskId||'未关联')} · ${clean(doc.status||'未记录')}${doc.at?' · '+clean(doc.at):''}</small>`:'';
+  return `<button type="button" class="journey-doc-choice" data-flow-document-choice="${i}">
+   <span class="journey-doc-choice-main"><strong>${clean(doc.title)} · ${clean(doc.ref)}</strong>${details}</span></button>`;
+ }).join('');
  host.insertAdjacentHTML('beforeend',`<div class="journey-doc-picker-backdrop" data-flow-document-picker>
   <section class="journey-doc-picker" role="dialog" aria-modal="true" aria-label="选择关联单据">
-   <header><strong>选择要查看的单据</strong><button type="button" data-flow-document-dismiss aria-label="关闭关联单据列表">×</button></header>
+   <header><strong>${reason?'这几张清洗报检单为什么同时存在？':'选择要查看的单据'}</strong><button type="button" data-flow-document-dismiss aria-label="关闭关联单据列表">×</button></header>
+   ${reason?`<p class="journey-doc-explanation">${clean(reason)}</p>`:''}
    <div class="journey-doc-picker-list">${body}</div>
   </section></div>`);
  activeDocumentChoices=docs;
