@@ -15,7 +15,7 @@ type Props={
 function compactBusinessStatus(value:string){
   const text=value.trim().replace(/\s+/g," ")
   if(!text)return ""
-  if(text.includes("部分发货"))return "部分发货"
+  if(text.includes("部分发货"))return "部分出库"
   if(text.includes("部分出库"))return "部分出库"
   if(text.includes("库存不足"))return "库存不足"
   if(text.includes("待出库"))return "待出库"
@@ -25,9 +25,35 @@ function compactBusinessStatus(value:string){
   if(text.includes("待审批"))return "待审批"
   if(text.includes("待质检"))return "待质检"
   if(text.includes("待登记"))return "待登记"
+  if(text.includes("待备料"))return "待备料"
+  if(text.includes("备料中"))return "备料中"
+  if(text.includes("待接收"))return "待接收"
+  if(text.includes("待判定"))return "待判定"
+  if(text.includes("待抽检"))return "待抽检"
+  if(text.includes("待处置"))return "待处置"
+  if(text.includes("待开始"))return "待开始"
+  if(text.includes("执行中"))return "执行中"
   const bracket=text.indexOf("（")
   return (bracket>0?text.slice(0,bracket):text).slice(0,12)
 }
+const fallbackContextStatuses:Record<string,string[]>={
+  orders:["待评审","已评审","生产中"],
+  orderReview:["待评审","已评审"],
+  orderHistory:["已交付"],
+  kitting:["待齐套","已齐套"],
+  purchase:["待审批","采购中","已完成"],
+  warehouseIncoming:["待登记","待质检","已完成"],
+  warehousePick:["待备料","备料中","已完成"],
+  warehouseOutbound:["待出库","部分出库","已交付"],
+  warehouseReturns:["待接收","处理中","已完成"],
+  qaQc:["待判定","处理中","已完成"],
+  qaSampling:["待抽检","处理中","已完成"],
+  qaCleanInspection:["待判定","处理中","已完成"],
+  qaNcr:["待处置","处理中","已完成"],
+  tasks:["待开始","生产中","已完成"],
+  nonProductionTasks:["待开始","执行中","已完成"]
+}
+
 export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
   const [markup,setMarkup]=useState("")
   const [status,setStatus]=useState<"loading"|"ready"|"error">("loading")
@@ -37,6 +63,7 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
   const [contextQuery,setContextQuery]=useState("")
   const [contextStatus,setContextStatus]=useState("")
   const [contextStatuses,setContextStatuses]=useState<string[]>([])
+  const [contextStatusCounts,setContextStatusCounts]=useState<Record<string,number>>({})
   const [toolHost,setToolHost]=useState<HTMLElement|null>(null)
   const rootRef=useRef<HTMLDivElement>(null)
   const render=useCallback(async()=>{
@@ -69,6 +96,7 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     setContextQuery("")
     setContextStatus("")
     setContextStatuses([])
+    setContextStatusCounts({})
     setToolHost(document.getElementById("business-context-tools-host"))
   },[dept,feature])
 
@@ -86,12 +114,18 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
         const group=compactBusinessStatus(row.dataset.orderStatus??"")
         if(group)counts.set(group,(counts.get(group)??0)+1)
       }
-      const options=Array.from(counts.entries()).sort((a,b)=>b[1]-a[1]).map(([name])=>name).slice(0,3)
+      const actual=Array.from(counts.entries()).sort((a,b)=>b[1]-a[1]).map(([name])=>name).slice(0,3)
+      const options=actual.length?actual:(fallbackContextStatuses[feature]??[])
+      const countRecord=Object.fromEntries(options.map(name=>[name,counts.get(name)??0]))
       setContextStatuses(current=>current.join("\u0000")===options.join("\u0000")?current:options)
+      setContextStatusCounts(current=>JSON.stringify(current)===JSON.stringify(countRecord)?current:countRecord)
       if(contextStatus&&!options.includes(contextStatus))setContextStatus("")
-    }else if(contextStatuses.length){
-      setContextStatuses([])
-      if(contextStatus)setContextStatus("")
+    }else{
+      const options=fallbackContextStatuses[feature]??[]
+      const countRecord=Object.fromEntries(options.map(name=>[name,0]))
+      setContextStatuses(current=>current.join("\u0000")===options.join("\u0000")?current:options)
+      setContextStatusCounts(current=>JSON.stringify(current)===JSON.stringify(countRecord)?current:countRecord)
+      if(contextStatus&&!options.includes(contextStatus))setContextStatus("")
     }
     const needle=contextQuery.trim().toLocaleLowerCase()
     let visible=0
@@ -165,7 +199,7 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
         {contextStatuses.length>0&&<div className="business-context-status" aria-label="当前列表状态">
           <button type="button" className={!contextStatus?"active":""} onClick={()=>setContextStatus("")}>全部</button>
           {contextStatuses.map(name=><button type="button" key={name} className={contextStatus===name?"active":""}
-            onClick={()=>setContextStatus(name)}>{name}</button>)}
+            onClick={()=>setContextStatus(name)}>{name}<span>{contextStatusCounts[name]??0}</span></button>)}
         </div>}
         <label className="business-context-search">
           <Search size={14}/><input type="search" value={contextQuery} onChange={event=>setContextQuery(event.target.value)}
