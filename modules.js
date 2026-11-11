@@ -290,19 +290,36 @@ function allocateFIFO(material,qty){
 function nextBatch(material,qty){const allocated=allocateFIFO(material,qty);return allocated?.length?getBatch(allocated[0].id):null}
 function validAllocations(request){return (request.allocations||[{id:request.batch,qty:request.qty}]).every(x=>{const b=getBatch(x.id);return b&&b.quality==='合格'&&!isExpired(b)&&b.qty>=Number(x.qty)})}
 
+// Attach the real status to PMC rows, and use the existing native select pattern.
+// The Gantt renderer and all other module pages are unchanged.
+function pmcStatusRow(values,actual){
+ return row(values).replace('<tr>',`<tr data-order-status="${esc(actual)}">`);
+}
+function pmcStatusGrid(columns,rows,statusIndex,allStatuses,empty='暂无记录'){
+ const table=grid(columns,rows,empty),label=columns[statusIndex];
+ const choices=[...new Set(allStatuses.filter(Boolean))];
+ const heading=`<th class="pmc-status-heading"><div class="sales-order-status-control">
+   <span>${esc(label)}</span>
+   <svg class="sales-order-status-caret" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 7h16M7 12h10M10 17h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+   <select class="sales-order-status-select" data-pmc-status-filter aria-label="筛选${esc(label)}" title="筛选${esc(label)}" data-status-label="${esc(label)}">
+     <option value="">全部状态</option>${choices.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('')}
+   </select>
+ </div></th>`;
+ return table.replace(`<th>${esc(label)}</th>`,heading);
+}
 function shiftPage(){const t=currentTab.shift||'plan';let content='',tools='';
  if(t==='plan'){
  tools=btn('安排岗位班次','form:roster','','primary');
- content=note('按产线 × 岗位编排；检查技能、请假、工位撞班与开工前 Gate')+grid(['班次','日期','产线','岗位','员工','订单','开工前 Gate','操作'],S.roster.map(r=>row([`<b>${esc(r.id)}</b>`,esc(r.day+' '+r.start+'–'+r.end),esc(r.line),esc(r.position),esc(ctx.access.staff.find(x=>x.id===r.person)?.name||r.person),esc(r.order),status(r.gate||'待检查'),btn('检查开工条件','gate',r.id,'primary')])));
+ content=note('按产线 × 岗位编排；检查技能、请假、工位撞班与开工前 Gate')+pmcStatusGrid(['班次','日期','产线','岗位','员工','订单','开工前 Gate','操作'],S.roster.map(r=>pmcStatusRow([`<b>${esc(r.id)}</b>`,esc(r.day+' '+r.start+'–'+r.end),esc(r.line),esc(r.position),esc(ctx.access.staff.find(x=>x.id===r.person)?.name||r.person),esc(r.order),status(r.gate||'待检查'),btn('检查开工条件','gate',r.id,'primary')],r.gate||'待检查')),6,[...S.roster.map(r=>r.gate||'待检查'),'待检查','已通过','未通过']);
  }else if(t==='people'){
- content=note('按员工查看班次安排与工种')+grid(['员工','日期','工位','产线','班次','状态'],S.roster.map(r=>row([esc(ctx.access.staff.find(x=>x.id===r.person)?.name||r.person),esc(r.day),esc(r.position),esc(r.line),esc(r.start+'–'+r.end),status(r.gate||'待检查')])));
+ content=note('按员工查看班次安排与工种')+pmcStatusGrid(['员工','日期','工位','产线','班次','状态'],S.roster.map(r=>pmcStatusRow([esc(ctx.access.staff.find(x=>x.id===r.person)?.name||r.person),esc(r.day),esc(r.position),esc(r.line),esc(r.start+'–'+r.end),status(r.gate||'待检查')],r.gate||'待检查')),5,[...S.roster.map(r=>r.gate||'待检查'),'待检查','已通过','未通过']);
  }else if(t==='stats'){
  const passed=S.roster.filter(r=>r.gate==='已通过').length;
  content=cards([['排班记录',S.roster.length,'产线 × 岗位'],['开工前 Gate 通过',passed,'人员、资质、请假、清洗'],['确认工时',S.hours.filter(h=>h.status==='已确认').length,'计入统计'],['未确认工时',S.hours.filter(h=>h.status==='待确认').length,'暂不计入']])+dataSection('班次统计明细','',grid(['产线','排班数','通过数','员工数'],[...new Set(S.roster.map(r=>r.line))].map(l=>{let a=S.roster.filter(r=>r.line===l);return row([esc(l),a.length,a.filter(x=>x.gate==='已通过').length,new Set(a.map(x=>x.person)).size])})));
  }else if(t==='products'){
  const confirms=S.hours.filter(h=>h.status==='已确认'&&h.order);
  const orders=[...new Set(confirms.map(h=>h.order))];
- content=note('只累计员工已确认的订单工时')+grid(['订单号','产品','确认工时（小时）','参与员工','状态'],orders.map(o=>{let a=confirms.filter(h=>h.order===o),obj=ctx.data.orders.find(x=>x.id===o);return row([esc(o),esc(obj?.product||'—'),money(a.reduce((sum,x)=>sum+Number(x.hours),0)),new Set(a.map(x=>x.person)).size,status(ops().flows[o]?.stage||'待处理')])}));
+ content=note('只累计员工已确认的订单工时')+pmcStatusGrid(['订单号','产品','确认工时（小时）','参与员工','状态'],orders.map(o=>{let a=confirms.filter(h=>h.order===o),obj=ctx.data.orders.find(x=>x.id===o),stage=ops().flows[o]?.stage||'待处理';return pmcStatusRow([esc(o),esc(obj?.product||'—'),money(a.reduce((sum,x)=>sum+Number(x.hours),0)),new Set(a.map(x=>x.person)).size,status(stage)],stage)}),4,[...orders.map(o=>ops().flows[o]?.stage||'待处理'),'待处理']);
  }else{
  const list=S.hours.filter(h=>h.status==='已确认'&&h.order);
  content=note('按日期 / 订单汇总已确认工时')+grid(['日期','订单','已确认工时（小时）','工时类型'],[...new Set(list.map(h=>h.day+'|'+h.order))].map(k=>{let [day,order]=k.split('|'),xs=list.filter(h=>h.day===day&&h.order===order);return row([esc(day),esc(order),money(xs.reduce((a,b)=>a+Number(b.hours),0)),esc([...new Set(xs.map(x=>x.type))].join(' / '))])}));

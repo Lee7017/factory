@@ -3403,3 +3403,451 @@ button.department-profile-photo-slot:focus-visible,
   background:#FFFFFF!important;
   text-align:left!important;
 }
+
+/* PMC non-Gantt ledgers: five ERP table rules. No selectors target schedule/Gantt. */
+/* Keep the production scheduling route and every Gantt component untouched. */
+.factory-shell-v2 .business-page-body:has(
+  :is(.biz-order-panel[data-order-panel="kitting"],
+  .mw-page[data-module-page="shift"],
+  .mw-page[data-module-page="shiftPeople"],
+  .mw-page[data-module-page="shiftStats"],
+  .mw-page[data-module-page="orderProductStats"],
+  .mw-page[data-module-page="orderDailyReport"])
+){
+  width:100%;
+  height:auto!important;
+  min-height:0!important;
+  padding:0!important;
+  overflow:visible!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root .biz-order-panel[data-order-panel="kitting"]{
+  display:block!important;
+  width:100%;
+  height:auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:visible!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="kitting"] :is(
+  .biz-order-stats,.biz-order-toolbar,.biz-order-fold
+){display:none!important}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="kitting"] .biz-order-table-area{
+  display:block;
+  height:auto!important;
+  min-height:0!important;
+  flex:none!important;
+  overflow:visible!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root .biz-order-panel[data-order-panel="kitting"] .op-table-wrap{
+  width:100%;
+  min-width:0;
+  margin:0!important;
+  overflow-x:auto!important;
+  overflow-y:visible!important;
+  background:#FFFFFF!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root .biz-order-panel[data-order-panel="kitting"] .op-table{
+  width:100%!important;
+  min-width:1100px!important;
+  table-layout:fixed!important;
+  border-collapse:collapse!important;
+  border:0!important;
+  background:#FFFFFF!important;
+}
+.factory-shell-v2 .biz-order-panel[data-order-panel="kitting"] .op-table :is(th,td):nth-child(1){width:15%!important}
+.factory-shell-v2 .biz-order-panel[data-order-panel="kitting"] .op-table :is(th,td):nth-child(2){width:17%!important}
+.factory-shell-v2 .biz-order-panel[data-order-panel="kitting"] .op-table :is(th,td):nth-child(3){width:10%!important}
+.factory-shell-v2 .biz-order-panel[data-order-panel="kitting"] .op-table :is(th,td):nth-child(4){width:14%!important}
+.factory-shell-v2 .biz-order-panel[data-order-panel="kitting"] .op-table :is(th,td):nth-child(5){width:27%!important}
+.factory-shell-v2 .biz-order-panel[data-order-panel="kitting"] .op-table :is(th,td):nth-child(6){width:17%!important}
+.factory-shell-v2 .native-business .legacy-root .biz-order-panel[data-order-panel="kitting"] .op-table :is(th,td){
+  text-align:left!important;
+  vertical-align:middle!important;
+}
+.factory-shell-v2 .native-business .legacy-root .biz-order-panel[data-order-panel="kitting"] .op-table th{
+  height:38px!important;
+  padding:0 12px!important;
+  background:#F4F4EF!important;
+  color:#4F574F!important;
+  border-top:1px solid #DEE3DC!important;
+  border-bottom:1px solid #DEE3DC!important;
+}
+.factory-shell-v2 .native-business .legacy-root .biz-order-panel[data-order-panel="kitting"] .op-table td{
+  min-height:48px!important;
+  height:auto!important;
+  padding:9px 12px!important;
+  background:#FFFFFF!important;
+  color:#3F4941!important;
+  border-bottom:1px solid #DEE3DC!important;
+  overflow-wrap:anywhere;
+}
+.factory-shell-v2 .native-business .legacy-root .biz-order-panel[data-order-panel="kitting"] .op-table tbody tr:hover td{
+  background:#FBFCF8!important;
+}
+.factory-shell-v2 .native-business .legacy-root .biz-order-panel[data-order-panel="kitting"] .op-row-actions{
+  display:flex!important;
+  justify-content:flex-start!important;
+  align-items:center!important;
+  flex-wrap:wrap!important;
+  gap:7px!important;
+  margin:0!important;
+}
+.factory-shell-v2 .native-business .legacy-root .biz-order-panel[data-order-panel="kitting"] .op-badge{
+  background:#FBFCF8!important;
+  color:#4F574F!important;
+  border:1px solid #DEE3DC!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .business-page-body .biz-order-panel[data-order-panel="kitting"] .biz-order-footer{
+  display:flex;
+  justify-content:flex-start;
+  align-items:center;
+  height:auto!important;
+  min-height:30px!important;
+  margin:0!important;
+  padding:6px 12px!important;
+  background:transparent!important;
+  color:#7B837C!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+/* PMC shift and order-hour screens: plain rows on white, no nested cards. */
+.factory-shell-v2 .native-business .legacy-root .mw-page:is(
+  [data-module-page="shift"],
+  [data-module-page="shiftPeople"],
+  [data-module-page="shiftStats"],
+  [data-module-page="orderProductStats"],
+  [data-module-page="orderDailyReport"]
+){
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  height:auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:visible!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root .mw-page:is(
+  [data-module-page="shift"],[data-module-page="shiftPeople"],
+  [data-module-page="shiftStats"],[data-module-page="orderProductStats"],
+  [data-module-page="orderDailyReport"]
+) .mw-content{
+  display:flex;
+  flex-direction:column;
+  gap:0!important;
+  height:auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root .mw-page[data-module-page="shift"] .mw-table-toolbar{
+  display:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root .mw-page:is(
+  [data-module-page="shift"],[data-module-page="shiftPeople"],
+  [data-module-page="shiftStats"],[data-module-page="orderProductStats"],
+  [data-module-page="orderDailyReport"]
+) .mw-table-scroll{
+  width:100%;
+  min-height:0!important;
+  height:auto!important;
+  margin:0!important;
+  padding:0!important;
+  overflow-x:auto!important;
+  overflow-y:visible!important;
+  background:#FFFFFF!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root .mw-page:is(
+  [data-module-page="shift"],[data-module-page="shiftPeople"],
+  [data-module-page="shiftStats"],[data-module-page="orderProductStats"],
+  [data-module-page="orderDailyReport"]
+) .mw-table{
+  width:100%!important;
+  table-layout:fixed!important;
+  border-collapse:collapse!important;
+  border:0!important;
+  background:#FFFFFF!important;
+}
+.factory-shell-v2 .mw-page[data-module-page="shift"] .mw-table{min-width:1040px!important}
+.factory-shell-v2 .mw-page[data-module-page="shiftPeople"] .mw-table{min-width:800px!important}
+.factory-shell-v2 .mw-page[data-module-page="shiftStats"] .mw-table{min-width:560px!important}
+.factory-shell-v2 .mw-page[data-module-page="orderProductStats"] .mw-table{min-width:760px!important}
+.factory-shell-v2 .mw-page[data-module-page="orderDailyReport"] .mw-table{min-width:700px!important}
+/* Assign widths to the real tables, not to the surrounding column cards. */
+.factory-shell-v2 .mw-page[data-module-page="shift"] .mw-table :is(th,td):nth-child(1){width:13%!important}
+.factory-shell-v2 .mw-page[data-module-page="shift"] .mw-table :is(th,td):nth-child(2){width:16%!important}
+.factory-shell-v2 .mw-page[data-module-page="shift"] .mw-table :is(th,td):nth-child(3){width:11%!important}
+.factory-shell-v2 .mw-page[data-module-page="shift"] .mw-table :is(th,td):nth-child(4){width:10%!important}
+.factory-shell-v2 .mw-page[data-module-page="shift"] .mw-table :is(th,td):nth-child(5){width:10%!important}
+.factory-shell-v2 .mw-page[data-module-page="shift"] .mw-table :is(th,td):nth-child(6){width:15%!important}
+.factory-shell-v2 .mw-page[data-module-page="shift"] .mw-table :is(th,td):nth-child(7){width:12%!important}
+.factory-shell-v2 .mw-page[data-module-page="shift"] .mw-table :is(th,td):nth-child(8){width:13%!important}
+.factory-shell-v2 .mw-page[data-module-page="shiftPeople"] .mw-table :is(th,td):nth-child(1){width:18%!important}
+.factory-shell-v2 .mw-page[data-module-page="shiftPeople"] .mw-table :is(th,td):nth-child(2){width:16%!important}
+.factory-shell-v2 .mw-page[data-module-page="shiftPeople"] .mw-table :is(th,td):nth-child(3){width:16%!important}
+.factory-shell-v2 .mw-page[data-module-page="shiftPeople"] .mw-table :is(th,td):nth-child(4){width:16%!important}
+.factory-shell-v2 .mw-page[data-module-page="shiftPeople"] .mw-table :is(th,td):nth-child(5){width:18%!important}
+.factory-shell-v2 .mw-page[data-module-page="shiftPeople"] .mw-table :is(th,td):nth-child(6){width:16%!important}
+.factory-shell-v2 .mw-page[data-module-page="shiftStats"] .mw-table :is(th,td):nth-child(1){width:34%!important}
+.factory-shell-v2 .mw-page[data-module-page="shiftStats"] .mw-table :is(th,td):nth-child(2){width:22%!important}
+.factory-shell-v2 .mw-page[data-module-page="shiftStats"] .mw-table :is(th,td):nth-child(3){width:22%!important}
+.factory-shell-v2 .mw-page[data-module-page="shiftStats"] .mw-table :is(th,td):nth-child(4){width:22%!important}
+.factory-shell-v2 .mw-page[data-module-page="orderProductStats"] .mw-table :is(th,td):nth-child(1){width:21%!important}
+.factory-shell-v2 .mw-page[data-module-page="orderProductStats"] .mw-table :is(th,td):nth-child(2){width:28%!important}
+.factory-shell-v2 .mw-page[data-module-page="orderProductStats"] .mw-table :is(th,td):nth-child(3){width:18%!important}
+.factory-shell-v2 .mw-page[data-module-page="orderProductStats"] .mw-table :is(th,td):nth-child(4){width:18%!important}
+.factory-shell-v2 .mw-page[data-module-page="orderProductStats"] .mw-table :is(th,td):nth-child(5){width:15%!important}
+.factory-shell-v2 .mw-page[data-module-page="orderDailyReport"] .mw-table :is(th,td):nth-child(1){width:23%!important}
+.factory-shell-v2 .mw-page[data-module-page="orderDailyReport"] .mw-table :is(th,td):nth-child(2){width:30%!important}
+.factory-shell-v2 .mw-page[data-module-page="orderDailyReport"] .mw-table :is(th,td):nth-child(3){width:23%!important}
+.factory-shell-v2 .mw-page[data-module-page="orderDailyReport"] .mw-table :is(th,td):nth-child(4){width:24%!important}
+.factory-shell-v2 .native-business .legacy-root .mw-page:is(
+  [data-module-page="shift"],[data-module-page="shiftPeople"],
+  [data-module-page="shiftStats"],[data-module-page="orderProductStats"],
+  [data-module-page="orderDailyReport"]
+) .mw-table :is(th,td){
+  text-align:left!important;
+  vertical-align:middle!important;
+}
+.factory-shell-v2 .native-business .legacy-root .mw-page:is(
+  [data-module-page="shift"],[data-module-page="shiftPeople"],
+  [data-module-page="shiftStats"],[data-module-page="orderProductStats"],
+  [data-module-page="orderDailyReport"]
+) .mw-table th{
+  height:38px!important;
+  padding:0 12px!important;
+  color:#4F574F!important;
+  background:#F4F4EF!important;
+  border-top:1px solid #DEE3DC!important;
+  border-bottom:1px solid #DEE3DC!important;
+}
+.factory-shell-v2 .native-business .legacy-root .mw-page:is(
+  [data-module-page="shift"],[data-module-page="shiftPeople"],
+  [data-module-page="shiftStats"],[data-module-page="orderProductStats"],
+  [data-module-page="orderDailyReport"]
+) .mw-table td{
+  height:auto!important;
+  min-height:48px!important;
+  padding:9px 12px!important;
+  color:#3F4941!important;
+  background:#FFFFFF!important;
+  border-bottom:1px solid #DEE3DC!important;
+  overflow-wrap:anywhere;
+}
+.factory-shell-v2 .native-business .legacy-root .mw-page:is(
+  [data-module-page="shift"],[data-module-page="shiftPeople"],
+  [data-module-page="shiftStats"],[data-module-page="orderProductStats"],
+  [data-module-page="orderDailyReport"]
+) .mw-table tbody tr:hover td{
+  background:#FBFCF8!important;
+}
+.factory-shell-v2 .native-business .legacy-root .mw-page:is(
+  [data-module-page="shift"],[data-module-page="shiftPeople"],
+  [data-module-page="shiftStats"],[data-module-page="orderProductStats"],
+  [data-module-page="orderDailyReport"]
+) .mw-status:not(.mw-alert){
+  background:#FBFCF8!important;
+  border:1px solid #DEE3DC!important;
+  color:#4F574F!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root .mw-page[data-module-page="shift"] .mw-table td:last-child :is(button,.mw-btn){
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  margin:0!important;
+  white-space:nowrap;
+}
+/* The native dropdown is anchored to the same baseline as its real table heading. */
+.factory-shell-v2 .native-business .legacy-root :is(
+  .biz-order-panel[data-order-panel="kitting"] .sales-order-status-heading,
+  .mw-page[data-module-page="shift"] .pmc-status-heading,
+  .mw-page[data-module-page="shiftPeople"] .pmc-status-heading,
+  .mw-page[data-module-page="orderProductStats"] .pmc-status-heading
+){
+  padding:0 12px!important;
+  text-align:left!important;
+  vertical-align:middle!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(
+  .biz-order-panel[data-order-panel="kitting"],
+  .mw-page[data-module-page="shift"],
+  .mw-page[data-module-page="shiftPeople"],
+  .mw-page[data-module-page="orderProductStats"]
+) .sales-order-status-control{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:7px;
+  height:34px;
+  min-height:34px;
+  max-width:100%;
+  padding:0 5px 0 0;
+  color:#4F574F;
+  font-size:11px;
+  font-weight:700;
+  line-height:1;
+  white-space:nowrap;
+  border-radius:5px;
+  cursor:pointer;
+}
+.factory-shell-v2 .native-business .legacy-root :is(
+  .biz-order-panel[data-order-panel="kitting"],
+  .mw-page[data-module-page="shift"],
+  .mw-page[data-module-page="shiftPeople"],
+  .mw-page[data-module-page="orderProductStats"]
+) .sales-order-status-control:is(:hover,.is-active,:focus-within){
+  background:#FBFCF8!important;
+}
+.factory-shell-v2 .native-business .legacy-root :is(
+  .biz-order-panel[data-order-panel="kitting"],
+  .mw-page[data-module-page="shift"],
+  .mw-page[data-module-page="shiftPeople"],
+  .mw-page[data-module-page="orderProductStats"]
+) .sales-order-status-control .sales-order-status-select{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  opacity:0!important;
+  border:0!important;
+  z-index:2;
+  cursor:pointer!important;
+}
+/* PMC shift statistics: four facts in a single compact strip, not four cards. */
+.factory-shell-v2 .native-business .legacy-root .mw-page[data-module-page="shiftStats"] .mw-metrics{
+  display:flex!important;
+  flex-wrap:wrap;
+  gap:0!important;
+  width:100%;
+  margin:0 0 12px!important;
+  padding:0!important;
+  overflow:visible!important;
+  background:#FBFCF8!important;
+  border:0!important;
+  border-bottom:1px solid #DEE3DC!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root .mw-page[data-module-page="shiftStats"] .mw-metric{
+  flex:1 1 180px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:4px;
+  min-height:64px!important;
+  margin:0!important;
+  padding:8px 12px!important;
+  border:0!important;
+  border-right:1px solid #DEE3DC!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root .mw-page[data-module-page="shiftStats"] .mw-metric:last-child{border-right:0!important}
+.factory-shell-v2 .native-business .legacy-root .mw-page[data-module-page="shiftStats"] .mw-data-section{
+  width:100%;
+  min-width:0;
+  margin:0!important;
+  padding:0!important;
+  overflow:visible!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root .mw-page[data-module-page="shiftStats"] .mw-data-section-head{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  min-height:35px!important;
+  padding:0 12px!important;
+  margin:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+/* PMC-approved purchase queue remains a separately labeled table, never a card stack. */
+.factory-shell-v2 .native-business .legacy-root .proc-pmc-inbox{
+  margin:14px 0 0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .native-business .legacy-root .proc-pmc-inbox .mw-data-section{
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+.factory-shell-v2 .native-business .legacy-root .proc-pmc-inbox .mw-data-section-head{
+  background:transparent!important;
+  border:0!important;
+  padding:8px 12px!important;
+}
+.factory-shell-v2 .native-business .legacy-root .proc-pmc-inbox .op-table-wrap{
+  border:0!important;
+  border-radius:0!important;
+  background:#FFFFFF!important;
+}
+.factory-shell-v2 .native-business .legacy-root .proc-pmc-inbox .op-table :is(th,td){
+  text-align:left!important;
+  vertical-align:middle!important;
+}
+.factory-shell-v2 .native-business .legacy-root .proc-pmc-inbox .op-table th{
+  background:#F4F4EF!important;
+  color:#4F574F!important;
+}
+.factory-shell-v2 .native-business .legacy-root .proc-pmc-inbox .op-table td{
+  background:#FFFFFF!important;
+}
+.factory-shell-v2 .native-business .legacy-root .proc-pmc-inbox .proc-actions{
+  display:flex!important;
+  justify-content:flex-start!important;
+  align-items:center!important;
+  flex-wrap:wrap!important;
+  gap:7px!important;
+}
+.factory-shell-v2 .native-business .legacy-root .proc-pmc-inbox .proc-status:not(.is-warning){
+  background:#FBFCF8!important;
+  border-color:#DEE3DC!important;
+  color:#4F574F!important;
+}

@@ -136,6 +136,71 @@ try{
   assert.equal(await page.locator('.native-business .proc-linked-panel').count(),0,"No separate PR table on PMC")
   assert.equal(await page.locator('.native-business [data-proc-action="newDirectPurchase"]').count(),1)
   await page.screenshot({path:"test-results/live-pmc-purchase-demand.png"})
+  // Published PMC data pages must use the same flat tables as sales and purchase.
+  // Do not change, test-rewrite or style the scheduling Gantt here.
+  for(const [feature,selector,columns,statusAt] of [
+    ["kitting",'.biz-order-panel[data-order-panel="kitting"]',6,3],
+    ["shift",'.mw-page[data-module-page="shift"]',8,6],
+    ["shiftPeople",'.mw-page[data-module-page="shiftPeople"]',6,5],
+    ["shiftStats",'.mw-page[data-module-page="shiftStats"]',4,-1],
+    ["orderProductStats",'.mw-page[data-module-page="orderProductStats"]',5,4],
+    ["orderDailyReport",'.mw-page[data-module-page="orderDailyReport"]',4,-1]
+  ]){
+    await page.evaluate(name=>{window.location.hash="#/departments/pmc/"+name},feature)
+    const panel=page.locator(".native-business "+selector)
+    await panel.waitFor({state:"visible",timeout:18000})
+    const audit=await panel.evaluate(el=>{
+      const isKitting=el.matches('.biz-order-panel[data-order-panel="kitting"]')
+      const table=el.querySelector(isKitting?".op-table":".mw-table")
+      const headings=[...(table?.querySelectorAll("thead th")??[])]
+      const select=el.querySelector("[data-sales-order-status-filter], [data-pmc-status-filter]")
+      const head=select?.closest("th"),control=select?.closest(".sales-order-status-control")
+      const body=document.querySelector(".business-page-body")
+      const wrapper=table?.closest(isKitting?".op-table-wrap":".mw-table-scroll")
+      const badge=el.querySelector(".op-badge,.mw-status:not(.mw-alert)")
+      if(!table||!headings.length||!body||!wrapper)return null
+      const h=head?.getBoundingClientRect(),t=control?.getBoundingClientRect()
+      return {
+        columns:headings.length,
+        filterColumn:head?headings.indexOf(head):-1,
+        filterAligned:!select||(!!h&&!!t&&Math.abs((h.top+h.bottom-t.top-t.bottom)/2)<5),
+        nativeSelect:!select||Boolean(control?.querySelector(".sales-order-status-caret")),
+        warmHeader:headings.every(x=>getComputedStyle(x).backgroundColor==="rgb(244, 244, 239)"),
+        whiteRows:getComputedStyle(table).backgroundColor==="rgb(255, 255, 255)",
+        neutralBadge:!badge||getComputedStyle(badge).backgroundColor==="rgb(251, 252, 248)",
+        flatSurface:getComputedStyle(body).backgroundColor==="rgba(0, 0, 0, 0)"&&
+          getComputedStyle(body).borderTopWidth==="0px"&&getComputedStyle(wrapper).borderTopWidth==="0px",
+        noOverflow:document.documentElement.scrollWidth<=window.innerWidth+4
+      }
+    })
+    assert.ok(audit,"PMC "+feature+" must render a published ERP table")
+    assert.equal(audit.columns,columns,"PMC "+feature+" keeps its data fields")
+    assert.equal(audit.filterColumn,statusAt,"PMC "+feature+" status control occupies the right heading")
+    for(const [key,ok] of Object.entries(audit)){
+      if(typeof ok==="boolean")assert.equal(ok,true,"PMC "+feature+" published "+key+": "+JSON.stringify(audit))
+    }
+    const headerFilter=panel.locator("[data-sales-order-status-filter], [data-pmc-status-filter]")
+    if(statusAt>=0){
+      await headerFilter.waitFor({state:"attached"})
+      const total=await panel.locator("tbody tr[data-order-status]:visible").count()
+      await headerFilter.selectOption({index:1})
+      await page.waitForTimeout(75)
+      assert.ok(await panel.locator("tbody tr[data-order-status]:visible").count()<=total,
+        "PMC "+feature+" status filter applies to real published rows")
+      assert.equal(await panel.locator(".sales-order-status-control").evaluate(node=>getComputedStyle(node).backgroundColor),
+        "rgb(251, 252, 248)","PMC "+feature+" active status uses #FBFCF8")
+      await headerFilter.selectOption("")
+    }else assert.equal(await headerFilter.count(),0)
+    if(feature==="shift"){
+      assert.equal(await page.getByRole("button",{name:"安排岗位班次"}).isVisible(),true,
+        "Published PMC create action lives in the top-right band")
+      assert.equal(await panel.locator('[data-module-action="form:roster"]').isVisible(),false,
+        "The original PMC create action is not duplicated inside the table")
+    }
+    await page.screenshot({path:"test-results/live-pmc-"+feature+"-flat.png",fullPage:false})
+    console.log("PUBLISHED PMC DATA LAYOUT",JSON.stringify({feature,...audit}))
+  }
+
   await page.evaluate(()=>{window.location.hash="#/departments/purchase/purchase"})
   await page.locator('.native-business .proc-purchase-board').waitFor({state:"visible",timeout:18000})
   const publishedPurchase=await page.evaluate(()=>{

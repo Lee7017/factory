@@ -163,7 +163,7 @@ function recordTable(cols,rows,toolbar=''){return `<div class="op-table-wrap">${
   const opts=[...new Set(statuses.filter(Boolean))];
   // Render the selector in the real table, avoiding a cross-root React portal.
   const columnStatusLabel=key==="orderHistory"?"状态":"流程状态";
-  const columnHasFilter=["orders","orderReview","orderHistory"].includes(key);
+  const columnHasFilter=["orders","orderReview","orderHistory","kitting"].includes(key);
   const statusHeader=columnHasFilter
     ?`<th class="sales-order-status-heading"><div class="sales-order-status-control">
         <span>${columnStatusLabel}</span>

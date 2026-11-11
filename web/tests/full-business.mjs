@@ -318,6 +318,122 @@ try {
     console.log("SALES "+feature+" FLAT LEDGER CHECK",JSON.stringify({audit,options,total,visible}))
   }
 
+  // PMC non-Gantt visual rules. The APS production scheduling feature is explicitly excluded.
+  for(const [feature,panelSelector,expectedCols,statusIndex] of [
+    ["kitting",'.biz-order-panel[data-order-panel="kitting"]',6,3],
+    ["shift",'.mw-page[data-module-page="shift"]',8,6],
+    ["shiftPeople",'.mw-page[data-module-page="shiftPeople"]',6,5],
+    ["shiftStats",'.mw-page[data-module-page="shiftStats"]',4,-1],
+    ["orderProductStats",'.mw-page[data-module-page="orderProductStats"]',5,4],
+    ["orderDailyReport",'.mw-page[data-module-page="orderDailyReport"]',4,-1]
+  ]){
+    activeFeature="pmc/"+feature
+    await page.evaluate(feat=>{location.hash="#/departments/pmc/"+feat},feature)
+    const panel=page.locator(".native-business "+panelSelector)
+    await panel.waitFor({state:"visible",timeout:14000})
+    const audit=await panel.evaluate(element=>{
+      const isKitting=element.matches('.biz-order-panel[data-order-panel="kitting"]')
+      const table=element.querySelector(isKitting?".op-table":".mw-table")
+      const headings=[...(table?.querySelectorAll("thead th")??[])]
+      const body=document.querySelector(".business-page-body")
+      const wrapper=table?.closest(isKitting?".op-table-wrap":".mw-table-scroll")
+      const footer=element.querySelector(".biz-order-footer")
+      const select=element.querySelector("[data-sales-order-status-filter], [data-pmc-status-filter]")
+      const header=select?.closest("th")
+      const control=select?.closest(".sales-order-status-control")
+      const actions=element.querySelector(isKitting?".op-row-actions":".mw-table tbody tr td:last-child .mw-btn")
+      const actionHead=isKitting?headings.at(-1):element.matches('[data-module-page="shift"]')?headings.at(-1):null
+      const badge=element.querySelector(".op-badge,.mw-status:not(.mw-alert)")
+      if(!table||!wrapper||!body||!headings.length)return null
+      const bg=getComputedStyle(body)
+      const tb=table.getBoundingClientRect()
+      const fb=footer?.getBoundingClientRect()
+      const headingBox=header?.getBoundingClientRect(),controlBox=control?.getBoundingClientRect()
+      return {
+        columns:headings.length,
+        statusIndex:header?headings.indexOf(header):-1,
+        statusAligned:!select||(!!headingBox&&!!controlBox&&
+          Math.abs((headingBox.top+headingBox.bottom-controlBox.top-controlBox.bottom)/2)<5),
+        filterIcon:!select||Boolean(control?.querySelector(".sales-order-status-caret")?.getBoundingClientRect().width>=13),
+        actionAligned:!actionHead||!actions||Math.abs(
+          actionHead.getBoundingClientRect().left+12-actions.getBoundingClientRect().left)<5,
+        neutralBadge:!badge||getComputedStyle(badge).backgroundColor==="rgb(251, 252, 248)",
+        headerWarm:headings.every(th=>getComputedStyle(th).backgroundColor==="rgb(244, 244, 239)"),
+        whiteTable:getComputedStyle(table).backgroundColor==="rgb(255, 255, 255)",
+        flatBody:bg.borderTopWidth==="0px"&&bg.backgroundColor==="rgba(0, 0, 0, 0)",
+        flatWrapper:getComputedStyle(wrapper).borderTopWidth==="0px"&&getComputedStyle(wrapper).borderTopLeftRadius==="0px",
+        naturalHeight:element.getBoundingClientRect().height<tb.height+(
+          isKitting?95:element.matches('[data-module-page="shiftStats"]')?205:130
+        ),
+        statsCompact:!element.matches('[data-module-page="shiftStats"]')||(()=>{
+          const metrics=element.querySelector(".mw-metrics")
+          return Boolean(metrics)&&metrics.getBoundingClientRect().height<=105&&
+            getComputedStyle(metrics).borderTopWidth==="0px"
+        })(),
+        footerAttached:!footer||Math.abs(fb.top-tb.bottom)<3,
+        noPageOverflow:document.documentElement.scrollWidth<=innerWidth+4
+      }
+    })
+    assert.ok(audit,"PMC "+feature+" table must render as flat business data")
+    assert.equal(audit.columns,expectedCols,"PMC "+feature+" must retain all business columns")
+    assert.equal(audit.statusIndex,statusIndex,"PMC "+feature+" uses the correct status heading")
+    for(const [name,ok] of Object.entries(audit)){
+      if(typeof ok==="boolean")assert.equal(ok,true,"PMC "+feature+" visual "+name+": "+JSON.stringify(audit))
+    }
+    const headerFilter=panel.locator("[data-sales-order-status-filter], [data-pmc-status-filter]")
+    assert.equal(await page.locator(".business-context-status").count(),0,
+      "PMC "+feature+" must not have a duplicated status toolbar")
+    if(statusIndex>=0){
+      await headerFilter.waitFor({state:"attached"})
+      assert.ok(await headerFilter.locator("option").count()>1,"PMC "+feature+" has status choices")
+      const originalRows=await panel.locator("tbody tr[data-order-status]:visible").count()
+      await headerFilter.selectOption({index:1})
+      await page.waitForTimeout(80)
+      assert.ok(await panel.locator("tbody tr[data-order-status]:visible").count()<=originalRows,
+        "PMC "+feature+" status select filters real records")
+      assert.equal(await panel.locator(".sales-order-status-control").evaluate(el=>getComputedStyle(el).backgroundColor),
+        "rgb(251, 252, 248)","PMC "+feature+" uses warm-white active status")
+      await headerFilter.selectOption("")
+    }else{
+      assert.equal(await headerFilter.count(),0,"PMC "+feature+" does not invent a status filter")
+    }
+    if(feature==="shift"){
+      const topRight=page.getByRole("button",{name:"安排岗位班次"})
+      assert.equal(await topRight.isVisible(),true,"PMC shift creation lives in the feature band")
+      assert.equal(await panel.locator('[data-module-action="form:roster"]').isVisible(),false,
+        "PMC shift does not duplicate the create action inside its table")
+      await topRight.click()
+      const dialog=page.locator(".mw-modal")
+      await dialog.waitFor({state:"visible"})
+      assert.ok((await dialog.textContent())?.includes("产线岗位排班"),"Existing roster modal remains functional")
+      await dialog.locator('[data-module-action="closeModal"]').last().click()
+      await dialog.waitFor({state:"hidden"})
+    }
+    if(feature==="kitting"){
+      const replenish=page.getByRole("button",{name:"手动补货采购"})
+      assert.equal(await replenish.isVisible(),true,"PMC manual replenishment lives in the feature band")
+      assert.equal(await panel.locator('[data-proc-action="newDirectPurchase"]').isVisible(),false,
+        "PMC manual replenishment has no duplicate toolbar button")
+      await replenish.click()
+      const purchaseModal=page.locator(".proc-modal")
+      await purchaseModal.waitFor({state:"visible"})
+      assert.ok((await purchaseModal.textContent())?.includes("直接新建补货采购单"),
+        "Top-right PMC replenishment opens its existing purchase form")
+      await purchaseModal.locator('[data-proc-action="close"]').first().click()
+      await purchaseModal.waitFor({state:"hidden"})
+    }
+    if(feature==="shiftStats"){
+      assert.equal(await panel.locator(".mw-metric").count(),4,"All shift facts remain available")
+      const stats=await panel.locator(".mw-metrics").evaluate(el=>({
+        flat:getComputedStyle(el).borderTopWidth==="0px",
+        neutral:getComputedStyle(el).backgroundColor==="rgb(251, 252, 248)"
+      }))
+      assert.ok(stats.flat&&stats.neutral,"PMC statistics use a single flat line instead of metric cards")
+    }
+    await page.screenshot({path:"test-results/pmc-"+feature+"-flat-ledger.png",fullPage:false})
+    console.log("PMC NON-GANTT CHECK",JSON.stringify({feature,...audit}))
+  }
+
   // Exercise an actual write through the original MES engine and shared workspace.
   activeFeature="sales/orders"
   await page.evaluate(()=>{location.hash="#/departments/sales/orders"})
