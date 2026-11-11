@@ -73,6 +73,26 @@ try {
   assert.equal(await page.getByRole("tab",{name:/部门花名簿/}).getAttribute("data-state"),"active","Roster tab must be active")
   assert.equal(await page.getByRole("tab",{name:/业务功能/}).getAttribute("data-state"),"inactive","Function tab must be inactive")
   await page.getByText("办公位置",{exact:true}).waitFor()
+  const rosterLayout=await page.locator(".roster-grid").evaluate(grid=>{
+    const cards=[...grid.querySelectorAll(".person-tile")]
+    const rects=cards.map(card=>card.getBoundingClientRect())
+    return {columns:getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length,
+      count:cards.length,heights:rects.map(box=>box.height),
+      titles:cards.every(card=>Boolean(card.title)),
+      fields:cards.every(card=>Boolean(card.querySelector(".person-meta strong")?.textContent?.trim())&&
+        Boolean(card.querySelector(".person-meta span")?.textContent?.trim())),
+      overflow:rects.some(box=>box.right>innerWidth+1)}
+  })
+  assert.equal(rosterLayout.columns,4,"Desktop roster displays four compact employee cards per row")
+  assert.ok(rosterLayout.count>0,"Warehouse roster contains employees")
+  assert.ok(rosterLayout.heights.every(height=>height>=50&&height<=85),
+    "Employee cards are compact rather than full-size tiles: "+JSON.stringify(rosterLayout))
+  assert.ok(rosterLayout.fields&&rosterLayout.titles&&!rosterLayout.overflow,
+    "Roster preserves names, roles, employee IDs and full hover details")
+  await page.locator(".person-tile").first().click()
+  await page.getByRole("dialog").getByText("本地演示消息，不会送达其他设备。").waitFor()
+  await page.keyboard.press("Escape")
+
   await page.screenshot({path:"test-results/warehouse-roster.png",fullPage:true})
   await page.getByRole("tab",{name:/业务功能/}).click()
   const first=page.locator(".feature-tile:not([disabled])").first()
@@ -94,6 +114,18 @@ try {
   await mobile.goto(base,{waitUntil:"networkidle"})
   await mobile.getByRole("button",{name:"打开部门菜单"}).click()
   await mobile.locator(".shell-sidebar .department-tile").filter({hasText:"仓库 / 物流部"}).click()
+  await mobile.getByRole("tab",{name:/部门花名簿/}).click()
+  const mobileRoster=await mobile.locator(".roster-grid").evaluate(grid=>({
+    columns:getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length,
+    heights:[...grid.querySelectorAll(".person-tile")].map(card=>card.getBoundingClientRect().height),
+    overflow:document.documentElement.scrollWidth>innerWidth+4
+  }))
+  assert.equal(mobileRoster.columns,1,"Phone roster uses one readable employee card per row")
+  assert.ok(mobileRoster.heights.every(height=>height>=48&&height<=80),
+    "Mobile employee cards remain short: "+JSON.stringify(mobileRoster))
+  assert.equal(mobileRoster.overflow,false,"Roster does not cause phone horizontal overflow")
+  await mobile.getByRole("tab",{name:/业务功能/}).click()
+
   const mobileFeatureLayout=await mobile.locator(".feature-grid").evaluate(grid=>{
     const cards=[...grid.querySelectorAll(".feature-tile")]
     return {columns:getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length,
