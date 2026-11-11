@@ -311,3 +311,64 @@ body {
 @media(prefers-reduced-transparency:reduce){
   .glass-panel,.feature-tile,.department-tile{backdrop-filter:none;-webkit-backdrop-filter:none}
 }
+
+/* B端业务功能卡片：紧凑双行信息布局，保留可点击面积及完整功能入口。 */
+.feature-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:9px;
+  padding:10px;
+}
+.feature-tile{
+  display:grid;
+  grid-template-columns:36px minmax(0,1fr);
+  grid-template-rows:auto auto;
+  align-content:center;
+  align-items:start;
+  column-gap:10px;
+  row-gap:5px;
+  min-height:90px;
+  padding:11px 13px 11px 11px;
+  border-radius:10px;
+}
+.feature-icon{
+  grid-column:1;
+  grid-row:1 / span 2;
+  align-self:center;
+  width:36px;
+  height:36px;
+  min-width:36px;
+  min-height:36px;
+  flex-basis:auto;
+  border-radius:9px;
+}
+.feature-icon svg{width:19px;height:19px}
+.feature-label{
+  grid-column:2;
+  grid-row:1;
+  min-width:0;
+  padding-right:18px;
+  font-size:13px;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+.feature-description{
+  grid-column:2;
+  grid-row:2;
+  min-width:0;
+  font-size:11px;
+  line-height:1.4;
+  -webkit-line-clamp:2;
+  overflow-wrap:anywhere;
+}
+.feature-arrow{top:11px;right:10px}
+.feature-tile:focus-visible{outline:2px solid #517c5d;outline-offset:2px}
+@media(max-width:1170px){.feature-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){.feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){
+  .feature-grid{grid-template-columns:1fr;gap:7px;padding:8px}
+  .feature-tile{min-height:70px;padding:10px 12px;row-gap:3px;column-gap:10px}
+  .feature-icon{width:34px;height:34px;min-width:34px;min-height:34px}
+  .feature-icon svg{width:18px;height:18px}
+  .feature-label{font-size:12px}
+  .feature-description{font-size:10.5px;line-height:1.35}
+}
