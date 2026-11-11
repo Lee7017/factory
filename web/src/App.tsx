@@ -65,7 +65,7 @@ function DepartmentNav({route,open,onSelect}:{
         })}
       </div>
     </nav>
-    <div className="sidebar-foot">11 个部门 · 按岗位权限开放功能</div>
+    <div className="sidebar-foot">{DEPARTMENTS.length} 个部门 · 按岗位权限开放功能</div>
   </aside>
 }
 
