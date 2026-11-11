@@ -731,3 +731,192 @@ body{
 .factory-prompt-close{appearance:none;border:0;background:transparent;color:#777d86;font-size:24px;line-height:1;cursor:pointer;padding:2px 5px;border-radius:8px}
 .factory-prompt-close:hover{background:rgba(20,22,25,.06);color:#30343a}
 @media(max-width:560px){.factory-prompt{width:calc(100vw - 18px)}.factory-prompt header{padding:17px 17px 10px}.factory-prompt>p{padding:2px 17px 17px}.factory-prompt footer{padding:12px 17px 16px}}
+
+
+/* 2026-11-11 · 首页总览配色试装：只影响 #/overview，不改其他业务页 */
+body.is-overview-home{
+  --page:#F4F4EF;
+  --panel:#FBFCF8;
+  --hairline:#DEE3DC;
+  background:#F4F4EF;
+  color:#1F241F;
+}
+body.is-overview-home .ambient{display:none}
+body.is-overview-home .app-shell,
+body.is-overview-home .workspace,
+body.is-overview-home .main-content{background:#F4F4EF}
+
+/* Claude 绿侧栏；#00973F 只做活跃细线 */
+body.is-overview-home .sidebar{
+  background:#788C5D;
+  color:#fff;
+  border-right:1px solid rgba(61,73,49,.12);
+  box-shadow:none;
+}
+body.is-overview-home .sidebar .brand-simple{
+  background:#788C5D;
+  border-bottom-color:rgba(255,255,255,.18);
+}
+body.is-overview-home .brand-simple .brand-mark{
+  position:relative;
+  background:#FBFCF8;
+  color:#74895F;
+  box-shadow:none;
+}
+body.is-overview-home .brand-simple .brand-mark::after{
+  content:"";
+  position:absolute;
+  left:7px;right:7px;bottom:4px;
+  height:2px;border-radius:2px;
+  background:#00973F;
+}
+body.is-overview-home .brand-simple b{color:#fff}
+body.is-overview-home .nav-label,
+body.is-overview-home .nav-label span{color:rgba(255,255,255,.62)}
+body.is-overview-home .dept-row{color:rgba(255,255,255,.82)}
+body.is-overview-home .dept-row .dept-ico,
+body.is-overview-home .dept-row .chevron{color:rgba(255,255,255,.72)}
+body.is-overview-home .dept-row:hover{background:rgba(255,255,255,.08);color:#fff}
+body.is-overview-home .dept-row.active,
+body.is-overview-home .dept-row.open{
+  position:relative;
+  background:rgba(255,255,255,.13);
+  color:#fff;
+}
+body.is-overview-home .dept-row.active::before,
+body.is-overview-home .dept-row.open::before{
+  content:"";
+  position:absolute;
+  left:0;top:9px;bottom:9px;
+  width:2px;border-radius:0 2px 2px 0;
+  background:#00973F;
+}
+body.is-overview-home .dept-row.active .dept-ico,
+body.is-overview-home .dept-row.open .dept-ico{color:#fff}
+body.is-overview-home .side-bottom{
+  background:#788C5D;
+  color:rgba(255,255,255,.60);
+  border-top-color:rgba(255,255,255,.16);
+}
+
+/* 暖米灰页面 + 暖白面板 */
+body.is-overview-home .topbar{
+  background:rgba(244,244,239,.94);
+  border-bottom-color:#DEE3DC;
+  box-shadow:none;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+body.is-overview-home .breadcrumbs{color:#7B837C}
+body.is-overview-home .crumb-link{color:#687169}
+body.is-overview-home .crumb-link:hover{background:#ECEFE9;color:#263026}
+body.is-overview-home .crumb-root-mark{background:#788C5D;box-shadow:9px 0 0 #829867,0 9px 0 #7B9164,9px 9px 0 #869B70}
+body.is-overview-home .crumb-current{
+  background:#FBFCF8;
+  border-color:#DEE3DC;
+  color:#1F241F;
+  box-shadow:none;
+}
+body.is-overview-home .crumb-level-label{color:#8B938C}
+body.is-overview-home .crumb-sep::before{border-color:#AAB2AA}
+body.is-overview-home .icon-btn:hover{background:#ECEFE9;color:#334033}
+body.is-overview-home .user-trigger:hover,
+body.is-overview-home .user-trigger[aria-expanded=true]{background:#ECEFE9}
+body.is-overview-home .user-avatar{background:#788C5D;color:#fff}
+body.is-overview-home .count-badge{background:#B54A42;border-color:#F4F4EF}
+
+body.is-overview-home .page-heading h1{color:#1F241F}
+body.is-overview-home .page-heading p{color:#707871}
+body.is-overview-home .footer{border-top-color:#DEE3DC;color:#8A928B}
+
+/* 总览模块 */
+body.is-overview-home .mw-page{color:#273027}
+body.is-overview-home .mw-content,
+body.is-overview-home .mw-head,
+body.is-overview-home .mw-metric,
+body.is-overview-home .gantt-panel{
+  background:#FBFCF8;
+  border-color:#DEE3DC;
+  box-shadow:none;
+}
+body.is-overview-home .mw-content{border-radius:12px}
+body.is-overview-home .mw-metrics{gap:10px}
+body.is-overview-home .mw-metric{
+  position:relative;
+  min-height:92px;
+  border-radius:10px;
+  overflow:hidden;
+}
+body.is-overview-home .mw-metric::before{
+  content:"";
+  position:absolute;left:0;right:0;top:0;height:2px;
+  background:#788C5D;
+}
+body.is-overview-home .mw-metric:nth-child(2)::before{background:#829867}
+body.is-overview-home .mw-metric:nth-child(3)::before{background:#718A59}
+body.is-overview-home .mw-metric:nth-child(4)::before{background:#7B9164}
+body.is-overview-home .mw-metric:nth-child(5)::before{background:#869B70}
+body.is-overview-home .mw-metric>span,
+body.is-overview-home .mw-metric small,
+body.is-overview-home .mw-section-head span{color:#7B837C}
+body.is-overview-home .mw-metric strong,
+body.is-overview-home .mw-section-head h3{color:#1F241F}
+
+body.is-overview-home .mw-btn{
+  background:#FBFCF8;
+  border-color:#D8DED7;
+  color:#4F584F;
+  box-shadow:none;
+}
+body.is-overview-home .mw-btn:hover{background:#F0F2EC;border-color:#BFC8BC}
+body.is-overview-home .mw-btn:focus-visible,
+body.is-overview-home .field:focus,
+body.is-overview-home .mw-field input:focus,
+body.is-overview-home .mw-field select:focus,
+body.is-overview-home .mw-field textarea:focus{
+  outline:2px solid #00973F;
+  outline-offset:2px;
+  border-color:#00973F;
+  box-shadow:none;
+}
+body.is-overview-home .mw-quick{gap:7px}
+body.is-overview-home .mw-quick .mw-btn{min-height:39px;border-radius:8px}
+
+body.is-overview-home .mw-table-scroll{border-color:#E1E5DF}
+body.is-overview-home .mw-table th{
+  background:#F4F4EF;
+  color:#747D75;
+  border-bottom-color:#DEE3DC;
+}
+body.is-overview-home .mw-table td{
+  color:#4D554E;
+  border-bottom-color:#E9ECE7;
+}
+body.is-overview-home .mw-table tbody tr:hover td{background:#F6F7F2}
+body.is-overview-home .mw-table strong{color:#252C25}
+body.is-overview-home .mw-status{
+  background:#F0F2EC;
+  border-color:#DCE2D9;
+  color:#5B655C;
+}
+body.is-overview-home .mw-status.mw-ok{
+  background:rgba(120,140,93,.10);
+  border-color:rgba(120,140,93,.22);
+  color:#5B694C;
+}
+body.is-overview-home .mw-status.mw-alert{
+  background:#F7ECE9;
+  border-color:#EFD3CF;
+  color:#B54A42;
+}
+
+/* 首页甘特图也跟随同一套色面，不改变条形业务色语义 */
+body.is-overview-home .gantt-panel-head,
+body.is-overview-home .gantt-foot{border-color:#DEE3DC}
+body.is-overview-home .gantt-panel-head h2{color:#1F241F}
+body.is-overview-home .gantt-panel-head p,
+body.is-overview-home .gantt-foot,
+body.is-overview-home .gantt-legend-item{color:#707871}
+
+/* 亮绿只作为线性活跃信号 */
+body.is-overview-home :where(.mw-tab.active,.dept-hub-tab.active)::after{background:#00973F}
