@@ -14,7 +14,7 @@ try{
  const errors=[]
  page.on("pageerror",error=>errors.push(error.message))
  await page.goto(base,{waitUntil:"networkidle"})
- await page.locator(".department-tile").first().waitFor()
+ await page.locator(".department-band-button").first().waitFor()
  const first="SO-2026-1023-018",second="SO-2026-1106-003"
  const form=page.locator("#module-form")
  const dismiss=()=>page.evaluate(()=>window.FactoryFlowUI?.dismiss?.())
