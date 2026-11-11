@@ -362,6 +362,8 @@ function cleaningDocumentsExplanation(docs){
   lines=[...new Set(items.map(d=>d.line).filter(Boolean))];
  if(items.some(d=>!d.taskId||!d.line))
   return '有历史报检单缺少关联清洗工单或产线信息，无法确认多张单的具体原因，请核对下方工单号与检验结论。';
+ if(tasks.length===1&&lines.length>1)
+  return `同一个清洗工单（${tasks[0]}）的历史报检却填写了 ${lines.length} 条不同产线：${lines.join('、')}。工单与产线信息存在冲突，无法据此判断是否真的清洗了多条线，需核对原始工单。`;
  if(tasks.length===1){
   const failed=items.filter(d=>d.status==='不合格');
   if(failed.length)
