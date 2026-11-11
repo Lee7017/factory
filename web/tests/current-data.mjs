@@ -50,7 +50,7 @@ try{
    await page.locator(".native-business .legacy-root").waitFor({state:"visible"})
    const content=await page.locator(".native-business #view").textContent()
    assert.ok(!content?.includes("来自旧版 v2 的订单"),"Old v2 data must not be displayed")
-   await page.locator('[data-op-action="newOrder"]').first().click()
+   await page.getByRole("button",{name:"新建销售订单"}).click()
    const form=page.locator("#ops-form")
    await form.waitFor({state:"visible"})
    await form.locator('[name="product"]').fill("当前版本新增订单")
