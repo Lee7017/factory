@@ -116,6 +116,23 @@ try{
   await page.waitForFunction(()=>document.querySelector(".native-business #view")?.textContent?.trim().length>20)
   assert.equal(await page.locator("iframe").count(),0,"Business modules run in React, not iframe")
   assert.ok((await native.locator("#view").textContent())?.trim().length>20,"Warehouse module renders")
+  const businessPalette=await page.evaluate(()=>{
+    const getColor=selector=>{
+      const el=document.querySelector(selector)
+      return el?getComputedStyle(el).backgroundColor:null
+    }
+    return {
+      page:getColor(".shell-content.is-business"),
+      panel:getColor(".business-page-body"),
+      data:getColor(".native-business .legacy-root .mw-table-scroll"),
+      header:getColor(".native-business .legacy-root .mw-table th")
+    }
+  })
+  assert.equal(businessPalette.page,"rgb(244, 244, 239)","Business page uses #F4F4EF")
+  assert.equal(businessPalette.panel,"rgb(251, 252, 248)","Business panel uses #FBFCF8")
+  assert.equal(businessPalette.data,"rgb(255, 255, 255)","Business data plane is white")
+  assert.equal(businessPalette.header,"rgb(244, 244, 239)","Business table header uses warm page tint")
+
   assert.equal((await page.locator('.feature-band-button[aria-current="page"]').textContent())?.trim(),"库存批次")
   const businessLayout=await page.evaluate(()=>{
     const feature=document.querySelector(".feature-band")?.getBoundingClientRect()
@@ -138,6 +155,21 @@ try{
   assert.ok((await page.locator("svg.lucide").count())>0,"React UI renders Lucide icons")
   assert.deepEqual(errors,[],"No uncaught page errors")
   await page.screenshot({path:"test-results/warehouse-module.png",fullPage:true})
+  await page.evaluate(()=>{window.location.hash="#/departments/hr/employees"})
+  await page.locator(".business-native-list").waitFor({state:"visible"})
+  const nativePalette=await page.evaluate(()=>{
+    const color=selector=>getComputedStyle(document.querySelector(selector)).backgroundColor
+    return {
+      panel:color(".business-page-body"),
+      table:color(".business-native-list"),
+      head:color('.business-native-list [data-slot="table-head"]')
+    }
+  })
+  assert.equal(nativePalette.panel,"rgb(251, 252, 248)","Native React business page uses the same panel")
+  assert.equal(nativePalette.table,"rgb(255, 255, 255)","Native React table uses white")
+  assert.equal(nativePalette.head,"rgb(244, 244, 239)","Native React header uses warm page tint")
+  await page.screenshot({path:"test-results/hr-employees-palette.png",fullPage:true})
+
 
   const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true})
   await mobile.goto(base,{waitUntil:"networkidle"})
