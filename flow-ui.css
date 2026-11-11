@@ -254,38 +254,21 @@
  stroke:#d34445;stroke-width:2.8;stroke-dasharray:none;stroke-linecap:round;
  filter:drop-shadow(0 1px 1px rgba(160,42,41,.12));
 }
-.journey-return-overview{
- display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin:0 0 12px;
- padding:10px;background:#fff7f6;border:1px solid #f0d4d1;border-radius:10px
-}
-.journey-return-event{
- display:flex;flex:1 1 230px;min-width:180px;max-width:100%;gap:3px;flex-direction:column;
- text-align:left;padding:9px 11px;border:1px solid #e9beb9;border-radius:8px;
- background:#fff;color:#7a3531;font-size:11px;cursor:pointer
-}
-.journey-return-event:hover{background:#fff1ef;border-color:#d47770}
-.journey-return-event strong{font-size:12px;color:#c13c40}
-.journey-return-event span{font-weight:620;color:#703d3e}
-.journey-return-event small{font-size:10px;color:#925b57;overflow-wrap:anywhere}
-.journey-head-labels{display:flex;align-items:center;flex-wrap:wrap;gap:3px;min-width:0}
-.journey-head-labels button{appearance:none;white-space:nowrap;cursor:pointer;font-size:9px;font-weight:740;line-height:1.35;border-radius:4px;padding:2px 3px}
-.journey-step-count{background:#e9f0fc;color:#365a8a;border:1px solid #bfd1e8}
-.journey-step-returns{background:#fff0ed;color:#b3413e;border:1px solid #efb5af}
-.journey-step-count:hover{background:#dbe8f9}
-.journey-step-returns:hover{background:#ffe0dc}
 .journey-snake-position .journey-card-head{align-items:flex-start;min-height:19px;gap:4px}
 .journey-snake-position .journey-card-head-actions{flex:0 0 auto}
 .journey-card-document.journey-order-content{white-space:nowrap;padding:4px 5px;min-height:23px}
+/* 真正的右侧抽屉：不在流程图上方放记录卡片。 */
 .journey-order-panel-backdrop{
- position:fixed;inset:0;z-index:115;display:flex;align-items:center;justify-content:center;
- padding:18px;background:rgba(23,34,48,.48);backdrop-filter:blur(3px);
- -webkit-backdrop-filter:blur(3px);box-sizing:border-box
+ position:fixed;inset:0;z-index:115;display:flex;align-items:stretch;justify-content:flex-end;
+ padding:0;background:rgba(23,34,48,.19);box-sizing:border-box
 }
 .journey-order-panel{
- width:min(630px,100%);max-height:min(82dvh,780px);display:flex;flex-direction:column;
- background:#fff;border:1px solid #d6e0e5;border-radius:14px;
- box-shadow:0 22px 74px rgba(18,31,44,.3);overflow:hidden
+ width:min(460px,96vw);height:100dvh;max-height:100dvh;display:flex;flex-direction:column;
+ background:#fff;border:1px solid #d6e0e5;border-right:0;border-radius:15px 0 0 15px;
+ box-shadow:-16px 0 65px rgba(18,31,44,.21);overflow:hidden;
+ animation:journey-drawer-in .22s ease-out both
 }
+@keyframes journey-drawer-in{from{transform:translateX(22px);opacity:.75}to{transform:translateX(0);opacity:1}}
 .journey-order-panel>header{
  display:flex;align-items:center;justify-content:space-between;gap:16px;flex:none;
  padding:15px 20px;border-bottom:1px solid #e5eaf0
@@ -307,8 +290,27 @@
 .journey-history-row.is-return strong{color:#b54740}
 .journey-detail-empty{color:#718194;font-size:12px;line-height:1.7}
 @media(max-width:600px){
- .journey-order-panel-backdrop{padding:10px}
+ .journey-order-panel{width:min(400px,100vw);border-radius:0}
  .journey-order-panel-body{padding:9px 14px 18px}
- .journey-return-overview{padding:7px}
- .journey-return-event{flex-basis:100%}
 }
+@media(prefers-reduced-motion:reduce){.journey-order-panel{animation:none}}
+
+/* 保持卡片高度一致；底部的时间和员工就是查看历史的入口。 */
+.journey-snake-position .journey-person-open{
+ display:flex;align-items:center;justify-content:space-between;gap:4px;width:100%;
+ margin-top:auto;padding:7px 0 0;border:0;border-top:1px solid #e5e9ef;border-radius:0;
+ background:transparent;text-align:left;color:#6b7886;font-size:10px;line-height:1.45;
+ font-family:inherit;cursor:pointer
+}
+.journey-snake-position .journey-person-open:hover{color:#255c87;border-top-color:#99b9d5}
+.journey-snake-position .journey-person-open:focus-visible{outline:2px solid #4a86b5;outline-offset:2px}
+.journey-snake-position .journey-card[data-flow-card-step]{cursor:pointer}
+.journey-snake-position .journey-card[data-flow-card-step]:hover{border-color:#a9bfd6}
+.journey-return-link{
+ flex:none;align-self:center;border:1px solid #e7b3b1;border-radius:7px;
+ background:#fff7f6;color:#b43c3b;padding:8px 13px;
+ font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap
+}
+.journey-return-link:hover{background:#ffeae8;border-color:#d96966}
+.journey-return-link:focus-visible{outline:2px solid #ca5551;outline-offset:2px}
+.journey-side-subtitle{margin:16px 0 8px;color:#a54544;font-size:13px;font-weight:750}
