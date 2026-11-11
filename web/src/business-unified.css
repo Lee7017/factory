@@ -2138,7 +2138,6 @@ body::before,body::after{display:none!important}
   grid-template-columns:minmax(170px,230px) minmax(0,1fr);
   gap:24px;
   align-items:center;
-  border-top:1px solid var(--factory-line-strong);
   border-bottom:1px solid var(--factory-line-strong);
 }
 .office-panel-header{min-width:0}
@@ -2157,21 +2156,39 @@ body::before,body::after{display:none!important}
 }
 .office-location-row{
   min-width:0;
-  min-height:50px;
+  min-height:108px;
   display:flex;
   align-items:center;
-  gap:12px;
-  padding:9px 11px;
+  gap:16px;
+  padding:12px;
   border:1px solid var(--factory-line);
   border-radius:8px;
   background:#F0F2EC;
 }
-.office-location-row [data-slot="button"]{
-  min-height:30px;
-  height:30px;
-  padding:0 9px;
-  font-size:11px;
+.office-photo-wrap{flex:0 0 auto}
+.office-photo-slot{
+  width:128px;height:84px;
+  display:block;
+  overflow:hidden;
+  padding:0;
+  border:1px dashed rgba(90,113,94,.35);
+  border-radius:7px;
+  background:#E7EBE3;
+  color:#778777;
 }
+button.office-photo-slot{cursor:pointer}
+button.office-photo-slot:hover{border-color:#668A6A;background:#E0E9DE}
+button.office-photo-slot:focus-visible{outline:2px solid #517c5d;outline-offset:2px}
+.office-photo-slot img{display:block;width:100%;height:100%;object-fit:cover}
+.office-photo-empty{display:flex;height:100%;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.office-photo-empty small{font-size:10px}
+.office-photo-input{display:none}
+.office-location-details{display:flex;min-width:0;flex:1;flex-direction:column;gap:8px}
+.office-location-details .office-address{font-size:12px;line-height:1.5}
+.office-location-actions{display:flex;flex-shrink:0;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.office-location-actions [data-slot="button"]{min-height:30px;height:30px;padding:0 9px;font-size:11px}
+.office-remove-image{color:#777F77}
+.office-image-error{font-size:10px;color:#AD4B43}
 
 /* Department secondary tabs are quiet; business functions already live in the horizontal band. */
 .factory-shell-v2 .dept-tabs [data-slot="tabs-list"]{
@@ -2368,10 +2385,15 @@ body::before,body::after{display:none!important}
   .factory-shell-v2 .shell-content.is-department:not(.is-business){padding:16px 12px 28px!important}
   .factory-shell-v2 .shell-content.is-overview{padding:18px 12px 30px!important}
   .office-panel{grid-template-columns:1fr;gap:10px;padding:14px 0 16px}
-  .office-location-row{align-items:flex-start;flex-wrap:wrap}
-  .office-location-row .office-address{flex-basis:100%}
+  .office-location-row{align-items:center;gap:12px}
+  .office-location-actions{justify-content:flex-start}
+
 }
 @media(max-width:520px){
+  .office-location-row{flex-wrap:wrap}
+  .office-photo-slot{width:112px;height:78px}
+  .office-location-details{flex-basis:calc(100% - 128px)}
+  .office-location-actions{width:100%;justify-content:flex-start}
   .business-context-search{width:122px}
   .business-context-search svg{display:none}
   .feature-band-nav{gap:13px}
