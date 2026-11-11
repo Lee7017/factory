@@ -63,7 +63,22 @@ try{
   await page.screenshot({path:"test-results/live-overview-cockpit.png",fullPage:true})
 
   await page.locator(".department-band-button").filter({hasText:"仓库"}).click()
-  await page.locator(".department-overview-panel").waitFor({state:"visible",timeout:10000})
+  await page.locator(".department-profile").waitFor({state:"visible",timeout:10000})
+  const publishedProfile=await page.locator(".department-profile").evaluate(profile=>{
+    const photo=profile.querySelector(".department-profile-photo")?.getBoundingClientRect()
+    const heading=profile.querySelector(".department-profile-heading h1")?.getBoundingClientRect()
+    const location=profile.querySelector(".department-profile-bottom")?.getBoundingClientRect()
+    return {
+      photoLeft:photo?.left??0,headingLeft:heading?.left??0,
+      headingTop:heading?.top??0,locationTop:location?.top??0,
+      overflow:document.documentElement.scrollWidth>innerWidth+4
+    }
+  })
+  assert.ok(publishedProfile.photoLeft<publishedProfile.headingLeft,
+    "Published department photo must be left of the department name")
+  assert.ok(publishedProfile.headingTop<publishedProfile.locationTop,
+    "Published office location must be beneath the department heading")
+  assert.equal(publishedProfile.overflow,false)
   assert.equal(await page.locator(".feature-band-button").count(),9,
     "Warehouse has overview plus eight real functions in the horizontal feature band")
   const navStyle=await page.evaluate(()=>{
