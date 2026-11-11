@@ -25,6 +25,23 @@ try{
   await page.locator(".overview-kpi-grid").waitFor()
   assert.equal(await page.locator(".overview-kpi-card").count(),4,"Published cockpit has four operational KPIs")
   assert.equal(await page.locator(".overview-gantt-panel").count(),1,"Published cockpit has production Gantt")
+  // Inspect actual published DOM boxes, not just task timestamps or mock data.
+  const ganttCollisions=await page.locator(".overview-gantt-data").evaluateAll(rows=>{
+    const clashes=[]
+    for(const row of rows){
+      const bars=Array.from(row.querySelectorAll(".overview-gantt-bar"))
+      for(let i=0;i<bars.length;i++)for(let j=i+1;j<bars.length;j++){
+        const a=bars[i].getBoundingClientRect(),b=bars[j].getBoundingClientRect()
+        if(Math.min(a.right,b.right)-Math.max(a.left,b.left)>0.5&&
+          Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>0.5)
+          clashes.push([bars[i].getAttribute("aria-label"),bars[j].getAttribute("aria-label")])
+      }
+    }
+    return clashes
+  })
+  assert.deepEqual(ganttCollisions,[],"Live overview task bars must not physically overlap")
+  assert.equal(await page.locator(".overview-gantt-legend span").count(),6,
+    "Live overview must show the same six operation colors as PMC")
   assert.equal(await page.locator(".overview-donut-panel").count(),1,"Published cockpit has order status chart")
   assert.equal(await page.locator(".overview-alerts-panel").count(),1,"Published cockpit has real warnings")
   assert.equal(await page.locator(".overview-agent-card").count(),5,"Published cockpit includes five animal Agent roles")
