@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react"
 import {
-  ArrowRight, Bell, Check, CheckCheck, ChevronDown, ChevronRight,
-  Factory, Info, LockKeyhole, Menu, MessageCircle, Pencil, Search
+  ArrowRight, Bell, Check, CheckCheck, Factory, Home, ListTodo,
+  LockKeyhole, MessageCircle, Pencil, Search, Settings, Sparkles
 } from "lucide-react"
 import { DEPARTMENTS, FEATURE_HINTS, FEATURE_NAMES, getDepartment, type Department } from "@/catalog"
 import { getDepartmentIcon, getFeatureIcon } from "@/icons"
@@ -24,7 +24,6 @@ import {
   Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 type Route={kind:"overview"}|{kind:"department";dept:string;feature?:string}
 type TabKey="functions"|"members"|"todos"
@@ -40,176 +39,196 @@ function Footer() {
   </footer>
 }
 
-function DepartmentNav({route,open,onSelect}:{
-  route:Route;open:boolean;onSelect:(hash:string)=>void
-}) {
-  const OverviewIcon=getFeatureIcon("overview")
-  return <aside className={`shell-sidebar ${open?"open":""}`} aria-label="部门导航">
-    <div className="sidebar-brand">
-      <span className="brand-icon"><Factory size={21} strokeWidth={1.7}/></span>
-      <div><div className="brand-title">工厂管理系统</div><div className="brand-caption">FACTORY MANAGEMENT</div></div>
-    </div>
-    <nav className="sidebar-scroll">
-      <div className="department-grid">
-        <button className="department-tile" aria-current={route.kind==="overview"?"page":undefined}
-          onClick={()=>onSelect("#/overview")}>
-          <span className="tile-icon"><OverviewIcon aria-hidden="true"/></span>
-          <span className="tile-label">首页总览</span>
-        </button>
-        {DEPARTMENTS.map(d=>{
-          const Icon=getDepartmentIcon(d.id),selected=route.kind==="department"&&route.dept===d.id
-          return <button key={d.id} className="department-tile" aria-current={selected?"page":undefined}
-            onClick={()=>onSelect(`#/departments/${d.id}`)}>
-            <span className="tile-icon"><Icon aria-hidden="true"/></span>
-            <span className="tile-label">{d.name}</span>
-          </button>
-        })}
-      </div>
-    </nav>
-    <div className="sidebar-foot">{DEPARTMENTS.length} 个部门 · 按岗位权限开放功能</div>
-  </aside>
-}
 
-function Topbar({route,onSelect,onOpenSidebar,employee,staff,onSwitch,messages,onRead,onReadAll}:{
-  route:Route;onSelect:(hash:string)=>void;onOpenSidebar:()=>void;
-  employee?:Employee;staff:Employee[];onSwitch:(id:string)=>void;
+const SHORT_DEPARTMENT_NAMES:Record<string,string>={
+  hr:"人事行政",sales:"销售部",pmc:"PMC",purchase:"采购部",warehouse:"仓库",
+  quality:"质量部",production:"生产车间",finance:"财务部",it:"信息化",leadership:"总经办"
+}
+function shortDepartmentName(dept:Department){return SHORT_DEPARTMENT_NAMES[dept.id]??dept.name}
+
+function SystemRail({route,onSelect,employee,staff,onSwitch,messages,onRead,onReadAll,workspace}:{
+  route:Route;onSelect:(hash:string)=>void;employee?:Employee;staff:Employee[];onSwitch:(id:string)=>void;
   onRead:(id:string|number)=>void;onReadAll:()=>void;
-  messages:Array<{id:string|number;title:string;text:string;date?:string;unread?:boolean;dept?:string;feature?:string}>
+  messages:Array<{id:string|number;title:string;text:string;date?:string;unread?:boolean;dept?:string;feature?:string}>;
+  workspace:ReturnType<typeof useFactoryState>["workspace"]
 }) {
-  const dept=route.kind==="department"?getDepartment(route.dept):undefined
-  const [infoOpen,setInfoOpen]=useState(false)
-  const [featureInfoOpen,setFeatureInfoOpen]=useState(false)
-  useEffect(()=>{setInfoOpen(false);setFeatureInfoOpen(false)},[dept?.id,route.kind==="department"?route.feature:undefined])
-  const count=messages.filter(m=>m.unread).length
-  return <header className="shell-topbar">
-    <div className="flex min-w-0 items-center gap-2">
-      <Button variant="ghost" size="icon-sm" className="mobile-menu" aria-label="打开部门菜单" onClick={onOpenSidebar}>
-        <Menu size={20}/>
-      </Button>
-      <nav className="crumbs" aria-label="当前位置">
-        <button type="button" className="crumb-button" onClick={()=>onSelect("#/overview")}>工厂管理系统</button>
-        <ChevronRight className="crumb-separator"/>
-        {dept?<div className="flex min-w-0 items-center gap-1">
-          <button type="button" className="crumb-button crumb-dept" onClick={()=>onSelect(`#/departments/${dept.id}`)}>{dept.name}</button>
-          <Popover open={infoOpen} onOpenChange={setInfoOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon-xs" aria-label={`查看${dept.name}介绍`}
-                onPointerEnter={event=>{if(event.pointerType==="mouse")setInfoOpen(true)}}>
-                <Info size={14}/>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent side="bottom" align="start" sideOffset={9} className="glass-tooltip">
-              <strong className="block text-xs font-semibold">{dept.name}</strong>
-              <span className="mt-1 block text-xs">{dept.description}</span>
-            </PopoverContent>
-          </Popover>
-          {route.kind==="department"&&route.feature&&<>
-            <ChevronRight className="crumb-separator"/>
-            <strong className="crumb-current">{FEATURE_NAMES[route.feature]??route.feature}</strong>
-            <Popover open={featureInfoOpen} onOpenChange={setFeatureInfoOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon-xs"
-                  aria-label={`查看${FEATURE_NAMES[route.feature]??route.feature}介绍`}
-                  onPointerEnter={event=>{if(event.pointerType==="mouse")setFeatureInfoOpen(true)}}>
-                  <Info size={14}/>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent side="bottom" align="start" sideOffset={9} className="glass-tooltip">
-                <strong className="block text-xs font-semibold">{FEATURE_NAMES[route.feature]??route.feature}</strong>
-                <span className="mt-1 block text-xs">{FEATURE_HINTS[route.feature]??dept.description}</span>
-              </PopoverContent>
-            </Popover>
-          </>}
-        </div>:<strong className="crumb-current">工厂运行总览</strong>}
-      </nav>
-    </div>
-    <div className="topbar-actions">
+  const [query,setQuery]=useState("")
+  const unread=messages.filter(m=>m.unread).length
+  const todos=DEPARTMENTS.flatMap(dept=>getTodos(dept.id,workspace).map(todo=>({dept,todo})))
+  const searchItems=[
+    {label:"首页总览",hint:"工厂运行总览",hash:"#/overview"},
+    ...DEPARTMENTS.flatMap(dept=>[
+      {label:shortDepartmentName(dept),hint:dept.description,hash:"#/departments/"+dept.id},
+      ...dept.features.map(feature=>({
+        label:FEATURE_NAMES[feature]??feature,
+        hint:shortDepartmentName(dept)+" · "+(FEATURE_HINTS[feature]??"业务功能"),
+        hash:"#/departments/"+dept.id+"/"+feature
+      }))
+    ])
+  ]
+  const normalized=query.trim().toLocaleLowerCase()
+  const results=(normalized?searchItems.filter(item=>(item.label+" "+item.hint).toLocaleLowerCase().includes(normalized)):searchItems.slice(0,9)).slice(0,16)
+  return <aside className="system-rail" aria-label="系统工具">
+    <button type="button" className="rail-brand" title="首页总览" aria-label="首页总览" onClick={()=>onSelect("#/overview")}>
+      <Factory size={20} strokeWidth={1.7}/>
+    </button>
+    <div className="rail-divider"/>
+    <nav className="rail-actions">
+      <button type="button" className={"rail-button "+(route.kind==="overview"?"active":"")} title="首页" aria-label="首页" onClick={()=>onSelect("#/overview")}>
+        <Home size={18}/>
+      </button>
       <Dialog>
         <DialogTrigger asChild>
-          <Button variant="ghost" size="icon-sm" className="relative" aria-label={`消息中心，${count} 条未读`}>
-            <Bell size={17}/>
-            {count>0&&<span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-[#2a5f40] px-1 text-[9px] text-white">{count}</span>}
-          </Button>
+          <button type="button" className="rail-button" title="全局搜索" aria-label="全局搜索"><Search size={18}/></button>
         </DialogTrigger>
-        <DialogContent className="glass-dialog">
-          <DialogHeader>
-            <DialogTitle>消息中心</DialogTitle>
-            <DialogDescription>以下消息仅保存在当前浏览器，不会发送到其他设备。</DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end"><Button size="sm" variant="outline" disabled={count===0} onClick={onReadAll}>
-            <CheckCheck size={14}/>全部标记已读
-          </Button></div>
-          <div className="max-h-96 space-y-2 overflow-y-auto">
-            {messages.length===0?<p className="empty-note">暂无消息</p>:messages.map(m=>
-              <DialogClose asChild key={m.id}>
-                <button type="button" className="block w-full rounded-lg border border-border/60 bg-white/60 p-3 text-left hover:bg-white/85"
-                  onClick={()=>onRead(m.id)}>
-                  <span className="flex items-center gap-2 text-xs font-semibold">
-                    {m.unread&&<span className="size-1.5 rounded-full bg-green-600"/>}{m.title}
-                  </span>
-                  <span className="mt-1 block text-xs text-muted-foreground">{m.text}</span>
-                  <small className="mt-1 block text-[10px] text-muted-foreground">{m.date??""}</small>
-                </button>
-              </DialogClose>)}
+        <DialogContent className="glass-dialog command-dialog">
+          <DialogHeader><DialogTitle>全局搜索</DialogTitle><DialogDescription>搜索部门、业务功能和常用入口。</DialogDescription></DialogHeader>
+          <div className="command-search-wrap">
+            <Search size={16}/><Input value={query} autoFocus onChange={event=>setQuery(event.target.value)} placeholder="搜索部门 / 功能"/>
+          </div>
+          <div className="command-results">
+            {results.map(item=><DialogClose asChild key={item.hash}>
+              <button type="button" className="command-result" onClick={()=>{onSelect(item.hash);setQuery("")}}>
+                <strong>{item.label}</strong><span>{item.hint}</span>
+              </button>
+            </DialogClose>)}
+            {results.length===0&&<p className="empty-note">没有找到匹配入口</p>}
           </div>
         </DialogContent>
       </Dialog>
       <Dialog>
         <DialogTrigger asChild>
-          <button type="button" className="user-action" aria-label="切换当前员工">
-            <span className="user-avatar">{employee?.name.slice(-1)??"工"}</span>
-            <span className="user-text">
-              <span className="user-name">{employee?.name??"员工"}</span>
-              <span className="user-dept">{employee?.dept??"正在读取权限"}</span>
-            </span>
-            <ChevronDown size={13} className="text-muted-foreground"/>
+          <button type="button" className="rail-button" title="待办" aria-label={"待办，"+todos.length+" 项"}><ListTodo size={18}/>{todos.length>0&&<i className="rail-badge">{Math.min(todos.length,99)}</i>}</button>
+        </DialogTrigger>
+        <DialogContent className="glass-dialog">
+          <DialogHeader><DialogTitle>跨部门待办</DialogTitle><DialogDescription>按当前浏览器里的业务状态汇总。</DialogDescription></DialogHeader>
+          <div className="rail-list-dialog">
+            {todos.length===0?<p className="empty-note">暂无待办</p>:todos.slice(0,18).map(({dept,todo})=><DialogClose asChild key={dept.id+":"+todo.kind+":"+todo.id}>
+              <button type="button" className="rail-list-row" onClick={()=>onSelect("#/departments/"+dept.id+"/"+todo.feature)}>
+                <span><strong>{todo.title}</strong><small>{shortDepartmentName(dept)} · {todo.id}</small></span><em>{todo.status}</em>
+              </button>
+            </DialogClose>)}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog>
+        <DialogTrigger asChild>
+          <button type="button" className="rail-button rail-message" title="消息" aria-label={"消息中心，"+unread+" 条未读"}>
+            <Bell size={18}/>{unread>0&&<i className="rail-unread-dot"/>}
           </button>
         </DialogTrigger>
         <DialogContent className="glass-dialog">
-          <DialogHeader>
-            <DialogTitle>切换当前员工</DialogTitle>
-            <DialogDescription>切换只影响本浏览器内的演示身份。</DialogDescription>
-          </DialogHeader>
-          <div className="max-h-80 space-y-1 overflow-y-auto">
-            {staff.map(person=>
-              <button type="button" key={person.id} onClick={()=>onSwitch(person.id)}
-                className="flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2 text-left hover:border-border/60 hover:bg-white/60">
-                <span className="person-avatar">{person.name.slice(-1)}</span>
-                <span className="person-meta flex-1">
-                  <strong>{person.name}</strong><span>{person.title} · {person.dept}</span>
-                </span>
-                {person.id===employee?.id&&<Check size={16} className="text-green-700"/>}
-              </button>)}
+          <DialogHeader><DialogTitle>消息中心</DialogTitle><DialogDescription>以下消息仅保存在当前浏览器。</DialogDescription></DialogHeader>
+          <div className="flex justify-end"><Button size="sm" variant="outline" disabled={unread===0} onClick={onReadAll}><CheckCheck size={14}/>全部标记已读</Button></div>
+          <div className="rail-list-dialog">
+            {messages.length===0?<p className="empty-note">暂无消息</p>:messages.map(m=><DialogClose asChild key={m.id}>
+              <button type="button" className="rail-list-row" onClick={()=>onRead(m.id)}>
+                <span><strong>{m.unread&&<b className="message-dot"/>}{m.title}</strong><small>{m.text}</small></span><em>{m.date??""}</em>
+              </button>
+            </DialogClose>)}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog>
+        <DialogTrigger asChild>
+          <button type="button" className="rail-button rail-ai" title="AI 协同" aria-label="AI 协同"><Sparkles size={18}/><i className="rail-ai-dot"/></button>
+        </DialogTrigger>
+        <DialogContent className="glass-dialog">
+          <DialogHeader><DialogTitle>AI 协同</DialogTitle><DialogDescription>按任务形态区分单实例与多实例 Agent。</DialogDescription></DialogHeader>
+          <div className="agent-mini-list">
+            <div><span>🐻</span><strong>小熊管家</strong><small>单实例 · 跨部门提醒与汇总</small></div>
+            <div><span>🐝</span><strong>蜂群排程</strong><small>多实例 · 并行分析排程任务</small></div>
+            <div><span>🐜</span><strong>蚁群巡检</strong><small>多实例 · 并行核查业务异常</small></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </nav>
+    <div className="rail-bottom">
+      <button type="button" className={"rail-button "+(route.kind==="department"&&route.dept==="it"?"active":"")} title="系统设置" aria-label="系统设置"
+        onClick={()=>onSelect("#/departments/it/settings")}><Settings size={18}/></button>
+      <Dialog>
+        <DialogTrigger asChild>
+          <button type="button" className="rail-user" title={employee?employee.name+" · "+employee.dept:"当前员工"} aria-label="切换当前员工">
+            {employee?.name.slice(-1)??"工"}
+          </button>
+        </DialogTrigger>
+        <DialogContent className="glass-dialog">
+          <DialogHeader><DialogTitle>切换当前员工</DialogTitle><DialogDescription>切换只影响本浏览器内的演示身份。</DialogDescription></DialogHeader>
+          <div className="rail-list-dialog">
+            {staff.map(person=><DialogClose asChild key={person.id}>
+              <button type="button" className="rail-list-row" onClick={()=>onSwitch(person.id)}>
+                <span><strong>{person.name}</strong><small>{person.title} · {person.dept}</small></span>
+                {person.id===employee?.id?<Check size={16}/>:<em>{person.id}</em>}
+              </button>
+            </DialogClose>)}
           </div>
           <DataBackup/>
         </DialogContent>
       </Dialog>
     </div>
-  </header>
+  </aside>
+}
+
+function DepartmentBand({route,onSelect}:{route:Route;onSelect:(hash:string)=>void}) {
+  return <div className="department-band-shell">
+    <nav className="department-band" aria-label="部门导航">
+      {DEPARTMENTS.map(dept=>{
+        const active=route.kind==="department"&&route.dept===dept.id
+        return <button type="button" key={dept.id} className={"department-band-button "+(active?"active":"")}
+          aria-current={active?"page":undefined} onClick={()=>onSelect("#/departments/"+dept.id)}>
+          <span className="department-band-dot"/>{shortDepartmentName(dept)}
+        </button>
+      })}
+    </nav>
+  </div>
+}
+
+function FeatureBand({route,onSelect,can}:{route:Route;onSelect:(hash:string)=>void;can:(dept:string,feature:string,action?:string)=>boolean}) {
+  if(route.kind!=="department")return null
+  const dept=getDepartment(route.dept)
+  if(!dept)return null
+  return <div className="feature-band">
+    <nav className="feature-band-nav" aria-label={dept.name+"业务功能"}>
+      <button type="button" className={"feature-band-button "+(!route.feature?"active":"")}
+        aria-current={!route.feature?"page":undefined} onClick={()=>onSelect("#/departments/"+dept.id)}>部门总览</button>
+      {dept.features.map(feature=>{
+        const allowed=can(dept.id,feature),active=route.feature===feature
+        return <button type="button" key={feature} className={"feature-band-button "+(active?"active":"")}
+          disabled={!allowed} aria-current={active?"page":undefined}
+          title={allowed?(FEATURE_HINTS[feature]??"业务功能"):"当前员工无访问权限"}
+          onClick={()=>onSelect("#/departments/"+dept.id+"/"+feature)}>
+          {FEATURE_NAMES[feature]??feature}
+        </button>
+      })}
+    </nav>
+    <div className="business-context-tools-host" id="business-context-tools-host" aria-live="polite"/>
+  </div>
 }
 
 function FeatureGrid({dept,can,onSelect}:{
   dept:Department;can:(dept:string,feature:string,action?:string)=>boolean;
   onSelect:(hash:string)=>void
 }) {
-  return <Card className="feature-panel gap-0 py-0">
-    <CardContent className="p-0">
-      <div className="feature-grid">
-        {dept.features.map(f=>{
-          const Icon=getFeatureIcon(f),allowed=can(dept.id,f)
-          return <button key={f} type="button" className="feature-tile" disabled={!allowed}
-            aria-label={`${FEATURE_NAMES[f]??f}${allowed?"":"，无访问权限"}`}
-            title={FEATURE_HINTS[f]??"业务操作与记录"}
-            onClick={()=>onSelect(`#/departments/${dept.id}/${f}`)}>
-            <span className="feature-icon"><Icon aria-hidden="true"/></span>
-            <span className="feature-label">{FEATURE_NAMES[f]??f}</span>
-            <span className="feature-description">{FEATURE_HINTS[f]??"业务操作与记录"}</span>
-            <span className="feature-arrow">{allowed?<ArrowRight size={16}/>:<LockKeyhole size={15}/>}</span>
-          </button>
-        })}
-      </div>
-    </CardContent>
-  </Card>
+  const available=dept.features.filter(feature=>can(dept.id,feature))
+  return <section className="department-overview-panel">
+    <div className="department-overview-copy">
+      <span>部门工作台</span><h1>{shortDepartmentName(dept)}</h1><p>{dept.description}</p>
+    </div>
+    <div className="department-overview-strip">
+      <div><span>可用业务功能</span><strong>{available.length}</strong></div>
+      <div><span>部门全部功能</span><strong>{dept.features.length}</strong></div>
+      <div><span>导航方式</span><strong>顶部功能带</strong></div>
+    </div>
+    <div className="department-overview-links">
+      {dept.features.map(feature=>{
+        const allowed=can(dept.id,feature)
+        return <button key={feature} type="button" disabled={!allowed}
+          onClick={()=>onSelect("#/departments/"+dept.id+"/"+feature)}>
+          <span>{FEATURE_NAMES[feature]??feature}</span><ArrowRight size={14}/>
+        </button>
+      })}
+    </div>
+  </section>
 }
 
 function Roster({dept,staff,employee,can,office,onUpdate}:{
@@ -362,7 +381,6 @@ function DepartmentPage({dept,staff,employee,workspace,can,onSelect,onRefresh}:{
 
 export default function App() {
   const [route,setRoute]=useState<Route>(()=>parseRoute(window.location.hash))
-  const [sidebarOpen,setSidebarOpen]=useState(false)
   const {access,employee,workspace,refresh,can,switchEmployee}=useFactoryState()
   useEffect(()=>{
     if(!window.location.hash)history.replaceState(null,"","#/overview")
@@ -373,7 +391,6 @@ export default function App() {
   const navigate=useCallback((hash:string)=>{
     if(window.location.hash!==hash)window.location.hash=hash
     setRoute(parseRoute(hash))
-    setSidebarOpen(false)
     window.scrollTo({top:0,behavior:"auto"})
   },[])
   const readMessage=useCallback((id:string|number)=>{
@@ -397,14 +414,13 @@ export default function App() {
   const validFeature=Boolean(currentDept&&currentFeature&&currentDept.features.includes(currentFeature))
   return <>
     <div aria-hidden="true" style={{position:"absolute",width:0,height:0,overflow:"hidden"}} dangerouslySetInnerHTML={{__html:SVG_SPRITE}}/>
-    <div className="factory-shell">
-      <div className={`sidebar-shade ${sidebarOpen?"open":""}`} onClick={()=>setSidebarOpen(false)} aria-hidden="true"/>
-      <DepartmentNav route={route} open={sidebarOpen} onSelect={navigate}/>
+    <div className="factory-shell factory-shell-v2">
+      <SystemRail route={route} onSelect={navigate} employee={employee} staff={staff} onSwitch={switchEmployee}
+        messages={messages} onRead={readMessage} onReadAll={readAllMessages} workspace={workspace}/>
       <div className="shell-workspace">
-        <Topbar route={route} employee={employee} staff={staff} onSwitch={switchEmployee}
-          onOpenSidebar={()=>setSidebarOpen(true)} onSelect={navigate} messages={messages}
-          onRead={readMessage} onReadAll={readAllMessages}/>
-        <main className="shell-content" id="main-content">
+        <DepartmentBand route={route} onSelect={navigate}/>
+        <FeatureBand route={route} onSelect={navigate} can={can}/>
+        <main className={"shell-content "+(route.kind==="overview"?"is-overview":"is-department")+" "+(currentFeature?"is-business":"")} id="main-content">
           {route.kind==="overview"?<OverviewDashboard workspace={workspace} onSelect={navigate} onRefresh={refresh}/>:
             currentDept&&(!currentFeature||!validFeature)?
               <DepartmentPage key={currentDept.id} dept={currentDept} staff={staff} employee={employee}
