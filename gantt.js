@@ -164,9 +164,8 @@ function status(entry){
 function readDay(){return state().ganttDay}
 function fmtMin(m){return `${pad(Math.floor(m/60))}:${pad(m%60)}`}
 function startMinute(x){const d=new Date(x.start);return d.getHours()*60+d.getMinutes()}
-function render(options={}){
+function render(){
  ensure();
- const overview=options.overview===true;
  const day=readDay(),view=dayLayout(state().gantt,day),canEdit=ctx.access.has('pmc','schedule','edit');
  const types=stages.map(type=>[type,categories[type]]);
  const times=Array.from({length:25},(_,i)=>`<span class="gantt-tick" style="left:${i/24*100}%">${pad(i)}:00</span>`).join('');
@@ -192,9 +191,9 @@ function render(options={}){
   replans.map(o=>'<p>'+safe(o.id)+'：'+safe((state().flows[o.id].audit||[]).filter(a=>a.action==='开工前一天物料不齐套，退回排程').slice(-1)[0]?.state||'请复查物料')+'</p>').join('')+'</div>':'';
  const warning=conflictCount?`<div class="gantt-warning" role="status"><strong>发现 ${conflictCount} 对同工位时间冲突</strong><span>冲突任务已分层显示，不代表工位能同时生产；可编辑任务或整理尚未发布的排程。</span></div>`:'';
  requestAnimationFrame(()=>{const sc=$('.gantt-scroll');if(sc)sc.scrollLeft=restoreLeft});
- return replanNote+`<section class="gantt-panel${overview?' gantt-overview':''}" aria-label="排产甘特图">
-   <header class="gantt-panel-head"><div><h2>${overview?'今日生产排程':'排产甘特图'}</h2><p>横轴：24 小时 · 纵轴：产线 / 检验工位 · 短任务用工序颜色识别，悬停查看详情</p></div>
-   <div class="gantt-controls"><button type="button" data-gantt="prev" aria-label="前一天">‹</button><input type="date" id="gantt-date" aria-label="选择排产日期" value="${day}"><button type="button" data-gantt="next" aria-label="后一天">›</button><button type="button" data-gantt="today">今天</button>${overview?'':(canEdit?'<button type="button" data-gantt="optimize" class="gantt-optimize">整理未发布排程</button>':'')+'<button type="button" data-gantt="add" class="gantt-add" '+(canEdit?'':'disabled title="无权修改排程"')+'>+ 新建任务</button>'}</div></header>
+ return replanNote+`<section class="gantt-panel" aria-label="排产甘特图">
+   <header class="gantt-panel-head"><div><h2>排产甘特图</h2><p>横轴：24 小时 · 纵轴：产线 / 检验工位 · 短任务用工序颜色识别，悬停查看详情</p></div>
+   <div class="gantt-controls"><button type="button" data-gantt="prev" aria-label="前一天">‹</button><input type="date" id="gantt-date" aria-label="选择排产日期" value="${day}"><button type="button" data-gantt="next" aria-label="后一天">›</button><button type="button" data-gantt="today">今天</button>${canEdit?'<button type="button" data-gantt="optimize" class="gantt-optimize">整理未发布排程</button>':''}<button type="button" data-gantt="add" class="gantt-add" ${canEdit?'':'disabled title="无权修改排程"'}>+ 新建任务</button></div></header>
    <div class="gantt-legend">${legend}<span class="gantt-count">当天 ${n} 项任务${conflictCount?' · '+conflictCount+' 对冲突':''}</span></div>
    ${warning}
    <div class="gantt-scroll" tabindex="0" aria-label="可左右滚动的排产甘特图"><div class="gantt-canvas"><div class="gantt-head"><div class="gantt-lane gantt-lane-title">产线 / 工位</div><div class="gantt-hours">${times}</div></div>${rows}</div></div>
@@ -297,5 +296,4 @@ document.addEventListener('scroll',ev=>{if(ev.target.matches?.('.gantt-scroll'))
 document.addEventListener('change',ev=>{if(ev.target.id==='gantt-date'){state().ganttDay=ev.target.value;ctx.save();rerender()}},true);
 document.addEventListener('submit',ev=>{if(ev.target.id==='gantt-form'){ev.stopPropagation();save(ev)}},true);
 window.FactoryGantt={init,render,validate,get entries(){return state()?.gantt||[]}};
-window.FactoryGantt.renderOverview=()=>render({overview:true});
 })();
