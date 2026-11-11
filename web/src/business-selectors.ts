@@ -57,6 +57,7 @@ export function getTodos(dept:string,workspace:WorkspaceData):TodoRecord[] {
     else if(dept==="warehouse"&&["dispatch","shipping"].includes(stage))add("ops","warehouseOutbound",order,"待成品出库",detail,status)
     else if(dept==="sales"&&stage==="stored")add("ops","orders",order,"待发货通知",detail,status)
     else if(dept==="sales"&&stage==="shipped")add("ops","orders",order,"待客户收货确认",detail,status)
+    else if(dept==="production"&&["blend_clean","pack_clean"].includes(stage))add("ops","nonProductionTasks",order,"清洗任务待执行",detail,status)
     else if(dept==="production"&&["blending","semi_ok","packaging"].includes(stage))add("ops","tasks",order,"生产任务待执行",detail,status)
     else if(match[dept]?.[0]===stage){
       const [,feature,title]=match[dept]
