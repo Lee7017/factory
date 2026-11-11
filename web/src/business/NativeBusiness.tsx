@@ -107,7 +107,6 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
       <div id="view" className="legacy-workbench"><BusinessMarkup markup={markup}/></div>
       <div id="modal-host"/>
       <div id="ops-modal-host"/>
-      <div id="proc-modal-host"/>
       <div id="toast-host" aria-live="polite"/>
     </div>
     {toast&&<div className="fixed bottom-5 right-5 z-100 max-w-sm rounded-xl border border-green-200 bg-white/95 p-3 text-xs shadow-xl" role="status">
@@ -120,6 +119,15 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
       <div className="legacy-root legacy-modules-portal-root"
         onClick={handleClick} onSubmit={handleSubmit}>
         <div id="modules-modal-host"/>
+      </div>,
+      document.body
+    )}
+    {/* Procurement receipt, PO and approval forms must not be contained by the business
+        card. Keep the legacy CSS scope in a body portal; procurement.js already
+        handles its native click and submit events on document. */}
+    {createPortal(
+      <div className="legacy-root legacy-proc-portal-root">
+        <div id="proc-modal-host"/>
       </div>,
       document.body
     )}

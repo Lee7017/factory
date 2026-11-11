@@ -82,3 +82,27 @@
 .proc-pmc-inbox{margin-top:14px}
 .proc-pmc-inbox .mw-data-section{border:1px solid #e2e9ee;border-radius:10px;background:#fff;overflow:hidden}
 @media(max-width:560px){.proc-po-source{align-items:flex-start;flex-direction:column}}
+
+/* Procurement receipts are full-viewport dialogs: the parent workbench must never clip them.
+   The content scrolls when the browser is small/zoomed, while the title and submit controls stay visible. */
+.proc-modal:has(#proc-form[data-kind="receipt"]){
+  display:flex;flex-direction:column;overflow:hidden;
+  height:min(480px,calc(100dvh - 28px));
+  max-height:calc(100dvh - 28px);
+}
+.proc-modal:has(#proc-form[data-kind="receipt"])>header{flex:none;margin-bottom:13px}
+.proc-modal:has(#proc-form[data-kind="receipt"]) #proc-form{
+  flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;
+}
+.proc-modal:has(#proc-form[data-kind="receipt"]) .proc-fields{
+  flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  padding:2px 4px 8px 1px;align-content:start;
+}
+.proc-modal:has(#proc-form[data-kind="receipt"]) .proc-error{flex:none;margin:4px 0 0}
+.proc-modal:has(#proc-form[data-kind="receipt"]) #proc-form>footer{
+  flex:none;margin-top:10px;padding-top:12px;
+}
+@media(max-height:560px){
+ .proc-modal:has(#proc-form[data-kind="receipt"]){padding-top:14px;padding-bottom:12px}
+ .proc-modal:has(#proc-form[data-kind="receipt"])>header{margin-bottom:9px}
+}
