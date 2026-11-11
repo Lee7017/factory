@@ -88,7 +88,6 @@
   "todoTitles": {
     "review": "待评审订单",
     "approved": "等待排程",
-    "trial": "等待发布正式排程",
     "formal": "待齐套锁库",
     "reserved": "待发料",
     "issued": "待生产",
