@@ -199,6 +199,7 @@ function FeatureGrid({dept,can,onSelect}:{
           const Icon=getFeatureIcon(f),allowed=can(dept.id,f)
           return <button key={f} type="button" className="feature-tile" disabled={!allowed}
             aria-label={`${FEATURE_NAMES[f]??f}${allowed?"":"，无访问权限"}`}
+            title={FEATURE_HINTS[f]??"业务操作与记录"}
             onClick={()=>onSelect(`#/departments/${dept.id}/${f}`)}>
             <span className="feature-icon"><Icon aria-hidden="true"/></span>
             <span className="feature-label">{FEATURE_NAMES[f]??f}</span>
