@@ -14,7 +14,7 @@ try{
  const errors=[]
  page.on("pageerror",err=>errors.push(err.message))
  await page.goto(base,{waitUntil:"networkidle"})
- await page.locator(".department-tile").first().waitFor()
+ await page.locator(".department-band-button").first().waitFor()
  const orderId="SO-2026-1023-018"
  const dialog=page.locator(".journey-dialog")
  const stage=()=>page.evaluate(id=>window.FactoryOperations.state.flows[id].stage,orderId)
