@@ -106,7 +106,7 @@ function showTaskGate(o,type,task){
   cleanQc&&task.status==='待复核'&&!window.FactoryModules?.hasCleaningPass?.(task.id)?'需提交清洗报检并取得 QC 合格结论':
   task.status==='待复核'?'待确认完工复核':task.status==='执行中'?'待执行结束并提交复核':'待开始执行';
  const next=report?{dept:'quality',feature:'qaCleanInspection',record:report.id}:
-  {dept:type==='清洗'?'production':'engineering',feature:type==='清洗'?'tasks':'engineering',record:task.id};
+  {dept:'production',feature:'nonProductionTasks',record:task.id};
  window.FactoryFlowUI?.openDocument({kind:'order',ref:o.id,docType:'销售订单',
   summary:o.product+' · '+o.spec+' · '+o.qty+' '+(o.unit||'L'),stage:stageOf(o),
   status:stageForOrder(o),history:S.flows[o.id]?.audit||[],
@@ -342,7 +342,7 @@ function applyFlow(key,id,button){const o=orderBy(id),step=orderActions[key];if(
  const from=route[expected]||dept,to=route[next]||dept;
  S.flows[id].audit.push({at:now(),person:current(),action:label,from,to,state:stages[next]});log(label,id,`${expected} → ${next}`);success(`${id}：${label}，当前状态 ${stages[next]}`);
  window.FactoryFlowUI?.show({ref:id,docType:'销售订单',summary:`${o.product} · ${o.spec} · ${o.qty} ${o.unit||'L'}`,action:label,from,to,status:stages[next],next:(generatedInspection?`质量部 QA/QC → 报检判定 · ${generatedInspection.id}`:({'approved':'排程试算','trial':'发布正式排程','formal':'物料齐套 / 锁库','reserved':'仓库发料','issued':'配制开工','blending':'配制任务完成','blend_clean':'配制线清洗执行与复核','semi_qc':'质量部 QA/QC → 报检判定','semi_ok':'调机调线复核及包装','packaging':'包装任务完成','pack_clean':'包装线清洗执行与复核','final_qc':'质量部 QA/QC → 报检判定','released':'成品入库','stored':'由销售部发起发货通知','dispatch':'仓库按订单批次出库','shipping':'仓库继续出库剩余数量','shipped':'销售确认客户实际收货','delivered':'客户交付完成，订单归档','review':'销售订单评审'})[next]||'查看单据当前状态'),operator:current(),at:now(),open:{dept:'sales',feature:'orders'},nextOpen:generatedInspection?{dept:'quality',feature:'qaQc',action:'qualityRecord',record:generatedInspection.id}:
-   prerequisite?{dept:prerequisite.type==='清洗'?'production':'engineering',feature:prerequisite.type==='清洗'?'tasks':'engineering',record:prerequisite.id}:nextWorkForStage[next],history:S.flows[id].audit.map(h=>({...h,from:h.from||(h.action==='订单记录导入'?'sales':undefined)}))});
+   prerequisite?{dept:'production',feature:'nonProductionTasks',record:prerequisite.id}:nextWorkForStage[next],history:S.flows[id].audit.map(h=>({...h,from:h.from||(h.action==='订单记录导入'?'sales':undefined)}))});
 }
 function applyTask(mode,id,button){let task=ctx.data.tasks.find(t=>t.id===id);if(!task)return;const dept='production',feat='nonProductionTasks';if(!can(dept,feat,'execute'))return flash(button);const map={start:['待开始','执行中','任务开工'],finish:['执行中','待复核','提交完工复核'],verify:['待复核','已完成','复核完成']};const [from,to,label]=map[mode]||[];if(task.status!==from)return warn(`任务 ${id} 当前状态为${task.status}，不能${label}`);
  if(mode==='verify'&&task.type==='清洗'&&window.FactoryModules?.state?.rules?.cleanQC&&!window.FactoryModules.hasCleaningPass(id))return trackCleanQc(id);
