@@ -1,9 +1,9 @@
-import { useMemo, useState, type CSSProperties } from "react"
+import { useMemo, useState } from "react"
 import {
   Activity, ArrowUpRight, Bot, CheckCircle2, Coins, FileText,
   MessageSquareText, Play, Sparkles, Wallet, Zap
 } from "lucide-react"
-import "./agent-center.css"
+import { AgentMap3D } from "./AgentMap3D"\nimport "./agent-center.css"
 
 const agentAsset=(name:string)=>`${import.meta.env.BASE_URL}agent-map/${name}`
 
@@ -163,22 +163,23 @@ export function AgentCenter({onSelect}:{onSelect:(hash:string)=>void}){
     <div className="agent-main-grid">
       <section className="agent-map-panel glass-panel">
         <div className="agent-panel-head"><div><h2>智慧地图</h2><p>点击建筑查看守护兽；线路、建筑和宠物均独立动画</p></div><div className="agent-map-legend"><span><i className="online"/>在线</span><span><i className="busy"/>执行中</span><span><i className="confirm"/>待确认</span></div></div>
-        <div className="agent-map-viewport">
-          <div className="agent-map-stage">
-            <MapTerrain/>
-            <svg className="agent-map-network" viewBox="0 0 1100 733" preserveAspectRatio="none" aria-hidden="true">
-              <g className="network-soft"><path d="M550 356 L198 315"/><path d="M550 356 L410 198"/><path d="M550 356 L715 195"/><path d="M550 356 L910 345"/><path d="M550 356 L335 505"/><path d="M550 356 L748 505"/><path d="M550 356 L550 590"/><path d="M550 356 L590 95"/></g>
-              <g className="network-flow"><path d="M550 356 L198 315"/><path d="M550 356 L410 198"/><path d="M550 356 L715 195"/><path d="M550 356 L910 345"/><path d="M550 356 L335 505"/><path d="M550 356 L748 505"/><path d="M550 356 L550 590"/><path d="M550 356 L590 95"/></g>
-            </svg>
-            <div className="agent-core" aria-hidden="true"><span>AI</span><i/><i/><i/></div>
-            {DEPARTMENTS.map((dept)=>{
-              const heightPct=dept.size*1100/733
-              const style={left:`${dept.x-dept.size/2}%`,top:`${dept.y-heightPct/2}%`,width:`${dept.size}%`} as CSSProperties
-              return <button type="button" key={dept.id} style={style} className={`agent-map-dept ${selectedId===dept.id?"selected":""}`} onClick={()=>setSelectedId(dept.id)} aria-label={`查看${dept.name} Agent`}>
-                <img className="dept-building-image" src={agentAsset(dept.building)} alt="" draggable={false}/><MascotSwarm dept={dept}/>
-                <span className="agent-map-badge"><b>{dept.short}</b><small>{dept.agent}</small><em><i/>{dept.status}</em></span>
-              </button>
-            })}
+        <div className="agent-map-viewport agent-map-viewport-3d">
+          <div className="agent-map-stage agent-map-stage-3d">
+            <AgentMap3D selectedId={selectedId}/>
+            <div className="agent-map-3d-vignette" aria-hidden="true"/>
+            <div className="agent-map-overlay" aria-label="部门 Agent 地图标记">
+              {DEPARTMENTS.map((dept)=>(
+                <button type="button" key={dept.id}
+                  style={{left:`${dept.x}%`,top:`${dept.y}%`}}
+                  className={`agent-map-marker ${selectedId===dept.id?"selected":""}`}
+                  onClick={()=>setSelectedId(dept.id)}
+                  aria-label={`查看${dept.name} Agent`}>
+                  <MascotSwarm dept={dept}/>
+                  <span className="agent-map-badge"><b>{dept.short}</b><small>{dept.agent}</small><em><i/>{dept.status}</em></span>
+                </button>
+              ))}
+            </div>
+            <div className="agent-map-render-note"><span className="live-dot"/>实时 3D 园区 · PBR 材质 · 软阴影</div>
           </div>
         </div>
       </section>
