@@ -554,9 +554,24 @@ try {
   await runningBorder.waitFor({state:"attached",timeout:7000})
   const borderAnimation=await runningBorder.evaluate(el=>getComputedStyle(el).animationName)
   assert.ok(borderAnimation.includes("journey-border-march"),"Animated journey border must retain running animation")
-  // Current flow UX: no order tabs; first two cards open a right-side order details drawer.
+  // A current step must track the bottleneck; completed intake/review steps may open order content.
   assert.equal(await flow.locator('[data-journey-tab]').count(),0)
-  assert.equal(await flow.locator('[data-flow-order-content]').count(),2)
+  const orderHeaderControls=await flow.evaluate(root=>[0,1].map(index=>{
+    const card=root.querySelector('.journey-card[data-journey-step="'+index+'"]')
+    return {
+      state:card?.classList.contains('is-current')?'current':
+        card?.classList.contains('is-done')?'done':'other',
+      track:Boolean(card?.querySelector('[data-flow-track]')),
+      content:Boolean(card?.querySelector('[data-flow-order-content]'))
+    }
+  }))
+  for(const [index,control] of orderHeaderControls.entries()){
+    if(control.state==="current"){
+      assert.equal(control.track,true,"Current order step "+index+" must offer tracking")
+      assert.equal(control.content,false,"Order content must not replace its tracking button")
+    }
+    if(control.state==="done")assert.equal(control.content,true,"Completed order step "+index+" shows order content")
+  }
   assert.equal(await flow.locator('.journey-return-overview,.journey-step-count,.journey-step-returns').count(),0)
   await page.screenshot({path:"test-results/order-animated-journey.png",fullPage:false})
   await flow.locator('[data-flow-order-content]').first().click()

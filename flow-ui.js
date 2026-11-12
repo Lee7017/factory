@@ -280,12 +280,14 @@ function makeCard(step,i,state,history,documents=[],kind='handoff',returns=[]){
  const docButton=done&&documents.length?
   `<button type="button" class="journey-card-document" data-flow-document-step="${i}" title="${clean('查看'+title)}">查看${clean(title)}</button>`:'';
  const status=state==='done'?'已办理':state==='current'?'当前环节':state==='complete'?'已办结':'待办理';
- // 订单最初两张业务卡右上角直接查看订单正文，不再使用独立 Tab。
- const head=kind==='order'&&i<2?
-  '<button type="button" class="journey-card-document journey-order-content" data-flow-order-content>订单内容</button>':
-  (docButton||(canTrack?
-   `<button type="button" class="journey-card-track" data-flow-track>${state==='complete'?'查看已办结环节':'跟踪当前环节'} →</button>`:
-   `<span class="journey-state">${status}</span>`));
+ // 当前待办卡要优先显示追踪入口；只有已办理的前两步才显示「订单内容」。
+ // 否则订单尚待评审时第 02 步会被「订单内容」占据，导致无法追踪。
+ const trackButton=canTrack?
+  `<button type="button" class="journey-card-track" data-flow-track>${state==='complete'?'查看已办结环节':'跟踪当前环节'} →</button>`:'';
+ const orderContent=kind==='order'&&i<2&&done?
+  '<button type="button" class="journey-card-document journey-order-content" data-flow-order-content>订单内容</button>':'';
+ const head=state==='current'&&trackButton?
+  trackButton:(orderContent||docButton||trackButton||`<span class="journey-state">${status}</span>`);
  return `<div class="journey-card is-${state}" data-journey-step="${i}" data-flow-card-step="${i}" title="查看本环节的执行记录">
   <div class="journey-card-head"><span class="journey-seq">${String(i+1).padStart(2,'0')}</span>
    <div class="journey-card-head-actions">${head}</div></div>

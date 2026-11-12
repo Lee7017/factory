@@ -47,13 +47,40 @@ try{
  const orderFlow=async(stage="delivered")=>{
   await page.evaluate(({order,stage})=>window.FactoryFlowUI.openDocument({
    kind:"order",ref:order,stage,docType:"销售订单",summary:"真实单据关联测试",
-   nextOpen:{dept:"sales",feature:"orders",record:order}
+   nextOpen:{dept:"sales",feature:stage==="review"?"orderReview":"orders",record:order}
   }),{order:id,stage})
   await dialog.waitFor({state:"visible"})
  }
  const card=name=>dialog.locator(".journey-card").filter({has:page.locator(".journey-task").getByText(name,{exact:true})})
  const docButton=name=>card(name).locator("[data-flow-document-step]")
  const closeRecord=async()=>{await modal.locator('[data-module-action="closeModal"]').first().click();await modal.waitFor({state:"hidden"})}
+ // A pending order-review card must keep the tracking button and route to review.
+ // Keep the persisted business stage consistent with the simulated flow stage;
+ // a genuinely delivered order routes to history by design.
+ await page.evaluate(order=>{window.FactoryOperations.state.flows[order].stage="review"},id)
+ await orderFlow("review")
+ assert.equal(await card("接收订单并提交评审").locator("[data-flow-order-content]").count(),1)
+ assert.equal(await card("订单评审通过").locator("[data-flow-order-content]").count(),0)
+ assert.equal(await card("订单评审通过").locator("[data-flow-track]").textContent(),"跟踪当前环节 →")
+ await page.screenshot({path:"test-results/flow-doc-review-pending-tracker.png"})
+ await card("订单评审通过").locator("[data-flow-track]").click()
+ await page.waitForTimeout(250)
+ const trackingNavigation=await page.evaluate(()=>({
+  hash:location.hash,
+  navType:typeof window.FactoryNavigation?.trackBottleneck,
+  hasReviewAccess:window.FactoryAccess?.has?.("sales","orderReview","view"),
+  activeBusiness:document.querySelector(".native-business")?.getAttribute("aria-label")
+ }))
+ assert.equal(trackingNavigation.hash,"#/departments/sales/orderReview",
+  "Review bottleneck must navigate to its business feature: "+JSON.stringify(trackingNavigation))
+ await page.locator('.native-business .biz-order-panel[data-order-panel="orderReview"]').waitFor({state:"visible"})
+ await page.evaluate(order=>{window.FactoryOperations.state.flows[order].stage="approved"},id)
+ await orderFlow("approved")
+ assert.equal(await card("订单评审通过").locator("[data-flow-order-content]").count(),1,
+  "After review approval, the second card can open the order content")
+ await page.evaluate(order=>{window.FactoryOperations.state.flows[order].stage="delivered"},id)
+ await page.evaluate(()=>{location.hash="#/departments/sales/orders"})
+ await page.locator('.native-business [data-op-action="detailFlow"]').first().waitFor({state:"visible"})
  await orderFlow()
  assert.equal(await card("发布正式排程").locator(".journey-state").textContent(),"已办理",
   "A completed step without a separate business document keeps 已办理")
