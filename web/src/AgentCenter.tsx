@@ -1,8 +1,9 @@
-import { useMemo, useState, type CSSProperties } from "react"
+import { useMemo, useState } from "react"
 import {
   Activity, ArrowUpRight, Bot, CheckCircle2, Coins, FileText,
   MessageSquareText, Play, Sparkles, Wallet, Zap
 } from "lucide-react"
+import { AgentMap3D } from "./AgentMap3D"
 import "./agent-center.css"
 
 const agentAsset=(name:string)=>`${import.meta.env.BASE_URL}agent-map/${name}`
@@ -37,48 +38,6 @@ const OUTPUTS=[
   ["缺料影响清单","风险分析 · PDF","采购蚁群","10:18"],
   ["订单交付摘要","经营简报 · DOCX","狐狸商务助手","09:56"],
 ]
-
-function MapTerrain(){
-  const trees=[[75,165],[125,120],[205,92],[890,112],[970,150],[1020,220],[94,520],[150,585],[230,620],[865,590],[940,545],[1010,500],[365,98],[760,105],[125,330],[970,350],[430,625],[770,620]]
-  return <svg className="agent-map-terrain" viewBox="0 0 1100 733" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-    <defs>
-      <linearGradient id="agentGrass" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#c8d7b6"/><stop offset="1" stopColor="#9fbe92"/></linearGradient>
-      <linearGradient id="agentWater" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#76b9bd"/><stop offset="1" stopColor="#4b929b"/></linearGradient>
-      <filter id="agentShadow"><feDropShadow dx="0" dy="9" stdDeviation="8" floodColor="#526458" floodOpacity=".2"/></filter>
-      <pattern id="agentRoadDots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="9" cy="9" r="1.2" fill="#c4c7bd" opacity=".45"/></pattern>
-    </defs>
-    <path d="M86 86 L548 22 L1014 90 L1072 555 L907 690 L198 695 L38 545 Z" fill="#7c9d78" opacity=".25" filter="url(#agentShadow)"/>
-    <path d="M76 70 L548 16 L1018 78 L1060 536 L902 669 L199 675 L48 531 Z" fill="url(#agentGrass)" stroke="#819e78" strokeWidth="5"/>
-    <path d="M49 533 C165 495 248 520 344 570 C470 637 586 635 699 602 C807 571 894 553 1058 536 L902 669 L199 675 Z" fill="url(#agentWater)" opacity=".94"/>
-    <path d="M68 516 C188 485 270 511 360 558 C481 620 583 616 693 585 C816 550 904 533 1048 520" fill="none" stroke="#e8dfc7" strokeWidth="17" opacity=".76"/>
-    <g fill="#d6d4ca" stroke="#b7bbb1" strokeWidth="2">
-      <path d="M500 89 L598 86 L603 618 L500 622 Z"/>
-      <path d="M117 319 L983 307 L987 395 L116 406 Z"/>
-      <path d="M214 159 L278 122 L858 558 L801 596 Z"/>
-      <path d="M827 155 L886 193 L295 590 L242 548 Z"/>
-    </g>
-    <g fill="url(#agentRoadDots)" opacity=".55">
-      <path d="M500 89 L598 86 L603 618 L500 622 Z"/><path d="M117 319 L983 307 L987 395 L116 406 Z"/>
-    </g>
-    <g className="terrain-lots" fill="#dcd9cd" stroke="#aeb5a9" strokeWidth="3">
-      <path d="M112 250 L237 213 L318 253 L190 293 Z"/><path d="M328 133 L449 98 L529 139 L405 176 Z"/>
-      <path d="M648 132 L770 98 L850 139 L726 177 Z"/><path d="M820 283 L948 247 L1026 289 L895 326 Z"/>
-      <path d="M247 472 L378 435 L458 478 L326 518 Z"/><path d="M651 473 L780 438 L860 480 L729 519 Z"/>
-      <path d="M456 550 L575 518 L650 555 L529 591 Z"/><path d="M477 48 L571 25 L631 54 L536 79 Z"/>
-    </g>
-    <g className="terrain-crosswalk" stroke="#f2efe5" strokeWidth="7" opacity=".9">
-      <path d="M520 300 l0 72"/><path d="M540 300 l0 72"/><path d="M560 300 l0 72"/><path d="M580 300 l0 72"/>
-    </g>
-    {trees.map(([x,y],i)=><g key={i} transform={`translate(${x} ${y})`}>
-      <ellipse cy="15" rx="20" ry="8" fill="#71886e" opacity=".22"/><rect x="-3" y="5" width="6" height="16" rx="2" fill="#806b4c"/>
-      <circle cx="-8" cy="-3" r="17" fill={i%3===0?"#78a769":"#6e9d64"}/><circle cx="9" cy="-7" r="15" fill={i%4===0?"#96b873":"#80aa6e"}/><circle cy="-16" r="15" fill="#8eb477"/>
-    </g>)}
-    <g opacity=".6" fill="#e9b6b9">{[[155,185],[920,180],[205,560],[890,515]].map(([x,y],i)=><g key={i} transform={`translate(${x} ${y})`}><circle r="17"/><circle cx="13" cy="-6" r="13"/><circle cx="-11" cy="-9" r="12"/></g>)}</g>
-    <circle cx="550" cy="356" r="67" fill="#d8dacd" stroke="#aeb8aa" strokeWidth="8"/>
-    <circle cx="550" cy="356" r="46" fill="#bdd0b2" stroke="#8ea68a" strokeWidth="4"/>
-    <circle cx="550" cy="356" r="25" fill="#dce9d8"/>
-  </svg>
-}
 
 function MapPetAvatar({kind}:{kind:DeptKind}){
   const cfg={
@@ -163,22 +122,23 @@ export function AgentCenter({onSelect}:{onSelect:(hash:string)=>void}){
     <div className="agent-main-grid">
       <section className="agent-map-panel glass-panel">
         <div className="agent-panel-head"><div><h2>智慧地图</h2><p>点击建筑查看守护兽；线路、建筑和宠物均独立动画</p></div><div className="agent-map-legend"><span><i className="online"/>在线</span><span><i className="busy"/>执行中</span><span><i className="confirm"/>待确认</span></div></div>
-        <div className="agent-map-viewport">
-          <div className="agent-map-stage">
-            <MapTerrain/>
-            <svg className="agent-map-network" viewBox="0 0 1100 733" preserveAspectRatio="none" aria-hidden="true">
-              <g className="network-soft"><path d="M550 356 L198 315"/><path d="M550 356 L410 198"/><path d="M550 356 L715 195"/><path d="M550 356 L910 345"/><path d="M550 356 L335 505"/><path d="M550 356 L748 505"/><path d="M550 356 L550 590"/><path d="M550 356 L590 95"/></g>
-              <g className="network-flow"><path d="M550 356 L198 315"/><path d="M550 356 L410 198"/><path d="M550 356 L715 195"/><path d="M550 356 L910 345"/><path d="M550 356 L335 505"/><path d="M550 356 L748 505"/><path d="M550 356 L550 590"/><path d="M550 356 L590 95"/></g>
-            </svg>
-            <div className="agent-core" aria-hidden="true"><span>AI</span><i/><i/><i/></div>
-            {DEPARTMENTS.map((dept)=>{
-              const heightPct=dept.size*1100/733
-              const style={left:`${dept.x-dept.size/2}%`,top:`${dept.y-heightPct/2}%`,width:`${dept.size}%`} as CSSProperties
-              return <button type="button" key={dept.id} style={style} className={`agent-map-dept ${selectedId===dept.id?"selected":""}`} onClick={()=>setSelectedId(dept.id)} aria-label={`查看${dept.name} Agent`}>
-                <img className="dept-building-image" src={agentAsset(dept.building)} alt="" draggable={false}/><MascotSwarm dept={dept}/>
-                <span className="agent-map-badge"><b>{dept.short}</b><small>{dept.agent}</small><em><i/>{dept.status}</em></span>
-              </button>
-            })}
+        <div className="agent-map-viewport agent-map-viewport-3d">
+          <div className="agent-map-stage agent-map-stage-3d">
+            <AgentMap3D selectedId={selectedId}/>
+            <div className="agent-map-3d-vignette" aria-hidden="true"/>
+            <div className="agent-map-overlay" aria-label="部门 Agent 地图标记">
+              {DEPARTMENTS.map((dept)=>(
+                <button type="button" key={dept.id}
+                  style={{left:`${dept.x}%`,top:`${dept.y}%`}}
+                  className={`agent-map-marker ${selectedId===dept.id?"selected":""}`}
+                  onClick={()=>setSelectedId(dept.id)}
+                  aria-label={`查看${dept.name} Agent`}>
+                  <MascotSwarm dept={dept}/>
+                  <span className="agent-map-badge"><b>{dept.short}</b><small>{dept.agent}</small><em><i/>{dept.status}</em></span>
+                </button>
+              ))}
+            </div>
+            <div className="agent-map-render-note"><span className="live-dot"/>实时 3D 园区 · PBR 材质 · 软阴影</div>
           </div>
         </div>
       </section>
