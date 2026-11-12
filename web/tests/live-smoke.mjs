@@ -393,10 +393,24 @@ try{
   assert.equal(await dialog.evaluate(element=>getComputedStyle(element).backgroundColor),
     "rgb(251, 252, 248)","Order workflow dialog uses the shared warm-white panel color")
 
-  // Current UX: the first two flow cards expose "订单内容"; there are no order tabs.
+  // Current order steps track the bottleneck; already completed steps expose the order document.
   assert.equal(await dialog.locator('[role="tablist"] [role="tab"]').count(),0,"Order flow must not render obsolete tabs")
-  assert.equal(await dialog.locator("[data-flow-order-content]").count(),2,
-    "Both receiving and review cards provide the order-content action")
+  const firstTwo=await dialog.evaluate(root=>[0,1].map(index=>{
+    const card=root.querySelector('.journey-card[data-journey-step="'+index+'"]')
+    return {
+      current:Boolean(card?.classList.contains('is-current')),
+      done:Boolean(card?.classList.contains('is-done')),
+      tracking:Boolean(card?.querySelector('[data-flow-track]')),
+      content:Boolean(card?.querySelector('[data-flow-order-content]'))
+    }
+  }))
+  for(const [index,card] of firstTwo.entries()){
+    if(card.current){
+      assert.equal(card.tracking,true,"Published current step "+index+" retains bottleneck tracking")
+      assert.equal(card.content,false,"Published current step must not replace tracking with order content")
+    }
+    if(card.done)assert.equal(card.content,true,"Published completed step "+index+" can show order content")
+  }
   assert.equal(await dialog.locator(".journey-toolbar,.journey-range,.journey-return-overview").count(),0)
   const orderSteps=await dialog.locator(".journey-task").allTextContents()
   assert.equal(orderSteps.length,19,"Order keeps all 19 production and delivery workflow steps")
