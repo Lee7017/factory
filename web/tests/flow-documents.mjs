@@ -61,7 +61,15 @@ try{
  assert.equal(await card("订单评审通过").locator("[data-flow-track]").textContent(),"跟踪当前环节 →")
  await page.screenshot({path:"test-results/flow-doc-review-pending-tracker.png"})
  await card("订单评审通过").locator("[data-flow-track]").click()
- await page.waitForFunction(()=>location.hash==="#/departments/sales/orderReview")
+ await page.waitForTimeout(250)
+ const trackingNavigation=await page.evaluate(()=>({
+  hash:location.hash,
+  navType:typeof window.FactoryNavigation?.trackBottleneck,
+  hasReviewAccess:window.FactoryAccess?.has?.("sales","orderReview","view"),
+  activeBusiness:document.querySelector(".native-business")?.getAttribute("aria-label")
+ }))
+ assert.equal(trackingNavigation.hash,"#/departments/sales/orderReview",
+  "Review bottleneck must navigate to its business feature: "+JSON.stringify(trackingNavigation))
  await page.locator('.native-business .biz-order-panel[data-order-panel="orderReview"]').waitFor({state:"visible"})
  await orderFlow("approved")
  assert.equal(await card("订单评审通过").locator("[data-flow-order-content]").count(),1,
