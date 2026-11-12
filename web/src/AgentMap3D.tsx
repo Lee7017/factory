@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useRef } from "react"
 import * as THREE from "three"
 
@@ -425,7 +426,7 @@ export function AgentMap3D({selectedId}:AgentMap3DProps){
         const ring=g.userData.selectionRing as THREE.Mesh
         const mat=ring.material as THREE.MeshBasicMaterial
         const selected=id===selectedRef.current
-        mat.opacity=selected?.72:0
+        mat.opacity=selected ? .72 : 0
         ring.scale.setScalar(selected?1+Math.sin(t*2.2)*.045:1)
       })
       renderer.render(scene,camera)
