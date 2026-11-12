@@ -55,6 +55,9 @@ try{
  const docButton=name=>card(name).locator("[data-flow-document-step]")
  const closeRecord=async()=>{await modal.locator('[data-module-action="closeModal"]').first().click();await modal.waitFor({state:"hidden"})}
  // A pending order-review card must keep the tracking button and route to review.
+ // Keep the persisted business stage consistent with the simulated flow stage;
+ // a genuinely delivered order routes to history by design.
+ await page.evaluate(order=>{window.FactoryOperations.state.flows[order].stage="review"},id)
  await orderFlow("review")
  assert.equal(await card("接收订单并提交评审").locator("[data-flow-order-content]").count(),1)
  assert.equal(await card("订单评审通过").locator("[data-flow-order-content]").count(),0)
@@ -71,9 +74,11 @@ try{
  assert.equal(trackingNavigation.hash,"#/departments/sales/orderReview",
   "Review bottleneck must navigate to its business feature: "+JSON.stringify(trackingNavigation))
  await page.locator('.native-business .biz-order-panel[data-order-panel="orderReview"]').waitFor({state:"visible"})
+ await page.evaluate(order=>{window.FactoryOperations.state.flows[order].stage="approved"},id)
  await orderFlow("approved")
  assert.equal(await card("订单评审通过").locator("[data-flow-order-content]").count(),1,
   "After review approval, the second card can open the order content")
+ await page.evaluate(order=>{window.FactoryOperations.state.flows[order].stage="delivered"},id)
  await page.evaluate(()=>{location.hash="#/departments/sales/orders"})
  await page.locator('.native-business [data-op-action="detailFlow"]').first().waitFor({state:"visible"})
  await orderFlow()
