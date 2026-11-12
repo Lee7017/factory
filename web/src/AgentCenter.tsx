@@ -3,7 +3,8 @@ import {
   Activity, ArrowUpRight, Bot, CheckCircle2, Coins, FileText,
   MessageSquareText, Play, Sparkles, Wallet, Zap
 } from "lucide-react"
-import { AgentMap3D } from "./AgentMap3D"\nimport "./agent-center.css"
+import { AgentMap3D } from "./AgentMap3D"
+import "./agent-center.css"
 
 const agentAsset=(name:string)=>`${import.meta.env.BASE_URL}agent-map/${name}`
 
