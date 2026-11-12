@@ -38,48 +38,6 @@ const OUTPUTS=[
   ["订单交付摘要","经营简报 · DOCX","狐狸商务助手","09:56"],
 ]
 
-function MapTerrain(){
-  const trees=[[75,165],[125,120],[205,92],[890,112],[970,150],[1020,220],[94,520],[150,585],[230,620],[865,590],[940,545],[1010,500],[365,98],[760,105],[125,330],[970,350],[430,625],[770,620]]
-  return <svg className="agent-map-terrain" viewBox="0 0 1100 733" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-    <defs>
-      <linearGradient id="agentGrass" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#c8d7b6"/><stop offset="1" stopColor="#9fbe92"/></linearGradient>
-      <linearGradient id="agentWater" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#76b9bd"/><stop offset="1" stopColor="#4b929b"/></linearGradient>
-      <filter id="agentShadow"><feDropShadow dx="0" dy="9" stdDeviation="8" floodColor="#526458" floodOpacity=".2"/></filter>
-      <pattern id="agentRoadDots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="9" cy="9" r="1.2" fill="#c4c7bd" opacity=".45"/></pattern>
-    </defs>
-    <path d="M86 86 L548 22 L1014 90 L1072 555 L907 690 L198 695 L38 545 Z" fill="#7c9d78" opacity=".25" filter="url(#agentShadow)"/>
-    <path d="M76 70 L548 16 L1018 78 L1060 536 L902 669 L199 675 L48 531 Z" fill="url(#agentGrass)" stroke="#819e78" strokeWidth="5"/>
-    <path d="M49 533 C165 495 248 520 344 570 C470 637 586 635 699 602 C807 571 894 553 1058 536 L902 669 L199 675 Z" fill="url(#agentWater)" opacity=".94"/>
-    <path d="M68 516 C188 485 270 511 360 558 C481 620 583 616 693 585 C816 550 904 533 1048 520" fill="none" stroke="#e8dfc7" strokeWidth="17" opacity=".76"/>
-    <g fill="#d6d4ca" stroke="#b7bbb1" strokeWidth="2">
-      <path d="M500 89 L598 86 L603 618 L500 622 Z"/>
-      <path d="M117 319 L983 307 L987 395 L116 406 Z"/>
-      <path d="M214 159 L278 122 L858 558 L801 596 Z"/>
-      <path d="M827 155 L886 193 L295 590 L242 548 Z"/>
-    </g>
-    <g fill="url(#agentRoadDots)" opacity=".55">
-      <path d="M500 89 L598 86 L603 618 L500 622 Z"/><path d="M117 319 L983 307 L987 395 L116 406 Z"/>
-    </g>
-    <g className="terrain-lots" fill="#dcd9cd" stroke="#aeb5a9" strokeWidth="3">
-      <path d="M112 250 L237 213 L318 253 L190 293 Z"/><path d="M328 133 L449 98 L529 139 L405 176 Z"/>
-      <path d="M648 132 L770 98 L850 139 L726 177 Z"/><path d="M820 283 L948 247 L1026 289 L895 326 Z"/>
-      <path d="M247 472 L378 435 L458 478 L326 518 Z"/><path d="M651 473 L780 438 L860 480 L729 519 Z"/>
-      <path d="M456 550 L575 518 L650 555 L529 591 Z"/><path d="M477 48 L571 25 L631 54 L536 79 Z"/>
-    </g>
-    <g className="terrain-crosswalk" stroke="#f2efe5" strokeWidth="7" opacity=".9">
-      <path d="M520 300 l0 72"/><path d="M540 300 l0 72"/><path d="M560 300 l0 72"/><path d="M580 300 l0 72"/>
-    </g>
-    {trees.map(([x,y],i)=><g key={i} transform={`translate(${x} ${y})`}>
-      <ellipse cy="15" rx="20" ry="8" fill="#71886e" opacity=".22"/><rect x="-3" y="5" width="6" height="16" rx="2" fill="#806b4c"/>
-      <circle cx="-8" cy="-3" r="17" fill={i%3===0?"#78a769":"#6e9d64"}/><circle cx="9" cy="-7" r="15" fill={i%4===0?"#96b873":"#80aa6e"}/><circle cy="-16" r="15" fill="#8eb477"/>
-    </g>)}
-    <g opacity=".6" fill="#e9b6b9">{[[155,185],[920,180],[205,560],[890,515]].map(([x,y],i)=><g key={i} transform={`translate(${x} ${y})`}><circle r="17"/><circle cx="13" cy="-6" r="13"/><circle cx="-11" cy="-9" r="12"/></g>)}</g>
-    <circle cx="550" cy="356" r="67" fill="#d8dacd" stroke="#aeb8aa" strokeWidth="8"/>
-    <circle cx="550" cy="356" r="46" fill="#bdd0b2" stroke="#8ea68a" strokeWidth="4"/>
-    <circle cx="550" cy="356" r="25" fill="#dce9d8"/>
-  </svg>
-}
-
 function MapPetAvatar({kind}:{kind:DeptKind}){
   const cfg={
     sales:{head:"#f28a35",light:"#fff1dc",dark:"#7a3a1f"},
