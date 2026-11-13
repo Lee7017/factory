@@ -3853,6 +3853,25 @@ button.department-profile-photo-slot:focus-visible,
 }
 
 /* Remaining business departments: flat ledger / top actions / header filters / warm palette / aligned actions. */
+/* Reserve space for genuine actions instead of spreading unused columns. */
+.factory-shell-v2 .remaining-business-ledger table[data-flat-ledger-table]:has(
+  thead th:nth-child(7)
+):not(:has(thead th:nth-child(8))) :is(th,td):last-child:has(button){width:24%!important}
+.factory-shell-v2 .remaining-business-ledger table[data-flat-ledger-table]:has(
+  thead th:nth-child(10)
+) :is(th,td):last-child:has(button){width:27%!important}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(.op-row-actions,.proc-actions){
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:7px!important;
+  margin:0!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(.op-row-actions,.proc-actions) button{
+  margin:0!important;
+}
+
 /* Shared order-panel leftovers exist beyond Sales (warehouse, production and QA).
    Make them genuine flat ledgers too; their original create buttons remain clickable
    in the DOM but only the React feature-band proxies are displayed. */
