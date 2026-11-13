@@ -4069,7 +4069,8 @@ button.department-profile-photo-slot:focus-visible,
 /* Main toolbar actions are represented by their original event targets in the
    top-right feature band. They remain mounted but are not displayed twice. */
 .factory-shell-v2 .remaining-business-ledger .legacy-root :is(
-  .mw-table-toolbar,.mw-inline-toolbar,.op-table-toolbar
+  .mw-table-toolbar,.mw-inline-toolbar,.op-table-toolbar,.op-inline-toolbar,
+  .op-subsection > header > .op-tools
 ){display:none!important}
 .factory-shell-v2 .remaining-business-ledger .legacy-root :is(
   .mw-quality-command > .mw-actions,
