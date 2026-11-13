@@ -3,7 +3,6 @@ import { createPortal } from "react-dom"
 import { ArrowDownUp, ChevronLeft, ChevronRight, ListFilter, Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 export type Column<T>={
@@ -27,7 +26,7 @@ export function DataTable<T>({rows,columns,rowKey,placeholder="搜索记录…",
   const [columnFilters,setColumnFilters]=useState<Record<string,string>>({})
   const [toolbarHost,setToolbarHost]=useState<HTMLElement|null>(null)
   useEffect(()=>{setToolbarHost(document.getElementById("business-context-tools-host"))},[])
-  const statusOptions=useMemo(()=>Object.fromEntries(columns
+  const statusOptions=useMemo<Record<string,string[]>>(()=>Object.fromEntries(columns
     .filter(column=>/(?:状态|结论|结果|审批状态|质量状态)$/.test(column.label)&&column.value)
     .map(column=>[column.key,Array.from(new Set(rows.map(row=>String(column.value?.(row)??"").trim())
       .filter(Boolean)))])),[columns,rows])
