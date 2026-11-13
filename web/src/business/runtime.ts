@@ -81,19 +81,33 @@ let singleton:(BusinessRuntime & {callbacks:Callbacks})|undefined
 // Preserve original trackBottleneck semantics across an asynchronous React route mount.
 let pendingTracking:{dept:string;feature:string;ref:string}|null=null
 
-function markTrackedRow(root:ParentNode,ref:string):boolean {
+// The document number is the primary key. A sales order can have several
+// cleaning/setup tasks, so matching the order ID as free text is not precise.
+export function highlightTrackedBusinessRow(root:ParentNode,ref:string):boolean {
   const needle=ref.trim()
   if(!needle)return false
-  const matches=Array.from(root.querySelectorAll<HTMLElement>(
+  const rows=Array.from(root.querySelectorAll<HTMLElement>(
     "tbody tr,.dept-todo-card,.op-quality-link"
   ))
-  const found=matches.find(node=>node.textContent?.includes(needle))
+  const found=rows.find(node=>node.dataset.taskRow===needle)||
+    rows.find(node=>node.matches("tr")&&node.querySelector("td:first-child")?.textContent?.trim()===needle)||
+    rows.find(node=>node.textContent?.includes(needle))
   if(!found)return false
+  root.querySelectorAll<HTMLElement>(".bottleneck-track-highlight").forEach(node=>{
+    node.classList.remove("bottleneck-track-highlight")
+    node.removeAttribute("aria-current")
+    node.querySelector(".bottleneck-track-action")?.classList.remove("bottleneck-track-action")
+  })
   found.classList.remove("bottleneck-track-highlight")
   void found.offsetWidth
   found.classList.add("bottleneck-track-highlight")
-  found.scrollIntoView({block:"center",behavior:"smooth"})
-  window.setTimeout(()=>found.classList.remove("bottleneck-track-highlight"),3200)
+  found.setAttribute("aria-current","location")
+  // Point to the actual start/finish/review task button, not just its row.
+  if(found.dataset.taskRow){
+    found.querySelector<HTMLElement>('[data-op-action^="task:"]')
+      ?.classList.add("bottleneck-track-action")
+  }
+  found.scrollIntoView({block:"center",inline:"nearest",behavior:"auto"})
   return true
 }
 
@@ -193,7 +207,7 @@ export async function getBusinessRuntime():Promise<BusinessRuntime> {
       if(engine.activeDept===target.dept&&engine.activeFeature===target.feature){
         if(needle)window.requestAnimationFrame(()=>{
           const root=document.querySelector(".native-business .legacy-root")
-          if(root)markTrackedRow(root,needle)
+          if(root)highlightTrackedBusinessRow(root,needle)
         })
         return
       }
