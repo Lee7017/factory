@@ -70,22 +70,23 @@ try {
       if(["leave","leaveApproval","employees","skills"].includes(feature)){
         const native=await page.evaluate(()=>{
           const list=document.querySelector(".business-native-list")
-          const toolbar=list?.querySelector(".business-native-list-toolbar")
+          const toolbar=document.querySelector("#business-context-tools-host .business-context-tools")
           const table=list?.querySelector(".business-native-list-table")
           if(!list||!toolbar||!table)return null
-          const l=list.getBoundingClientRect(),t=toolbar.getBoundingClientRect(),b=table.getBoundingClientRect()
+          const t=toolbar.getBoundingClientRect(),b=table.getBoundingClientRect()
           return {
             toolbarHeight:Math.round(t.height),
-            toolbarTopGap:Math.round(t.top-l.top),
-            tableGap:Math.round(b.top-t.bottom),
+            toolbarAboveTable:t.bottom<=b.top,
+            topRight:t.right<=innerWidth,
+            noInternalToolbar:!list.querySelector(".business-native-list-toolbar"),
             duplicateHeading:!!document.querySelector(".business-native-page h1,.business-native-page h2")
           }
         })
         if(!native)missing.push(`${name}: ${feature} missing native shared list foundation`)
         else{
           if(native.toolbarHeight>58)missing.push(`${name}: ${feature} native toolbar too tall (${native.toolbarHeight}px)`)
-          if(Math.abs(native.toolbarTopGap)>2)missing.push(`${name}: ${feature} native toolbar not attached to list surface`)
-          if(Math.abs(native.tableGap)>2)missing.push(`${name}: ${feature} native table detached from toolbar`)
+          if(!native.toolbarAboveTable||!native.topRight||!native.noInternalToolbar)
+            missing.push(`${name}: ${feature} toolbar did not move to top-right feature band`)
           if(native.duplicateHeading)missing.push(`${name}: ${feature} duplicates title inside content`)
         }
       }
@@ -629,7 +630,9 @@ try {
   })
   assert.ok(warehouseLayout,"Warehouse batches must render compact overview and ledger surfaces")
   assert.equal(warehouseLayout.detached,false,"Warehouse batches must not contain detached headings, notes, or command bars")
-  assert.equal(warehouseLayout.actionInside,true,"Register batch action must sit inside ledger title bar")
+  assert.equal(warehouseLayout.actionInside,false,"Original batch action is hidden in the flat ledger")
+  const registerBatch=page.locator("#business-context-tools-host").getByRole("button",{name:"登记批次"})
+  assert.equal(await registerBatch.isVisible(),true,"Register batch action must appear in the top-right band")
   assert.equal(warehouseLayout.ledgerBelowOverview,true,"Inventory overview must precede the actual batch ledger")
   assert.ok(warehouseLayout.headHeight<=52,`Warehouse ledger title bar too tall: ${JSON.stringify(warehouseLayout)}`)
   assert.ok(Math.abs(warehouseLayout.tableGap)<=2,`Warehouse table must directly follow ledger title: ${JSON.stringify(warehouseLayout)}`)
