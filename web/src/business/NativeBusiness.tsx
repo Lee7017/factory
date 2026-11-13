@@ -163,7 +163,10 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
       )).every(select=>{
         const key=select.dataset.flatLedgerFilter??""
         const chosen=flatFilters[key]??""
-        return !chosen||row.children.item(Number(select.dataset.flatLedgerColumn))?.textContent?.trim()===chosen
+        const cell=row.children.item(Number(select.dataset.flatLedgerColumn))
+        const value=cell?.querySelector(".mw-status,.op-badge,.proc-status")?.textContent?.trim()
+          ||cell?.textContent?.trim()||""
+        return !chosen||value===chosen
       })
       const show=statusMatch&&searchMatch&&flatMatch
       row.hidden=!show
