@@ -229,6 +229,73 @@ try {
   assert.equal(visualAudit.length,features.length,"Each business feature has a captured browser screenshot")
   assert.deepEqual(missing,[],"Every department feature must render inside its shared page family")
   assert.deepEqual(errors,[],"No uncaught errors in business modules")
+  // Exercise the new real column filters across modules, stock, QA, and finance.
+  // Empty tables keep the select visible but may have no non-empty choices.
+  for(const [dept,feature] of [
+    ["quality","qaQc"],["quality","qaNcr"],["warehouse","warehouseOps"],
+    ["warehouse","warehouseIncoming"],["production","workshop"],
+    ["production","nonProductionTasks"],["finance","finance"],
+    ["leadership","approvals"],["it","templates"]
+  ]){
+    activeFeature=dept+"/"+feature
+    await page.evaluate(([d,f])=>{location.hash="#/departments/"+d+"/"+f},[dept,feature])
+    const tableRoot=page.locator(".remaining-business-ledger")
+    await tableRoot.waitFor({state:"visible",timeout:15000})
+    const selects=tableRoot.locator("[data-flat-ledger-filter]")
+    const count=await selects.count()
+    for(let index=0;index<count;index++){
+      const select=selects.nth(index)
+      if(await select.locator("option").count()<2)continue
+      const table=select.locator("xpath=ancestor::table[1]")
+      const original=await table.locator("tbody tr[data-flat-ledger-row]:visible").count()
+      await select.selectOption({index:1})
+      await page.waitForTimeout(65)
+      const filtered=await table.locator("tbody tr[data-flat-ledger-row]:visible").count()
+      assert.ok(filtered<=original,dept+"/"+feature+" must filter actual data rows")
+      assert.equal(await select.locator("xpath=..").evaluate(el=>getComputedStyle(el).backgroundColor),
+        "rgb(251, 252, 248)",dept+"/"+feature+" selected column uses #FBFCF8")
+      await select.selectOption("")
+      await page.waitForTimeout(65)
+      assert.equal(await table.locator("tbody tr[data-flat-ledger-row]:visible").count(),original,
+        dept+"/"+feature+" resets to the complete table")
+    }
+    assert.equal(await page.locator(".business-context-status").count(),0,
+      dept+"/"+feature+" has no redundant status filter above tables")
+    await page.screenshot({path:"test-results/flat-standard-"+dept+"-"+feature+".png"})
+  }
+  // The actual legacy button is still responsible for the business form.
+  await page.evaluate(()=>{location.hash="#/departments/quality/qaQc"})
+  const newInspection=page.locator("#business-context-tools-host").getByRole("button",{name:"新建报检单"})
+  await newInspection.waitFor({state:"visible",timeout:12000})
+  await newInspection.click()
+  await page.locator(".mw-modal").waitFor({state:"visible"})
+  assert.ok((await page.locator(".mw-modal").textContent())?.includes("新建报检单"),
+    "Top-right creation button reuses the existing QA form")
+  await page.locator('.mw-modal [data-module-action="closeModal"]').first().click()
+  await page.locator(".mw-modal").waitFor({state:"hidden"})
+  await page.evaluate(()=>{location.hash="#/departments/warehouse/warehouseOps"})
+  const batchAction=page.locator("#business-context-tools-host").getByRole("button",{name:"登记批次"})
+  await batchAction.waitFor({state:"visible"})
+  await batchAction.click()
+  await page.locator(".mw-modal").waitFor({state:"visible"})
+  assert.ok((await page.locator(".mw-modal").textContent())?.includes("仓库批次"),
+    "Top-right batch registration opens the original warehouse form")
+  await page.locator('.mw-modal [data-module-action="closeModal"]').first().click()
+  await page.locator(".mw-modal").waitFor({state:"hidden"})
+  // The separately migrated React leave table follows the same five rules.
+  await page.evaluate(()=>{location.hash="#/departments/hr/leave"})
+  const leaveTable=page.locator(".business-native-list")
+  await leaveTable.waitFor({state:"visible"})
+  assert.equal(await page.locator(".business-native-list-toolbar").count(),0,
+    "React leave table does not duplicate a toolbar inside the card")
+  assert.equal(await page.locator(".business-context-search").count(),1)
+  assert.equal(await page.locator(".business-context-tools-host").getByRole("button",{name:"发起请假"}).isVisible(),true)
+  assert.equal(await leaveTable.locator('th select[aria-label="筛选状态"]').count(),1,
+    "React leave status filter must reside in its heading")
+  await page.locator(".business-context-tools-host").getByRole("button",{name:"发起请假"}).click()
+  await page.getByRole("dialog",{name:/发起请假/}).waitFor({state:"visible"})
+  await page.getByRole("dialog",{name:/发起请假/}).getByRole("button",{name:"取消"}).click()
+
   // Purchase orders: a real, flat eight-column table. PMC creates the purchase
   // document; this page must not manufacture a separate "new purchase" path.
   activeFeature="purchase/purchase"
