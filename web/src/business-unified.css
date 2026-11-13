@@ -3851,3 +3851,475 @@ button.department-profile-photo-slot:focus-visible,
   border-color:#DEE3DC!important;
   color:#4F574F!important;
 }
+
+/* Remaining business departments: flat ledger / top actions / header filters / warm palette / aligned actions. */
+/* Reserve space for genuine actions instead of spreading unused columns. */
+.factory-shell-v2 .remaining-business-ledger table[data-flat-ledger-table]:has(
+  thead th:nth-child(7)
+):not(:has(thead th:nth-child(8))) :is(th,td):last-child:has(button){width:24%!important}
+.factory-shell-v2 .remaining-business-ledger table[data-flat-ledger-table]:has(
+  thead th:nth-child(10)
+) :is(th,td):last-child:has(button){width:27%!important}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(.op-row-actions,.proc-actions){
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:7px!important;
+  margin:0!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(.op-row-actions,.proc-actions) button{
+  margin:0!important;
+}
+
+/* Shared order-panel leftovers exist beyond Sales (warehouse, production and QA).
+   Make them genuine flat ledgers too; their original create buttons remain clickable
+   in the DOM but only the React feature-band proxies are displayed. */
+.factory-shell-v2 .remaining-business-ledger .legacy-root .biz-order-panel{
+  display:block!important;
+  width:100%;
+  height:auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root .biz-order-panel :is(
+  .biz-order-stats,.biz-order-toolbar,.biz-order-fold
+){display:none!important}
+.factory-shell-v2 .remaining-business-ledger .legacy-root .biz-order-panel .biz-order-table-area{
+  display:block!important;
+  flex:none!important;
+  width:100%;
+  min-height:0!important;
+  height:auto!important;
+  overflow-x:auto!important;
+  overflow-y:visible!important;
+  margin:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root .biz-order-panel .biz-order-footer{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  min-height:29px!important;
+  height:auto!important;
+  padding:6px 12px!important;
+  margin:0!important;
+  color:#7B837C!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+
+/* This scope deliberately excludes already-converted sales, procurement, PMC, APS
+   scheduling and Gantt. Only the unfinished legacy business screens are included. */
+.factory-shell-v2 .business-page-frame:has(.remaining-business-ledger),
+.factory-shell-v2 .business-page-body:has(.remaining-business-ledger){
+  min-height:0!important;
+  height:auto!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.factory-shell-v2 .business-page-body:has(.remaining-business-ledger){
+  padding:0!important;
+  overflow:visible!important;
+}
+.factory-shell-v2 .remaining-business-ledger,
+.factory-shell-v2 .remaining-business-ledger .legacy-root,
+.factory-shell-v2 .remaining-business-ledger .legacy-workbench,
+.factory-shell-v2 .remaining-business-ledger .ops-workbench,
+.factory-shell-v2 .remaining-business-ledger .mw-page,
+.factory-shell-v2 .remaining-business-ledger .mw-content,
+.factory-shell-v2 .remaining-business-ledger .proc-page{
+  width:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  height:auto!important;
+  margin:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-quality-surface,.mw-clean-page,.mw-ledger-panel,.mw-stock-overview,
+  .mw-data-section,.op-subsection,.op-task-inbox,.proc-section,
+  .proc-purchase-page,.proc-purchase-list,.op-table-wrap
+){
+  min-height:0!important;
+  height:auto!important;
+  margin:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root .mw-content{
+  display:flex!important;
+  flex-direction:column;
+  gap:0!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-table-scroll,.op-table-wrap,.proc-scroll,
+  [data-slot="table-container"]
+){
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  height:auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  overflow-x:auto!important;
+  overflow-y:visible!important;
+  background:#FFFFFF!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-table,.op-table,.proc-table,[data-slot="table"]
+){
+  width:100%!important;
+  table-layout:fixed!important;
+  border-collapse:collapse!important;
+  margin:0!important;
+  background:#FFFFFF!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+/* Width follows each table's real number of columns, never a fake equal-width
+   multi-card layout. Horizontal scrolling stays inside the table, not the page. */
+.factory-shell-v2 .remaining-business-ledger .legacy-root table[data-flat-ledger-table]{
+  min-width:560px!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root table[data-flat-ledger-table]:has(thead th:nth-child(5)){
+  min-width:730px!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root table[data-flat-ledger-table]:has(thead th:nth-child(7)){
+  min-width:940px!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root table[data-flat-ledger-table]:has(thead th:nth-child(8)){
+  min-width:1080px!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root table[data-flat-ledger-table]:has(thead th:nth-child(10)){
+  min-width:1380px!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-table,.op-table,.proc-table,[data-slot="table"]
+) :is(th,td){
+  text-align:left!important;
+  vertical-align:middle!important;
+  overflow-wrap:anywhere;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-table,.op-table,.proc-table,[data-slot="table"]
+) th{
+  height:39px!important;
+  padding:0 12px!important;
+  color:#4F574F!important;
+  font-size:11px!important;
+  background:#F4F4EF!important;
+  border-top:1px solid #DEE3DC!important;
+  border-bottom:1px solid #DEE3DC!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-table,.op-table,.proc-table,[data-slot="table"]
+) td{
+  height:auto!important;
+  min-height:46px!important;
+  padding:9px 12px!important;
+  color:#3F4941!important;
+  background:#FFFFFF!important;
+  border-bottom:1px solid #DEE3DC!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-table,.op-table,.proc-table,[data-slot="table"]
+) tbody tr:nth-child(even) td{
+  background:#FFFFFF!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-table,.op-table,.proc-table,[data-slot="table"]
+) tbody tr:hover td{
+  background:#FBFCF8!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root table[data-flat-ledger-table] :is(th,td):last-child:has(
+  button,.mw-btn,.op-button,.proc-btn
+){
+  width:19%!important;
+  text-align:left!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root table[data-flat-ledger-table]:has(thead th:nth-child(8)) :is(th,td):last-child:has(
+  button,.mw-btn,.op-button,.proc-btn
+){width:21%!important}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-table,.op-table,.proc-table,[data-slot="table"]
+) td:last-child :is(.mw-btn,.op-button,.proc-btn,[data-slot="button"]){
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  vertical-align:middle!important;
+  margin:0!important;
+  white-space:nowrap!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-table,.op-table,.proc-table,[data-slot="table"]
+) td:last-child button+button{
+  margin-left:6px!important;
+}
+/* Main toolbar actions are represented by their original event targets in the
+   top-right feature band. They remain mounted but are not displayed twice. */
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-table-toolbar,.mw-inline-toolbar,.op-table-toolbar,.op-inline-toolbar,
+  .op-subsection > header > .op-tools
+){display:none!important}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-quality-command > .mw-actions,
+  .mw-ledger-head > .mw-actions,
+  .mw-data-section-head > .mw-actions
+){display:none!important}
+/* Status/selection: ordinary workflow status is warm-white; true error/warning
+   states preserve their semantic color and remain visually distinct. */
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-status:not(.mw-alert),.op-badge:not(.warning):not(.danger),
+  .proc-status:not(.is-warning):not(.is-danger)
+){
+  background:#FBFCF8!important;
+  color:#4F574F!important;
+  border:1px solid #DEE3DC!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root .flat-ledger-filter-heading{
+  padding:0 12px!important;
+  text-align:left!important;
+  vertical-align:middle!important;
+  background:#F4F4EF!important;
+}
+.factory-shell-v2 .remaining-business-ledger .flat-ledger-filter-control{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:7px;
+  max-width:100%;
+  height:35px;
+  padding:0 5px 0 0;
+  border-radius:5px;
+  color:#4F574F;
+  white-space:nowrap;
+  line-height:1;
+  cursor:pointer;
+}
+.factory-shell-v2 .remaining-business-ledger .flat-ledger-filter-control:is(
+  :hover,.is-active,:focus-within
+){
+  color:#343D36!important;
+  background:#FBFCF8!important;
+}
+.factory-shell-v2 .remaining-business-ledger .flat-ledger-filter-control:focus-within{
+  outline:2px solid #9AA99A;
+  outline-offset:1px;
+}
+.factory-shell-v2 .remaining-business-ledger .flat-ledger-filter-control .flat-ledger-filter-select{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  opacity:0!important;
+  border:0!important;
+  z-index:3;
+  cursor:pointer!important;
+}
+.factory-shell-v2 .remaining-business-ledger .flat-ledger-filter-control .sales-order-status-caret{
+  display:block;
+  flex:0 0 15px;
+  width:15px;
+  height:15px;
+  color:#58655C;
+}
+/* Summaries, stock and quality queue statistics stay available but no longer
+   appear as a row of tall, independent "AI dashboard" cards. */
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-metrics,.mw-stock-snapshot,.mw-quality-status
+){
+  display:flex!important;
+  flex-wrap:wrap;
+  gap:0!important;
+  min-height:0!important;
+  margin:0 0 10px!important;
+  padding:0!important;
+  background:#FBFCF8!important;
+  border:0!important;
+  border-bottom:1px solid #DEE3DC!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-metric,.mw-snapshot,.mw-quality-status-item
+){
+  flex:1 1 155px;
+  display:flex!important;
+  flex-direction:column;
+  justify-content:center;
+  gap:3px!important;
+  min-width:0;
+  min-height:58px!important;
+  height:auto!important;
+  margin:0!important;
+  padding:8px 12px!important;
+  background:transparent!important;
+  border:0!important;
+  border-right:1px solid #DEE3DC!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-metric,.mw-snapshot,.mw-quality-status-item
+):last-child{border-right:0!important}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-stock-overview-head,.mw-ledger-head,.mw-data-section-head,.mw-clean-head
+){
+  display:flex!important;
+  flex-wrap:wrap;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px;
+  min-height:36px!important;
+  height:auto!important;
+  margin:0!important;
+  padding:6px 12px!important;
+  color:#4F574F!important;
+  background:transparent!important;
+  border:0!important;
+  border-bottom:1px solid #DEE3DC!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root .mw-clean-counts span{
+  padding:3px 7px!important;
+  background:#FBFCF8!important;
+  border-color:#DEE3DC!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-stock-overview,.mw-ledger-panel,.mw-data-section,.mw-clean-page
+){margin-bottom:12px!important}
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+  .mw-stock-overview,.mw-ledger-panel,.mw-data-section,.mw-clean-page
+):last-child{margin-bottom:0!important}
+/* React-native leave, employee and skill tables use the same neutral ledger. */
+.factory-shell-v2 .business-native-page,
+.factory-shell-v2 .business-native-list,
+.factory-shell-v2 .business-native-list-table,
+.factory-shell-v2 .business-native-list-table > div{
+  min-height:0!important;
+  height:auto!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .business-native-page{padding:0!important}
+.factory-shell-v2 .business-native-list-table{overflow-x:auto!important}
+.factory-shell-v2 .business-native-list [data-slot="table"]{
+  width:100%!important;
+  min-width:680px!important;
+  table-layout:fixed!important;
+  background:#FFFFFF!important;
+}
+.factory-shell-v2 .business-native-list [data-slot="table-head"]{
+  height:39px!important;
+  text-align:left!important;
+  padding:0 12px!important;
+  color:#4F574F!important;
+  background:#F4F4EF!important;
+  border-top:1px solid #DEE3DC!important;
+  border-bottom:1px solid #DEE3DC!important;
+}
+.factory-shell-v2 .business-native-list [data-slot="table-cell"]{
+  min-height:46px!important;
+  padding:9px 12px!important;
+  text-align:left!important;
+  background:#FFFFFF!important;
+  border-bottom:1px solid #DEE3DC!important;
+}
+.factory-shell-v2 .business-native-list [data-slot="table-row"]:hover [data-slot="table-cell"]{
+  background:#FBFCF8!important;
+}
+.factory-shell-v2 .business-native-list [data-slot="table-head"]:last-child:has(button){
+  width:20%;
+}
+.factory-shell-v2 .business-native-list .flat-ledger-filter-control{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  height:34px;
+  padding:0 5px 0 0;
+  border-radius:5px;
+  cursor:pointer;
+}
+.factory-shell-v2 .business-native-list .flat-ledger-filter-control:is(.is-active,:hover,:focus-within){
+  background:#FBFCF8!important;
+}
+.factory-shell-v2 .business-native-list .flat-ledger-filter-select{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  opacity:0;
+  cursor:pointer;
+  z-index:2;
+}
+.factory-shell-v2 .business-native-list [data-slot="badge"]:not([data-variant="destructive"]){
+  background:#FBFCF8!important;
+  border-color:#DEE3DC!important;
+  color:#4F574F!important;
+}
+.factory-shell-v2 .business-native-list-footer{
+  min-height:30px!important;
+  padding:6px 12px!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+}
+.factory-shell-v2 .business-context-tools .business-native-list-actions{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:7px;
+  margin:0;
+}
+.factory-shell-v2 .business-context-tools .business-native-list-actions [data-slot="button"]{
+  min-height:34px;
+  border-radius:6px!important;
+}
+@media(max-width:860px){
+  .factory-shell-v2 .remaining-business-ledger .legacy-root :is(
+    .mw-metric,.mw-snapshot,.mw-quality-status-item
+  ){flex:1 1 130px}
+  .factory-shell-v2 .business-context-tools .business-native-list-actions [data-slot="button"]{
+    font-size:11px;
+  }
+}

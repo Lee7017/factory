@@ -70,22 +70,23 @@ try {
       if(["leave","leaveApproval","employees","skills"].includes(feature)){
         const native=await page.evaluate(()=>{
           const list=document.querySelector(".business-native-list")
-          const toolbar=list?.querySelector(".business-native-list-toolbar")
+          const toolbar=document.querySelector("#business-context-tools-host .business-context-tools")
           const table=list?.querySelector(".business-native-list-table")
           if(!list||!toolbar||!table)return null
-          const l=list.getBoundingClientRect(),t=toolbar.getBoundingClientRect(),b=table.getBoundingClientRect()
+          const t=toolbar.getBoundingClientRect(),b=table.getBoundingClientRect()
           return {
             toolbarHeight:Math.round(t.height),
-            toolbarTopGap:Math.round(t.top-l.top),
-            tableGap:Math.round(b.top-t.bottom),
+            toolbarAboveTable:t.bottom<=b.top,
+            topRight:t.right<=innerWidth,
+            noInternalToolbar:!list.querySelector(".business-native-list-toolbar"),
             duplicateHeading:!!document.querySelector(".business-native-page h1,.business-native-page h2")
           }
         })
         if(!native)missing.push(`${name}: ${feature} missing native shared list foundation`)
         else{
           if(native.toolbarHeight>58)missing.push(`${name}: ${feature} native toolbar too tall (${native.toolbarHeight}px)`)
-          if(Math.abs(native.toolbarTopGap)>2)missing.push(`${name}: ${feature} native toolbar not attached to list surface`)
-          if(Math.abs(native.tableGap)>2)missing.push(`${name}: ${feature} native table detached from toolbar`)
+          if(!native.toolbarAboveTable||!native.topRight||!native.noInternalToolbar)
+            missing.push(`${name}: ${feature} toolbar did not move to top-right feature band`)
           if(native.duplicateHeading)missing.push(`${name}: ${feature} duplicates title inside content`)
         }
       }
@@ -158,7 +159,61 @@ try {
         missing.push(`${name}: ${feature} module table toolbar too tall (${layout.moduleTableToolbarHeight}px)`)
       if(layout.moduleToolbarInsideTable===false)
         missing.push(`${name}: ${feature} module action toolbar is not inside table surface`)
-      visualAudit.push({department:dept,feature,...appearance,boxes,layout})
+      // Every unfinished legacy business route follows the same five ERP table
+      // rules; APS/Gantt and earlier completed sales, procurement, PMC are excluded.
+      if(!["sales","purchase","pmc"].includes(dept)&&
+         !["leave","leaveApproval","employees","skills"].includes(feature)){
+        const standardized=await page.evaluate(()=>{
+          const root=document.querySelector(".remaining-business-ledger")
+          if(!root)return null
+          const tables=[...root.querySelectorAll("table[data-flat-ledger-table]")]
+          const toolbarSources=[...root.querySelectorAll("[data-flat-toolbar-action]")]
+          const topActions=[...document.querySelectorAll("#business-context-tools-host button.business-context-create")]
+          const allHeaders=tables.flatMap(table=>[...table.querySelectorAll("thead th")])
+          const statusNames=/^(?:状态|审批状态|处理状态|执行状态|流程状态|质量状态|订单状态|审核状态|工单状态|任务状态|当前状态|开工前 Gate|QC 判定|判定状态|检验结果|操作结果|结论|状态 \/ 质检)$/
+          const filterHeadings=allHeaders.filter(el=>statusNames.test(el.querySelector(".flat-ledger-filter-control > span")?.textContent?.trim()??el.textContent?.trim()??""))
+          const filters=[...root.querySelectorAll("[data-flat-ledger-filter]")]
+          const badge=root.querySelector(".mw-status:not(.mw-alert),.op-badge:not(.danger):not(.warning)")
+          const actualButton=tables.flatMap(table=>[...table.querySelectorAll("tbody tr td:last-child button")]).find(
+            button=>button.getBoundingClientRect().width>0)
+          const lastTd=actualButton?.closest("td")
+          const lastTable=lastTd?.closest("table")
+          const lastHeading=lastTable?.querySelector("thead th:last-child")
+          const cell=lastTd?.getBoundingClientRect(),head=lastHeading?.getBoundingClientRect()
+          const host=document.querySelector(".business-page-body")
+          const tablePalette=tables.every(table=>
+            getComputedStyle(table).backgroundColor==="rgb(255, 255, 255)"&&
+            [...table.querySelectorAll("thead th")].every(th=>
+              getComputedStyle(th).backgroundColor==="rgb(244, 244, 239)"))
+          return {
+            tables:tables.length,
+            filters:filters.length,
+            sourceActions:toolbarSources.length,
+            topActions:topActions.length,
+            statusInHeaders:filterHeadings.every(head=>Boolean(head.querySelector("[data-flat-ledger-filter]"))),
+            cleanPalette:tablePalette,
+            flatContainer:getComputedStyle(host).backgroundColor==="rgba(0, 0, 0, 0)"&&
+              getComputedStyle(host).borderTopWidth==="0px",
+            noDuplicateActions:toolbarSources.every(node=>node.getClientRects().length===0),
+            actionColumnsAligned:!actualButton||!lastTd||!lastHeading||
+              Math.abs((cell?.left??0)-(head?.left??0))<4,
+            badgeNeutral:!badge||getComputedStyle(badge).backgroundColor==="rgb(251, 252, 248)",
+            pageOverflow:document.documentElement.scrollWidth>innerWidth+4
+          }
+        })
+        if(!standardized)missing.push(`${name}: ${feature} missing flat-ledger root`)
+        else{
+          for(const key of ["statusInHeaders","cleanPalette","flatContainer",
+            "noDuplicateActions","actionColumnsAligned","badgeNeutral"]){
+            if(!standardized[key])missing.push(`${name}: ${feature} failed ${key}: ${JSON.stringify(standardized)}`)
+          }
+          if(standardized.sourceActions!==standardized.topActions)
+            missing.push(`${name}: ${feature} top-right action count differs: ${JSON.stringify(standardized)}`)
+          if(standardized.pageOverflow)missing.push(`${name}: ${feature} page overflow`)
+          visualAudit.push({department:dept,feature,...appearance,boxes,layout,standardized})
+        }
+      }else visualAudit.push({department:dept,feature,...appearance,boxes,layout})
+
       if(dept==="purchase"&&feature==="purchase")console.log("PURCHASE LAYOUT AUDIT",JSON.stringify(boxes))
       await page.screenshot({
         path:`test-results/business-${dept}-${feature}.jpg`,
@@ -173,6 +228,73 @@ try {
   assert.equal(visualAudit.length,features.length,"Each business feature has a captured browser screenshot")
   assert.deepEqual(missing,[],"Every department feature must render inside its shared page family")
   assert.deepEqual(errors,[],"No uncaught errors in business modules")
+  // Exercise the new real column filters across modules, stock, QA, and finance.
+  // Empty tables keep the select visible but may have no non-empty choices.
+  for(const [dept,feature] of [
+    ["quality","qaQc"],["quality","qaNcr"],["warehouse","warehouseOps"],
+    ["warehouse","warehouseIncoming"],["production","workshop"],
+    ["production","nonProductionTasks"],["finance","finance"],
+    ["leadership","approvals"],["it","templates"]
+  ]){
+    activeFeature=dept+"/"+feature
+    await page.evaluate(([d,f])=>{location.hash="#/departments/"+d+"/"+f},[dept,feature])
+    const tableRoot=page.locator(".remaining-business-ledger")
+    await tableRoot.waitFor({state:"visible",timeout:15000})
+    const selects=tableRoot.locator("[data-flat-ledger-filter]")
+    const count=await selects.count()
+    for(let index=0;index<count;index++){
+      const select=selects.nth(index)
+      if(await select.locator("option").count()<2)continue
+      const table=select.locator("xpath=ancestor::table[1]")
+      const original=await table.locator("tbody tr[data-flat-ledger-row]:visible").count()
+      await select.selectOption({index:1})
+      await page.waitForTimeout(65)
+      const filtered=await table.locator("tbody tr[data-flat-ledger-row]:visible").count()
+      assert.ok(filtered<=original,dept+"/"+feature+" must filter actual data rows")
+      assert.equal(await select.locator("xpath=..").evaluate(el=>getComputedStyle(el).backgroundColor),
+        "rgb(251, 252, 248)",dept+"/"+feature+" selected column uses #FBFCF8")
+      await select.selectOption("")
+      await page.waitForTimeout(65)
+      assert.equal(await table.locator("tbody tr[data-flat-ledger-row]:visible").count(),original,
+        dept+"/"+feature+" resets to the complete table")
+    }
+    assert.equal(await page.locator(".business-context-status").count(),0,
+      dept+"/"+feature+" has no redundant status filter above tables")
+    await page.screenshot({path:"test-results/flat-standard-"+dept+"-"+feature+".png"})
+  }
+  // The actual legacy button is still responsible for the business form.
+  await page.evaluate(()=>{location.hash="#/departments/quality/qaQc"})
+  const newInspection=page.locator("#business-context-tools-host").getByRole("button",{name:"新建报检单"})
+  await newInspection.waitFor({state:"visible",timeout:12000})
+  await newInspection.click()
+  await page.locator(".mw-modal").waitFor({state:"visible"})
+  assert.ok((await page.locator(".mw-modal").textContent())?.includes("新建报检单"),
+    "Top-right creation button reuses the existing QA form")
+  await page.locator('.mw-modal [data-module-action="closeModal"]').first().click()
+  await page.locator(".mw-modal").waitFor({state:"hidden"})
+  await page.evaluate(()=>{location.hash="#/departments/warehouse/warehouseOps"})
+  const batchAction=page.locator("#business-context-tools-host").getByRole("button",{name:"登记批次"})
+  await batchAction.waitFor({state:"visible"})
+  await batchAction.click()
+  await page.locator(".mw-modal").waitFor({state:"visible"})
+  assert.ok((await page.locator(".mw-modal").textContent())?.includes("仓库批次"),
+    "Top-right batch registration opens the original warehouse form")
+  await page.locator('.mw-modal [data-module-action="closeModal"]').first().click()
+  await page.locator(".mw-modal").waitFor({state:"hidden"})
+  // The separately migrated React leave table follows the same five rules.
+  await page.evaluate(()=>{location.hash="#/departments/hr/leave"})
+  const leaveTable=page.locator(".business-native-list")
+  await leaveTable.waitFor({state:"visible"})
+  assert.equal(await page.locator(".business-native-list-toolbar").count(),0,
+    "React leave table does not duplicate a toolbar inside the card")
+  assert.equal(await page.locator(".business-context-search").count(),1)
+  assert.equal(await page.locator(".business-context-tools-host").getByRole("button",{name:"发起请假"}).isVisible(),true)
+  assert.equal(await leaveTable.locator('th select[aria-label="筛选状态"]').count(),1,
+    "React leave status filter must reside in its heading")
+  await page.locator(".business-context-tools-host").getByRole("button",{name:"发起请假"}).click()
+  await page.getByRole("dialog",{name:/发起请假/}).waitFor({state:"visible"})
+  await page.getByRole("dialog",{name:/发起请假/}).getByRole("button",{name:"取消"}).click()
+
   // Purchase orders: a real, flat eight-column table. PMC creates the purchase
   // document; this page must not manufacture a separate "new purchase" path.
   activeFeature="purchase/purchase"
@@ -629,7 +751,9 @@ try {
   })
   assert.ok(warehouseLayout,"Warehouse batches must render compact overview and ledger surfaces")
   assert.equal(warehouseLayout.detached,false,"Warehouse batches must not contain detached headings, notes, or command bars")
-  assert.equal(warehouseLayout.actionInside,true,"Register batch action must sit inside ledger title bar")
+  assert.equal(warehouseLayout.actionInside,false,"Original batch action is hidden in the flat ledger")
+  const registerBatch=page.locator("#business-context-tools-host").getByRole("button",{name:"登记批次"})
+  assert.equal(await registerBatch.isVisible(),true,"Register batch action must appear in the top-right band")
   assert.equal(warehouseLayout.ledgerBelowOverview,true,"Inventory overview must precede the actual batch ledger")
   assert.ok(warehouseLayout.headHeight<=52,`Warehouse ledger title bar too tall: ${JSON.stringify(warehouseLayout)}`)
   assert.ok(Math.abs(warehouseLayout.tableGap)<=2,`Warehouse table must directly follow ledger title: ${JSON.stringify(warehouseLayout)}`)

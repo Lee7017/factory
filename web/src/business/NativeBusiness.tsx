@@ -59,6 +59,9 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
   const isPurchaseList=dept==="purchase"&&feature==="purchase"
   const hasPmcStatusFilter=dept==="pmc"&&["kitting","shift","shiftPeople","orderProductStats"].includes(feature)
   const hasColumnStatusFilter=isSalesOrderList||isPurchaseList||hasPmcStatusFilter
+  // Other departments use the shared flat-table treatment. The APS/Gantt view
+  // and previously converted sales, purchasing and PMC screens stay untouched.
+  const remainingLedger=dept!=="sales"&&dept!=="purchase"&&dept!=="pmc"&&feature!=="schedule"
   const [markup,setMarkup]=useState("")
   const [status,setStatus]=useState<"loading"|"ready"|"error">("loading")
   const [error,setError]=useState("")
@@ -69,6 +72,8 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
   const [contextStatuses,setContextStatuses]=useState<string[]>([])
   const [contextStatusCounts,setContextStatusCounts]=useState<Record<string,number>>({})
   const [toolHost,setToolHost]=useState<HTMLElement|null>(null)
+  const [flatFilters,setFlatFilters]=useState<Record<string,string>>({})
+  const [flatActions,setFlatActions]=useState<Array<{key:string;label:string;primary:boolean;disabled:boolean}>>([])
   const rootRef=useRef<HTMLDivElement>(null)
   const render=useCallback(async()=>{
     const runtime=await getBusinessRuntime()
@@ -101,6 +106,8 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     setContextStatus("")
     setContextStatuses([])
     setContextStatusCounts({})
+    setFlatFilters({})
+    setFlatActions([])
     setToolHost(document.getElementById("business-context-tools-host"))
   },[dept,feature])
 
@@ -112,7 +119,9 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     const purchaseBoard=isPurchaseList?root.querySelector<HTMLElement>(".proc-purchase-board"):null
     const pmcTable=hasPmcStatusFilter&&!panel
       ?root.querySelector<HTMLElement>("[data-pmc-status-filter]")?.closest("table")??null:null
-    const rows=purchaseBoard
+    const rows=remainingLedger
+      ?Array.from(root.querySelectorAll<HTMLElement>("table tbody tr[data-flat-ledger-row]"))
+      :purchaseBoard
       ?Array.from(purchaseBoard.querySelectorAll<HTMLElement>(".proc-order-row"))
       :panel
         ?Array.from(panel.querySelectorAll<HTMLElement>(".biz-order-row"))
@@ -148,14 +157,27 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
       const raw=row.dataset.orderStatus??""
       const statusMatch=!contextStatus||(hasColumnStatusFilter?raw:compactBusinessStatus(raw))===contextStatus
       const searchMatch=!needle||(row.textContent??"").toLocaleLowerCase().includes(needle)
-      const show=statusMatch&&searchMatch
+      const table=row.closest<HTMLTableElement>("table[data-flat-ledger-table]")
+      const flatMatch=!remainingLedger||!table||Array.from(table.querySelectorAll<HTMLSelectElement>(
+        "[data-flat-ledger-filter]"
+      )).every(select=>{
+        const key=select.dataset.flatLedgerFilter??""
+        const chosen=flatFilters[key]??""
+        const cell=row.children.item(Number(select.dataset.flatLedgerColumn))
+        const value=cell?.querySelector(".mw-status,.op-badge,.proc-status")?.textContent?.trim()
+          ||cell?.textContent?.trim()||""
+        return !chosen||value===chosen
+      })
+      const show=statusMatch&&searchMatch&&flatMatch
       row.hidden=!show
       if(show)visible++
     }
     const count=panel?.querySelector<HTMLElement>(".biz-order-visible-count")
       ??purchaseBoard?.querySelector<HTMLElement>(".proc-order-count")
-    if(count)count.textContent=String(visible)
-  },[status,markup,contextQuery,contextStatus,contextStatuses.length,hasColumnStatusFilter,isPurchaseList])
+    if(count)count.textContent=String(remainingLedger
+      ?rows.filter(row=>row.classList.contains("biz-order-row")&&!row.hidden).length:visible)
+  },[status,markup,contextQuery,contextStatus,contextStatuses.length,flatFilters,
+    hasColumnStatusFilter,isPurchaseList,remainingLedger])
 
   // Keep the native table heading's selected value in sync across MES re-renders.
   useEffect(()=>{
@@ -169,6 +191,51 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     const label=select.dataset.statusLabel||(isPurchaseList?"审批状态":"流程状态")
     select.setAttribute("aria-label",contextStatus?"筛选"+label+"，当前："+contextStatus:"筛选"+label)
   },[dept,feature,status,markup,contextStatus,hasColumnStatusFilter,isPurchaseList])
+
+  // A table can have several independent status columns and several sub-tables.
+  // Preserve their selections across native MES rerenders, without regenerating React markup.
+  useEffect(()=>{
+    if(!remainingLedger||status!=="ready")return
+    for(const select of rootRef.current?.querySelectorAll<HTMLSelectElement>(
+      "[data-flat-ledger-filter]"
+    )??[]){
+      const key=select.dataset.flatLedgerFilter??""
+      const chosen=flatFilters[key]??""
+      select.value=Array.from(select.options).some(o=>o.value===chosen)?chosen:""
+      select.parentElement?.classList.toggle("is-active",Boolean(select.value))
+    }
+  },[remainingLedger,status,markup,flatFilters])
+
+  // Reuse the original create/form buttons instead of copying their business logic.
+  // Their hidden originals remain in the business DOM and keep all access checks.
+  useEffect(()=>{
+    if(!remainingLedger||status!=="ready")return
+    const root=rootRef.current
+    if(!root)return
+    const toolbarSelectors=[
+      ".mw-table-toolbar .mw-actions > button[data-module-action]",
+      ".mw-inline-toolbar .mw-actions > button[data-module-action]",
+      ".mw-quality-command > .mw-actions > button[data-module-action]",
+      ".mw-ledger-head > .mw-actions > button[data-module-action]",
+      ".mw-data-section-head > .mw-actions > button[data-proc-action]",
+      ".mw-data-section-head > .mw-actions > button[data-module-action]",
+      ".mw-data-section-head > .mw-actions > button[data-op-action]",
+      ".op-table-toolbar .op-tools > button[data-op-action]",
+      ".op-inline-toolbar .op-tools > button[data-op-action]",
+      ".op-subsection > header > .op-tools > button[data-op-action]",
+      ".biz-order-toolbar .biz-order-create button[data-module-action]",
+      ".biz-order-toolbar .biz-order-create button[data-op-action]"
+    ].join(",")
+    const controls=Array.from(root.querySelectorAll<HTMLButtonElement>(toolbarSelectors))
+    const actions=controls.map((button,index)=>{
+      const key="flat-"+index
+      button.dataset.flatToolbarAction=key
+      return {key,label:button.textContent?.trim()??"",
+        primary:/(?:^|\s)(?:primary|op-primary|btn-primary)(?:\s|$)/.test(button.className),
+        disabled:button.disabled}
+    }).filter(item=>item.label)
+    setFlatActions(previous=>JSON.stringify(previous)===JSON.stringify(actions)?previous:actions)
+  },[remainingLedger,status,markup])
 
   // Track the exact document after React has committed the destination route's DOM.
   useEffect(()=>{
@@ -209,6 +276,11 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     // Listen to their native change events directly to keep the old access matrix working.
     function handleNativeChange(event:Event){
       const el=event.target
+      if(el instanceof HTMLSelectElement&&el.matches("[data-flat-ledger-filter]")){
+        const key=el.dataset.flatLedgerFilter
+        if(key)setFlatFilters(previous=>({...previous,[key]:el.value}))
+        return
+      }
       if(el instanceof HTMLSelectElement&&el.matches("[data-sales-order-status-filter], [data-purchase-status-filter], [data-pmc-status-filter]")){
         setContextStatus(el.value)
         return
@@ -226,7 +298,7 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     void getBusinessRuntime().then(runtime=>runtime.submit(event.nativeEvent))
   }
   const contextPlaceholder="搜索"+(FEATURE_NAMES[feature]??"当前列表")
-  return <section className="native-business" aria-label="业务工作区">
+  return <section className={"native-business "+(remainingLedger?"remaining-business-ledger":"")} aria-label="业务工作区">
     {toolHost&&createPortal(
       <div className="business-context-tools">
         {dept==="sales"&&feature==="orders"&&<Button type="button" size="sm"
@@ -253,7 +325,16 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
           )?.click()}>
           <Plus size={13}/><span className="create-label-full">手动补货采购</span><span className="create-label-short">补货</span>
         </Button>}
-        {contextStatuses.length>0&&!hasColumnStatusFilter&&<div className="business-context-status" aria-label="当前列表状态">
+        {remainingLedger&&flatActions.map(item=><Button key={item.key} type="button" size="sm"
+          className="business-context-create" variant={item.primary?"default":"outline"}
+          aria-label={item.label} disabled={item.disabled||status!=="ready"}
+          onClick={()=>rootRef.current?.querySelector<HTMLButtonElement>(
+            '[data-flat-toolbar-action="'+item.key+'"]'
+          )?.click()}>
+          {/(新增|新建|登记|发起|安排|申请|提报|创建)/.test(item.label)&&<Plus size={13}/>}
+          <span>{item.label}</span>
+        </Button>)}
+        {contextStatuses.length>0&&!hasColumnStatusFilter&&!remainingLedger&&<div className="business-context-status" aria-label="当前列表状态">
           <button type="button" className={!contextStatus?"active":""} onClick={()=>setContextStatus("")}>全部</button>
           {contextStatuses.map(name=><button type="button" key={name} className={contextStatus===name?"active":""}
             onClick={()=>setContextStatus(name)}>{name}<span>{contextStatusCounts[name]??0}</span></button>)}
@@ -274,7 +355,7 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
     </div>}
     <div ref={rootRef} className="legacy-root" style={{display:status==="ready"?"block":"none"}}
       onClick={handleClick} onSubmit={handleSubmit}>
-      <div id="view" className="legacy-workbench"><BusinessMarkup markup={markup}/></div>
+      <div id="view" className="legacy-workbench"><BusinessMarkup markup={markup} standardize={remainingLedger}/></div>
       <div id="modal-host"/>
       <div id="ops-modal-host"/>
       <div id="toast-host" aria-live="polite"/>

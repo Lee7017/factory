@@ -383,6 +383,75 @@ try{
   await page.locator('.native-business [data-proc-action="editPolicy"]').waitFor({state:"visible",timeout:18000})
   await page.screenshot({path:"test-results/live-purchase-approval-policy.png"})
 
+  // Published site: verify every part of the remaining-department contract,
+  // not just the build artifact. Gantt and previously migrated pages are untouched.
+  for(const [dept,feature,createLabel] of [
+    ["quality","qaQc","新建报检单"],
+    ["warehouse","warehouseOps","登记批次"],
+    ["production","nonProductionTasks","新增非生产任务"],
+    ["it","templates","新建草稿"]
+  ]){
+    await page.evaluate(([d,f])=>{location.hash="#/departments/"+d+"/"+f},[dept,feature])
+    const root=page.locator(".remaining-business-ledger")
+    await root.waitFor({state:"visible",timeout:18000})
+    const geometry=await root.evaluate(element=>{
+      const body=document.querySelector(".business-page-body")
+      const tables=[...element.querySelectorAll("table[data-flat-ledger-table]")]
+      const heads=tables.flatMap(table=>[...table.querySelectorAll("thead th")])
+      const sources=[...element.querySelectorAll("[data-flat-toolbar-action]")]
+      const controls=[...document.querySelectorAll("#business-context-tools-host .business-context-create")]
+      const filter=element.querySelector("[data-flat-ledger-filter]")
+      const badge=element.querySelector(".mw-status:not(.mw-alert),.op-badge:not(.danger):not(.warning)")
+      const buttons=[...element.querySelectorAll("table tbody tr td:last-child button")]
+      const action=buttons.find(button=>button.getBoundingClientRect().width>0)
+      const actionTitle=action?.closest("table")?.querySelector("thead th:last-child")
+      const tableWhite=tables.every(table=>getComputedStyle(table).backgroundColor==="rgb(255, 255, 255)")
+      return {
+        tables:tables.length,
+        flat:getComputedStyle(body).backgroundColor==="rgba(0, 0, 0, 0)"&&
+          getComputedStyle(body).borderTopWidth==="0px",
+        tableWhite,
+        headersWarm:heads.every(head=>getComputedStyle(head).backgroundColor==="rgb(244, 244, 239)"),
+        filterInHeading:!filter||Boolean(filter.closest("th")),
+        neutralBadge:!badge||getComputedStyle(badge).backgroundColor==="rgb(251, 252, 248)",
+        actionsInTop:controls.length===sources.length,
+        noDuplicateSource:sources.every(node=>node.getClientRects().length===0),
+        actionAligned:!action||!actionTitle||Math.abs(
+          action.closest("td").getBoundingClientRect().left-actionTitle.getBoundingClientRect().left)<4,
+        noPageOverflow:document.documentElement.scrollWidth<=innerWidth+4
+      }
+    })
+    assert.ok(geometry&&geometry.tables>0,dept+"/"+feature+" published tables exist")
+    for(const [key,val] of Object.entries(geometry))
+      if(typeof val==="boolean")assert.equal(val,true,dept+"/"+feature+" published "+key+": "+JSON.stringify(geometry))
+    assert.equal(await page.locator("#business-context-tools-host").getByRole("button",{name:createLabel}).isVisible(),true,
+      dept+"/"+feature+" original creation action appears at top right")
+    const filters=root.locator("[data-flat-ledger-filter]")
+    if(await filters.count()){
+      const select=filters.first()
+      if(await select.locator("option").count()>1){
+        await select.selectOption({index:1})
+        assert.equal(await select.locator("xpath=..").evaluate(el=>getComputedStyle(el).backgroundColor),
+          "rgb(251, 252, 248)",dept+"/"+feature+" active filter must use #FBFCF8")
+        await select.selectOption("")
+      }
+    }
+    await page.screenshot({path:"test-results/live-unified-"+dept+"-"+feature+".png"})
+  }
+  await page.evaluate(()=>{location.hash="#/departments/hr/leave"})
+  const leave=page.locator(".business-native-list")
+  await leave.waitFor({state:"visible",timeout:15000})
+  assert.equal(await page.locator("#business-context-tools-host").getByRole("button",{name:"发起请假"}).isVisible(),true)
+  assert.equal(await leave.locator("th select[aria-label='筛选状态']").count(),1)
+  assert.equal(await leave.locator(".business-native-list-toolbar").count(),0)
+  const leaveColors=await leave.evaluate(root=>({
+    table:getComputedStyle(root.querySelector("table")).backgroundColor,
+    header:getComputedStyle(root.querySelector("thead th")).backgroundColor
+  }))
+  assert.equal(leaveColors.table,"rgb(255, 255, 255)")
+  assert.equal(leaveColors.header,"rgb(244, 244, 239)")
+  await page.screenshot({path:"test-results/live-unified-hr-leave.png"})
+
   // Real published-order modal check: a generic page screenshot cannot verify flow controls.
   await page.evaluate(()=>{window.location.hash="#/departments/sales/orders"})
   const orderButton=page.locator('.native-business [data-op-action="detailFlow"]').first()

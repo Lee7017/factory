@@ -129,7 +129,7 @@ try{
     }
   })
   assert.equal(businessPalette.page,"rgb(244, 244, 239)","Business page uses #F4F4EF")
-  assert.equal(businessPalette.panel,"rgb(251, 252, 248)","Business panel uses #FBFCF8")
+  assert.equal(businessPalette.panel,"rgba(0, 0, 0, 0)","Flat business table has no enclosing card background")
   assert.equal(businessPalette.data,"rgb(255, 255, 255)","Business data plane is white")
   assert.equal(businessPalette.header,"rgb(244, 244, 239)","Business table header uses warm page tint")
 
