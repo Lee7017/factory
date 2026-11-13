@@ -194,8 +194,7 @@ try {
             cleanPalette:tablePalette,
             flatContainer:getComputedStyle(host).backgroundColor==="rgba(0, 0, 0, 0)"&&
               getComputedStyle(host).borderTopWidth==="0px",
-            noDuplicateActions:toolbarSources.every(node=>getComputedStyle(node).display!=="none"&&
-              node.getClientRects().length===0),
+            noDuplicateActions:toolbarSources.every(node=>node.getClientRects().length===0),
             actionColumnsAligned:!actualButton||!lastTd||!lastHeading||
               Math.abs((cell?.left??0)-(head?.left??0))<4,
             badgeNeutral:!badge||getComputedStyle(badge).backgroundColor==="rgb(251, 252, 248)",
