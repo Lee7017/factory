@@ -41,7 +41,11 @@ try{
     "Amber selected row must override flattened white table cells")
   assert.ok(state.leftMarker.includes("187, 129, 27"),"Selected row has a strong left marker")
   assert.equal(state.action,expectedAction,"Highlight must point to the next available action")
-  assert.equal(state.buttonBackground,"rgb(41, 60, 46)","Next action button is visibly emphasized")
+  // The legacy primary button is dark already; the tracking cue is the gold
+  // focus ring, which distinguishes the exact action from every other button.
+  const buttonRing=await row.locator(".bottleneck-track-action").evaluate(el=>getComputedStyle(el).boxShadow)
+  assert.ok(buttonRing.includes("187, 129, 27"),
+    "Next action button must show its amber tracking ring: "+buttonRing)
   assert.equal(await page.locator(".bottleneck-track-highlight").count(),1,
     "Only the exact work order may be highlighted")
  }
