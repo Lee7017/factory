@@ -1,5 +1,6 @@
-import { useMemo, useState, type ReactNode } from "react"
-import { ArrowDownUp, ChevronLeft, ChevronRight, Search } from "lucide-react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
+import { createPortal } from "react-dom"
+import { ArrowDownUp, ChevronLeft, ChevronRight, ListFilter, Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,9 +24,20 @@ export function DataTable<T>({rows,columns,rowKey,placeholder="搜索记录…",
   const [query,setQuery]=useState("")
   const [sort,setSort]=useState<{key:string;desc:boolean}|null>(null)
   const [page,setPage]=useState(0)
+  const [columnFilters,setColumnFilters]=useState<Record<string,string>>({})
+  const [toolbarHost,setToolbarHost]=useState<HTMLElement|null>(null)
+  useEffect(()=>{setToolbarHost(document.getElementById("business-context-tools-host"))},[])
+  const statusOptions=useMemo(()=>Object.fromEntries(columns
+    .filter(column=>/(?:状态|结论|结果|审批状态|质量状态)$/.test(column.label)&&column.value)
+    .map(column=>[column.key,Array.from(new Set(rows.map(row=>String(column.value?.(row)??"").trim())
+      .filter(Boolean)))])),[columns,rows])
   const result=useMemo(()=>{
     const term=query.trim().toLocaleLowerCase()
-    let records=rows.filter(row=>!term||columns.some(c=>String(c.value?.(row)??"").toLocaleLowerCase().includes(term)))
+    let records=rows.filter(row=>
+      (!term||columns.some(c=>String(c.value?.(row)??"").toLocaleLowerCase().includes(term)))&&
+      Object.entries(columnFilters).every(([key,selected])=>
+        !selected||String(columns.find(c=>c.key===key)?.value?.(row)??"").trim()===selected)
+    )
     const column=columns.find(c=>c.key===sort?.key)
     if(sort&&column){
       records=[...records].sort((a,b)=>{
@@ -36,23 +48,36 @@ export function DataTable<T>({rows,columns,rowKey,placeholder="搜索记录…",
       })
     }
     return records
-  },[rows,columns,query,sort])
+  },[rows,columns,query,sort,columnFilters])
   const pages=Math.max(1,Math.ceil(result.length/pageSize))
   const current=Math.min(page,pages-1)
+  const controls=<div className="business-context-tools">
+    {actions&&<div className="business-native-list-actions">{actions}</div>}
+    <label className="business-context-search">
+      <Search size={14}/>
+      <input type="search" value={query}
+        onChange={event=>{setQuery(event.target.value);setPage(0)}}
+        placeholder={placeholder} aria-label="搜索业务记录"/>
+    </label>
+  </div>
   return <div className="business-native-list">
-    <div className="business-native-list-toolbar">
-      <div className="relative w-full max-w-72">
-        <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/>
-        <Input value={query} onChange={e=>{setQuery(e.target.value);setPage(0)}}
-          className="bg-white/70 pl-9 text-xs" placeholder={placeholder} aria-label="搜索业务记录"/>
-      </div>
-      {actions&&<div className="business-native-list-actions">{actions}</div>}
-    </div>
+    {toolbarHost?createPortal(controls,toolbarHost):
+      <div className="business-native-list-toolbar">{controls}</div>}
     <div className="business-native-list-table">
       <Table>
         <TableHeader><TableRow>
           {columns.map(c=><TableHead key={c.key} className="text-xs">
-            {c.sortable?<button type="button" className="inline-flex items-center gap-1 hover:underline"
+            {statusOptions[c.key]?<div className={"sales-order-status-control flat-ledger-filter-control "+(columnFilters[c.key]?"is-active":"")}>
+              <span>{c.label}</span><ListFilter size={14} className="sales-order-status-caret"/>
+              <select className="sales-order-status-select flat-ledger-filter-select"
+                aria-label={`筛选${c.label}`} title={`筛选${c.label}`}
+                value={columnFilters[c.key]??""}
+                onChange={event=>{setColumnFilters(old=>({...old,[c.key]:event.target.value}));setPage(0)}}>
+                <option value="">全部状态</option>
+                {statusOptions[c.key].map(value=><option key={value} value={value}>{value}</option>)}
+              </select>
+            </div>:
+            c.sortable?<button type="button" className="inline-flex items-center gap-1 hover:underline"
               aria-label={`按${c.label}排序`} onClick={()=>{setSort(old=>({key:c.key,desc:old?.key===c.key?!old.desc:false}));setPage(0)}}>
               {c.label}<ArrowDownUp size={12}/></button>:c.label}
           </TableHead>)}
