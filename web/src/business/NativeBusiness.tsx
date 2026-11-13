@@ -3,7 +3,7 @@ import { createPortal } from "react-dom"
 import { AlertCircle, LoaderCircle, Plus, RotateCcw, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { FactoryAccessAPI } from "@/factory-state"
-import { getBusinessRuntime } from "@/business/runtime"
+import { getBusinessRuntime, highlightTrackedBusinessRow } from "@/business/runtime"
 import { BusinessMarkup } from "@/business/BusinessMarkup"
 import { FEATURE_NAMES } from "@/catalog"
 
@@ -249,16 +249,7 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
       if(!root)return
       const needle=ref.trim()
       if(!needle)return
-      const nodes=Array.from(root.querySelectorAll<HTMLElement>(
-        "tbody tr,.dept-todo-card,.op-quality-link"
-      ))
-      const row=nodes.find(node=>node.textContent?.includes(needle))
-      if(!row)return
-      row.classList.remove("bottleneck-track-highlight")
-      void row.offsetWidth
-      row.classList.add("bottleneck-track-highlight")
-      row.scrollIntoView({block:"center",behavior:"smooth"})
-      window.setTimeout(()=>row.classList.remove("bottleneck-track-highlight"),3200)
+      highlightTrackedBusinessRow(root,needle)
     })
     return ()=>{disposed=true}
   },[dept,feature,status,markup])

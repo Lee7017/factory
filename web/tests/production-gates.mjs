@@ -20,6 +20,36 @@ try{
  const stage=()=>page.evaluate(id=>window.FactoryOperations.state.flows[id].stage,orderId)
  const taskRow=id=>page.locator(`[data-task-row="${id}"]`)
  const currentStep=()=>dialog.locator(".journey-card.is-current .journey-task").textContent()
+ async function assertTrackedTask(taskId,expectedAction){
+  const row=taskRow(taskId)
+  await page.waitForFunction(id=>
+    document.querySelector('[data-task-row="'+id+'"]')?.classList.contains("bottleneck-track-highlight"),
+    taskId,{timeout:8000})
+  const state=await row.evaluate(el=>{
+    const first=el.querySelector("td")
+    const button=el.querySelector(".bottleneck-track-action")
+    return {highlight:el.classList.contains("bottleneck-track-highlight"),
+      current:el.getAttribute("aria-current"),
+      background:first?getComputedStyle(first).backgroundColor:"",
+      leftMarker:first?getComputedStyle(first).boxShadow:"",
+      action:button?.getAttribute("data-op-action")||"",
+      buttonBackground:button?getComputedStyle(button).backgroundColor:""}
+  })
+  assert.equal(state.highlight,true,"Corresponding work order must be highlighted")
+  assert.equal(state.current,"location","Tracking marks the selected work order")
+  assert.equal(state.background,"rgb(255, 242, 203)",
+    "Amber selected row must override flattened white table cells")
+  assert.ok(state.leftMarker.includes("187, 129, 27"),"Selected row has a strong left marker")
+  assert.equal(state.action,expectedAction,"Highlight must point to the next available action")
+  // The legacy primary button is dark already; the tracking cue is the gold
+  // focus ring, which distinguishes the exact action from every other button.
+  const buttonRing=await row.locator(".bottleneck-track-action").evaluate(el=>getComputedStyle(el).boxShadow)
+  assert.ok(buttonRing.includes("187, 129, 27"),
+    "Next action button must show its amber tracking ring: "+buttonRing)
+  assert.equal(await page.locator(".bottleneck-track-highlight").count(),1,
+    "Only the exact work order may be highlighted")
+ }
+
  const close=async()=>page.evaluate(()=>window.FactoryFlowUI?.dismiss?.())
  async function route(dept,feature){
   await page.evaluate(hash=>{location.hash=hash},`#/departments/${dept}/${feature}`)
@@ -98,6 +128,7 @@ try{
  await page.locator('.native-business .op-task-inbox').waitFor({state:"visible",timeout:14000})
  assert.match(new URL(page.url()).hash,/#\/departments\/production\/nonProductionTasks$/,"Tracking must open workshop nonproduction task list")
  assert.equal(await taskRow(blendTask.id).count(),1)
+ await assertTrackedTask(blendTask.id,"task:start")
  assert.equal(await taskRow(blendTask.id).locator('[data-op-action="task:start"]').count(),1,
   "New post-blending cleaning must begin with execution, not skip to QC or review")
  await page.screenshot({path:"test-results/production-03-blending-clean-todo.png"})
@@ -127,6 +158,7 @@ try{
  await dialog.locator(".journey-card.is-current [data-flow-track]").click()
  await page.locator('.native-business .op-task-inbox').waitFor({state:"visible",timeout:14000})
  assert.match(new URL(page.url()).hash,/#\/departments\/production\/nonProductionTasks$/,"Tracking must open workshop nonproduction task list")
+ await assertTrackedTask(setupTask.id,"task:start")
  for(const mode of ["start","finish","verify"]){
   await taskRow(setupTask.id).locator(`[data-op-action="task:${mode}"]`).click()
   await dialog.waitFor({state:"visible"})
@@ -149,7 +181,10 @@ try{
  assert.notEqual(packTask.id,blendTask.id,"Packaging and blending cleaning are distinct work orders")
  assert.equal(await page.evaluate(id=>window.FactoryModules.state.inspections.some(r=>r.order===id&&r.phase==="成品"),orderId),false)
  await page.screenshot({path:"test-results/production-06-packaging-clean-after-task.png"})
- await close()
+ await dialog.locator(".journey-card.is-current [data-flow-track]").click()
+ await page.locator('.native-business .op-task-inbox').waitFor({state:"visible",timeout:14000})
+ await assertTrackedTask(packTask.id,"task:start")
+ await page.screenshot({path:"test-results/production-06-packaging-clean-tracked.png"})
  await cleanTask(packTask.id)
  assert.equal(await stage(),"final_qc")
  assert.equal(await currentStep(),"成品检验判定并放行")
