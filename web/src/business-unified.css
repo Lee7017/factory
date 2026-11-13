@@ -4323,3 +4323,36 @@ button.department-profile-photo-slot:focus-visible,
     font-size:11px;
   }
 }
+
+/* Bottleneck tracking must remain visible on the standardized flat table. */
+/* Placed after the flat-ledger white-cell rules deliberately. A routed task
+   remains selected until it is acted on or the route is left. */
+.factory-shell-v2 .native-business .legacy-root tr.bottleneck-track-highlight > td,
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(.mw-table,.op-table,.proc-table,[data-slot="table"]) tbody tr.bottleneck-track-highlight > td,
+.factory-shell-v2 .remaining-business-ledger .legacy-root :is(.mw-table,.op-table,.proc-table,[data-slot="table"]) tbody tr.bottleneck-track-highlight:hover > td{
+  background:#FFF2CB!important;
+  color:#28352A!important;
+  border-bottom-color:#E0BA64!important;
+  border-top:1px solid #E0BA64!important;
+}
+.factory-shell-v2 .native-business .legacy-root tr.bottleneck-track-highlight > td:first-child,
+.factory-shell-v2 .remaining-business-ledger .legacy-root table tbody tr.bottleneck-track-highlight > td:first-child{
+  box-shadow:inset 4px 0 0 #BB811B!important;
+}
+.factory-shell-v2 .native-business .legacy-root tr.bottleneck-track-highlight > td:last-child,
+.factory-shell-v2 .remaining-business-ledger .legacy-root table tbody tr.bottleneck-track-highlight > td:last-child{
+  box-shadow:inset -1px 0 0 #E0BA64!important;
+}
+.factory-shell-v2 .native-business .legacy-root tr.bottleneck-track-highlight .bottleneck-track-action{
+  background:#293C2E!important;
+  color:#FFFFFF!important;
+  border-color:#293C2E!important;
+  box-shadow:0 0 0 3px rgba(187,129,27,.29)!important;
+  font-weight:650!important;
+}
+.factory-shell-v2 .native-business .legacy-root tr.bottleneck-track-highlight .bottleneck-track-action:hover{
+  background:#1D2F24!important;
+}
+.factory-shell-v2 .native-business .legacy-root tr.bottleneck-track-highlight{
+  scroll-margin-block:138px 64px;
+}
