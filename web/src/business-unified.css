@@ -3853,6 +3853,55 @@ button.department-profile-photo-slot:focus-visible,
 }
 
 /* Remaining business departments: flat ledger / top actions / header filters / warm palette / aligned actions. */
+/* Shared order-panel leftovers exist beyond Sales (warehouse, production and QA).
+   Make them genuine flat ledgers too; their original create buttons remain clickable
+   in the DOM but only the React feature-band proxies are displayed. */
+.factory-shell-v2 .remaining-business-ledger .legacy-root .biz-order-panel{
+  display:block!important;
+  width:100%;
+  height:auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root .biz-order-panel :is(
+  .biz-order-stats,.biz-order-toolbar,.biz-order-fold
+){display:none!important}
+.factory-shell-v2 .remaining-business-ledger .legacy-root .biz-order-panel .biz-order-table-area{
+  display:block!important;
+  flex:none!important;
+  width:100%;
+  min-height:0!important;
+  height:auto!important;
+  overflow-x:auto!important;
+  overflow-y:visible!important;
+  margin:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.factory-shell-v2 .remaining-business-ledger .legacy-root .biz-order-panel .biz-order-footer{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  min-height:29px!important;
+  height:auto!important;
+  padding:6px 12px!important;
+  margin:0!important;
+  color:#7B837C!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+
 /* This scope deliberately excludes already-converted sales, procurement, PMC, APS
    scheduling and Gantt. Only the unfinished legacy business screens are included. */
 .factory-shell-v2 .business-page-frame:has(.remaining-business-ledger),
