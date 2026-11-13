@@ -221,8 +221,10 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
       ".mw-data-section-head > .mw-actions > button[data-module-action]",
       ".mw-data-section-head > .mw-actions > button[data-op-action]",
       ".op-table-toolbar .op-tools > button[data-op-action]",
-      ".biz-order-toolbar button[data-module-action]",
-      ".biz-order-toolbar button[data-op-action]"
+      ".op-inline-toolbar .op-tools > button[data-op-action]",
+      ".op-subsection > header > .op-tools > button[data-op-action]",
+      ".biz-order-toolbar .biz-order-create button[data-module-action]",
+      ".biz-order-toolbar .biz-order-create button[data-op-action]"
     ].join(",")
     const controls=Array.from(root.querySelectorAll<HTMLButtonElement>(toolbarSelectors))
     const actions=controls.map((button,index)=>{
