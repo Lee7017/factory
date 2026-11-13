@@ -215,6 +215,8 @@ export function NativeBusiness({dept,feature,access,onRoute,onRefresh}:Props){
       ".mw-quality-command > .mw-actions > button[data-module-action]",
       ".mw-ledger-head > .mw-actions > button[data-module-action]",
       ".mw-data-section-head > .mw-actions > button[data-proc-action]",
+      ".mw-data-section-head > .mw-actions > button[data-module-action]",
+      ".mw-data-section-head > .mw-actions > button[data-op-action]",
       ".op-table-toolbar .op-tools > button[data-op-action]",
       ".biz-order-toolbar button[data-module-action]",
       ".biz-order-toolbar button[data-op-action]"
