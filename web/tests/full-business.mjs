@@ -171,7 +171,7 @@ try {
           const topActions=[...document.querySelectorAll("#business-context-tools-host button.business-context-create")]
           const allHeaders=tables.flatMap(table=>[...table.querySelectorAll("thead th")])
           const statusNames=/^(?:状态|审批状态|处理状态|执行状态|流程状态|质量状态|订单状态|审核状态|工单状态|任务状态|当前状态|开工前 Gate|QC 判定|判定状态|检验结果|操作结果|结论|状态 \/ 质检)$/
-          const filterHeadings=allHeaders.filter(el=>statusNames.test(el.textContent?.trim()??""))
+          const filterHeadings=allHeaders.filter(el=>statusNames.test(el.querySelector(".flat-ledger-filter-control > span")?.textContent?.trim()??el.textContent?.trim()??""))
           const filters=[...root.querySelectorAll("[data-flat-ledger-filter]")]
           const badge=root.querySelector(".mw-status:not(.mw-alert),.op-badge:not(.danger):not(.warning)")
           const actualButton=tables.flatMap(table=>[...table.querySelectorAll("tbody tr td:last-child button")]).find(
