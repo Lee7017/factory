@@ -4356,3 +4356,12 @@ button.department-profile-photo-slot:focus-visible,
 .factory-shell-v2 .native-business .legacy-root tr.bottleneck-track-highlight{
   scroll-margin-block:138px 64px;
 }
+
+/* The original MES primary-button selector is more specific than the generic
+   tracked-action rule above. Ensure the actual actionable button wins. */
+.factory-shell-v2 #main-content .remaining-business-ledger .legacy-root table tbody tr.bottleneck-track-highlight td button.bottleneck-track-action[data-op-action]{
+  background:#293C2E!important;
+  color:#FFFFFF!important;
+  border-color:#293C2E!important;
+  box-shadow:0 0 0 3px rgba(187,129,27,.34)!important;
+}
