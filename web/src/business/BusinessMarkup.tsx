@@ -44,7 +44,9 @@ function decorateRemainingTables(root:DocumentFragment){
       if(!filterHeadings.test(heading)||head.querySelector("select"))return
       const values=Array.from(new Set(rows.flatMap(row=>{
         if(row.children.length!==heads.length)return []
-        const value=row.children[columnIndex]?.textContent?.trim()??""
+        const cell=row.children[columnIndex]
+        const value=cell?.querySelector(".mw-status,.op-badge,.proc-status")?.textContent?.trim()
+          ||cell?.textContent?.trim()||""
         return value&&value!=="—"&&value.length<=65?[value]:[]
       })))
       head.classList.add("flat-ledger-filter-heading")
