@@ -159,7 +159,62 @@ try {
         missing.push(`${name}: ${feature} module table toolbar too tall (${layout.moduleTableToolbarHeight}px)`)
       if(layout.moduleToolbarInsideTable===false)
         missing.push(`${name}: ${feature} module action toolbar is not inside table surface`)
-      visualAudit.push({department:dept,feature,...appearance,boxes,layout})
+      // Every unfinished legacy business route follows the same five ERP table
+      // rules; APS/Gantt and earlier completed sales, procurement, PMC are excluded.
+      if(!["sales","purchase","pmc"].includes(dept)&&
+         !["leave","leaveApproval","employees","skills"].includes(feature)){
+        const standardized=await page.evaluate(()=>{
+          const root=document.querySelector(".remaining-business-ledger")
+          if(!root)return null
+          const tables=[...root.querySelectorAll("table[data-flat-ledger-table]")]
+          const toolbarSources=[...root.querySelectorAll("[data-flat-toolbar-action]")]
+          const topActions=[...document.querySelectorAll("#business-context-tools-host button.business-context-create")]
+          const allHeaders=tables.flatMap(table=>[...table.querySelectorAll("thead th")])
+          const statusNames=/^(?:状态|审批状态|处理状态|执行状态|流程状态|质量状态|订单状态|审核状态|工单状态|任务状态|当前状态|开工前 Gate|QC 判定|判定状态|检验结果|操作结果|结论|状态 \/ 质检)$/
+          const filterHeadings=allHeaders.filter(el=>statusNames.test(el.textContent?.trim()??""))
+          const filters=[...root.querySelectorAll("[data-flat-ledger-filter]")]
+          const badge=root.querySelector(".mw-status:not(.mw-alert),.op-badge:not(.danger):not(.warning)")
+          const actualButton=tables.flatMap(table=>[...table.querySelectorAll("tbody tr td:last-child button")]).find(
+            button=>button.getBoundingClientRect().width>0)
+          const lastTd=actualButton?.closest("td")
+          const lastTable=lastTd?.closest("table")
+          const lastHeading=lastTable?.querySelector("thead th:last-child")
+          const cell=lastTd?.getBoundingClientRect(),head=lastHeading?.getBoundingClientRect()
+          const host=document.querySelector(".business-page-body")
+          const tablePalette=tables.every(table=>
+            getComputedStyle(table).backgroundColor==="rgb(255, 255, 255)"&&
+            [...table.querySelectorAll("thead th")].every(th=>
+              getComputedStyle(th).backgroundColor==="rgb(244, 244, 239)"))
+          return {
+            tables:tables.length,
+            filters:filters.length,
+            sourceActions:toolbarSources.length,
+            topActions:topActions.length,
+            statusInHeaders:filterHeadings.every(head=>Boolean(head.querySelector("[data-flat-ledger-filter]"))),
+            cleanPalette:tablePalette,
+            flatContainer:getComputedStyle(host).backgroundColor==="rgba(0, 0, 0, 0)"&&
+              getComputedStyle(host).borderTopWidth==="0px",
+            noDuplicateActions:toolbarSources.every(node=>getComputedStyle(node).display!=="none"&&
+              node.getClientRects().length===0),
+            actionColumnsAligned:!actualButton||!lastTd||!lastHeading||
+              Math.abs((cell?.left??0)-(head?.left??0))<4,
+            badgeNeutral:!badge||getComputedStyle(badge).backgroundColor==="rgb(251, 252, 248)",
+            pageOverflow:document.documentElement.scrollWidth>innerWidth+4
+          }
+        })
+        if(!standardized)missing.push(`${name}: ${feature} missing flat-ledger root`)
+        else{
+          for(const key of ["statusInHeaders","cleanPalette","flatContainer",
+            "noDuplicateActions","actionColumnsAligned","badgeNeutral"]){
+            if(!standardized[key])missing.push(`${name}: ${feature} failed ${key}: ${JSON.stringify(standardized)}`)
+          }
+          if(standardized.sourceActions!==standardized.topActions)
+            missing.push(`${name}: ${feature} top-right action count differs: ${JSON.stringify(standardized)}`)
+          if(standardized.pageOverflow)missing.push(`${name}: ${feature} page overflow`)
+          visualAudit.push({department:dept,feature,...appearance,boxes,layout,standardized})
+        }
+      }else visualAudit.push({department:dept,feature,...appearance,boxes,layout})
+
       if(dept==="purchase"&&feature==="purchase")console.log("PURCHASE LAYOUT AUDIT",JSON.stringify(boxes))
       await page.screenshot({
         path:`test-results/business-${dept}-${feature}.jpg`,
